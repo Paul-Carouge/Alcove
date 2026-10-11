@@ -90,8 +90,18 @@ pressed, focus-visible, disabled, loading, error.
 | Skeleton | For content loading, respects reduced motion (no shimmer) |
 | ProgressBar | Uploads; has text percentage for screen readers |
 
-Icons: [Lucide](https://lucide.dev) on web, Material Symbols (outlined) on Flutter until a shared set is
+Icons: [Lucide](https://lucide.dev) on web (`@lucide/svelte`, always `aria-hidden` next to a text label), Material Symbols (outlined) on Flutter until a shared set is
 justified. 20px default, 24px in touch toolbars.
+
+## Layout
+
+- **App shell (web):** 16rem sidebar (logo, sections, version) + sticky translucent top bar (account menu)
+  + content column capped at 80rem. Below `md` (900px) the sidebar becomes a drawer with a scrim.
+  Upcoming sections stay visible but disabled with a "Soon" badge, so the roadmap is legible.
+- **Public pages:** split layout. A brand panel (logo, pitch, three promises, soft accent gradient) on the left,
+  the form on the right. Below `md` only the form remains, with the logo in the header.
+- **Account menu:** avatar trigger → identity, theme (system/light/dark, persisted per browser), language,
+  sign-out. Closes on `Esc` (focus returns to the trigger) and on outside pointer-down.
 
 ## Accessibility rules
 

@@ -26,7 +26,7 @@
 	aria-busy={loading || undefined}
 >
 	{#if loading}<span class="spinner" aria-hidden="true"></span>{/if}
-	<span class:hidden={loading}>{@render children()}</span>
+	<span class="label" class:hidden={loading}>{@render children()}</span>
 </button>
 
 <style>
@@ -76,6 +76,11 @@
 	.danger {
 		background: var(--color-danger);
 		color: var(--color-danger-contrast);
+	}
+	.label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.hidden {
 		visibility: hidden;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import '@fontsource-variable/inter';
 	import '#lib/styles/tokens.css';
 	import '#lib/styles/base.css';
@@ -8,12 +9,16 @@
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import ServerProblem from '#lib/server-status/ServerProblem.svelte';
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
+	import { theme } from '#lib/theme/theme.svelte.js';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
 
-	$effect(() => {
+	// One-time startup. (An $effect would re-run whenever state it reads, like
+	// the theme, changes, re-checking the server and remounting the app.)
+	onMount(() => {
 		document.documentElement.lang = getLocale();
+		theme.apply();
 		serverStatus.check();
 		session.refresh();
 	});

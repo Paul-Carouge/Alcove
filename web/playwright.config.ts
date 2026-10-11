@@ -19,6 +19,8 @@ export default defineConfig({
 	use: {
 		baseURL: `http://127.0.0.1:${port}`,
 		trace: 'retain-on-failure',
+		// Zero-duration transitions (our tokens honor it): axe must not sample mid-fade colors.
+		reducedMotion: 'reduce',
 		// Optional override of the browser binary. Prefer Playwright's own
 		// Chromium (`pnpm exec playwright install chromium`): browsers with
 		// built-in content blockers (e.g. Helium) make navigation tests flaky.

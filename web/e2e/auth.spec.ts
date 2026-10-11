@@ -6,7 +6,11 @@ async function expectNoA11yViolations(page: Page) {
 	const { violations } = await new AxeBuilder({ page })
 		.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
 		.analyze();
-	expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+	expect(
+		violations.flatMap((v) =>
+			v.nodes.map((n) => `${v.id}: ${n.target.join(' ')} ${n.failureSummary ?? ''}`)
+		)
+	).toEqual([]);
 }
 
 test('protected pages redirect to sign-in and come back after login', async ({ page }) => {
@@ -19,16 +23,40 @@ test('protected pages redirect to sign-in and come back after login', async ({ p
 	await page.getByRole('button', { name: 'Sign in' }).click();
 
 	await expect(page.getByRole('heading', { name: 'My files' })).toBeVisible();
-	await expect(page.getByText(`Signed in as ${USER.email}`)).toBeVisible();
 	await expectNoA11yViolations(page);
+
+	// Account menu: identity, theme switch (persisted), then audit it open.
+	await page.getByRole('button', { name: 'Account menu' }).click();
+	await expect(page.getByText(USER.email)).toBeVisible();
+	await page.getByRole('radio', { name: 'Dark' }).click();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.getByRole('radio', { name: 'Dark' })).toBeVisible(); // menu stays open
+	await expectNoA11yViolations(page);
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: 'Account menu' })).toBeFocused();
 
 	// Session survives a reload, then sign-out returns to the login page.
 	await page.reload();
 	await expect(page.getByRole('heading', { name: 'My files' })).toBeVisible();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await page.getByRole('button', { name: 'Account menu' }).click();
 	await page.getByRole('button', { name: 'Sign out' }).click();
 	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/login/);
+});
+
+test('mobile navigation drawer opens and closes', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 780 });
+	await page.goto('/login');
+	await page.getByLabel('Email').fill(USER.email);
+	await page.getByLabel('Password').fill(USER.password);
+	await page.getByRole('button', { name: 'Sign in' }).click();
+	await page.getByRole('button', { name: 'Open navigation' }).click();
+	await expect(page.getByRole('link', { name: 'Files' })).toBeVisible();
+	await expectNoA11yViolations(page);
+	await page.getByRole('button', { name: 'Close navigation' }).first().click();
+	await expect(page.getByRole('link', { name: 'Files' })).toBeHidden();
 });
 
 test('wrong password shows an error and validation is announced', async ({ page }) => {
@@ -45,6 +73,7 @@ test('wrong password shows an error and validation is announced', async ({ page 
 test('forgot password never reveals whether the account exists', async ({ page }) => {
 	await page.goto('/login');
 	await page.getByRole('link', { name: 'Forgot password?' }).click();
+	await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
 	await page.getByLabel('Email').fill('nobody@e2e.test');
 	await page.getByRole('button', { name: 'Send link' }).click();
 	await expect(page.getByRole('status')).toContainText('If an account exists');

@@ -1,0 +1,122 @@
+openapi: 3.1.0
+info:
+  title: Alcove API
+  version: 1.0.0
+  summary: Custom HTTP endpoints of the Alcove server.
+  description: |
+    This document is the contract for every endpoint the Alcove server adds on
+    top of PocketBase. Built-in PocketBase routes (`/api/collections/*`,
+    `/api/realtime`, auth) are documented by PocketBase and are not repeated here.
+
+    Versioning: `info.version` major == API version advertised by `/health`
+    (`api.max`). Custom endpoints live under `/api/v{N}/`. A breaking change
+    bumps N; the server keeps serving N-1 until `api.min` is raised.
+  license:
+    name: AGPL-3.0-only
+    identifier: AGPL-3.0-only
+servers:
+  - url: http://localhost:8090
+    description: Local development server
+tags:
+  - name: system
+    description: Server metadata and compatibility.
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Server health, version and compatibility information.
+      description: |
+        Unauthenticated. Clients call it when the user enters a server URL and
+        on every app start, then refuse to continue if their own supported API
+        version is outside `[api.min, api.max]`.
+      security: []
+      responses:
+        "200":
+          description: Server is up.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                status: ok
+                name: Alcove
+                version: 0.1.0
+                api: { min: 1, max: 1 }
+                modules: [core]
+                setupRequired: false
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+components:
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, name, version, api, modules, setupRequired]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        name:
+          type: string
+          description: Product name (branding), e.g. "Alcove".
+          maxLength: 64
+        version:
+          type: string
+          description: Server version (SemVer).
+          maxLength: 64
+          example: 0.1.0
+        api:
+          $ref: "#/components/schemas/ApiRange"
+        modules:
+          type: array
+          description: Active modules. `core` is always present.
+          items:
+            $ref: "#/components/schemas/Module"
+        setupRequired:
+          type: boolean
+          description: True until the first administrator account has been created.
+    ApiRange:
+      type: object
+      additionalProperties: false
+      required: [min, max]
+      properties:
+        min:
+          type: integer
+          minimum: 1
+          description: Oldest API version the server still serves.
+        max:
+          type: integer
+          minimum: 1
+          description: Newest API version the server serves.
+    Module:
+      type: string
+      enum: [core, drive, photos, documents, ocr, faces, notes, calendar, contacts]
+    Error:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: true

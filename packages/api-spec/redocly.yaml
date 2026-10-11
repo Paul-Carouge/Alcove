@@ -1,0 +1,6 @@
+extends:
+  - recommended
+rules:
+  info-contact: off
+  security-defined: off
+  no-server-example.com: off

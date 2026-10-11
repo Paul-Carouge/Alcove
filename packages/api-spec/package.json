@@ -1,0 +1,24 @@
+{
+  "name": "@alcove/api-spec",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./clients/ts/index.ts"
+  },
+  "scripts": {
+    "lint": "redocly lint openapi.yaml",
+    "gen": "pnpm gen:ts && pnpm gen:dart",
+    "gen:ts": "openapi-typescript openapi.yaml -o clients/ts/schema.d.ts && prettier --write clients/ts",
+    "gen:dart": "sh scripts/gen-dart.sh"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^2.62.0",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.6.0"
+  }
+}

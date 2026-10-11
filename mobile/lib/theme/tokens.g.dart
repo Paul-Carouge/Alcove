@@ -1,7 +1,6 @@
 // GENERATED from packages/design-tokens/tokens.json. Do not edit.
 // ignore_for_file: public_member_api_docs, constant_identifier_names
 
-import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
 
 /// Theme-dependent tokens (colors, shadows). Read with
@@ -73,9 +72,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     dangerContrast: Color(0xFFFFFFFF),
     focus: Color(0xFF3E5C8A),
     overlay: Color(0x661A1D21),
-    shadowSM: [BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x0F1A1D21))],
-    shadowMD: [BoxShadow(offset: Offset(0, 4), blurRadius: 12, spreadRadius: -2, color: Color(0x1A1A1D21))],
-    shadowLG: [BoxShadow(offset: Offset(0, 12), blurRadius: 32, spreadRadius: -4, color: Color(0x241A1D21))],
+    shadowSM: [
+      BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x0F1A1D21)),
+    ],
+    shadowMD: [
+      BoxShadow(offset: Offset(0, 4), blurRadius: 12, spreadRadius: -2, color: Color(0x1A1A1D21)),
+    ],
+    shadowLG: [
+      BoxShadow(offset: Offset(0, 12), blurRadius: 32, spreadRadius: -4, color: Color(0x241A1D21)),
+    ],
   );
 
   static const dark = AlcoveColors(
@@ -97,9 +102,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     dangerContrast: Color(0xFF1A0B09),
     focus: Color(0xFF93B2E0),
     overlay: Color(0xA3000000),
-    shadowSM: [BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x66000000))],
-    shadowMD: [BoxShadow(offset: Offset(0, 4), blurRadius: 12, spreadRadius: -2, color: Color(0x80000000))],
-    shadowLG: [BoxShadow(offset: Offset(0, 12), blurRadius: 32, spreadRadius: -4, color: Color(0x99000000))],
+    shadowSM: [
+      BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x66000000)),
+    ],
+    shadowMD: [
+      BoxShadow(offset: Offset(0, 4), blurRadius: 12, spreadRadius: -2, color: Color(0x80000000)),
+    ],
+    shadowLG: [
+      BoxShadow(offset: Offset(0, 12), blurRadius: 32, spreadRadius: -4, color: Color(0x99000000)),
+    ],
   );
 
   @override
@@ -188,8 +199,8 @@ abstract final class AlcoveFont {
   static const double sizeMd = 16;
   static const double sizeLg = 18;
   static const double sizeXl = 22;
-  static const double sizeX2xl = 28;
-  static const double sizeX3xl = 36;
+  static const double sizeXxl = 28;
+  static const double sizeXxxl = 36;
   static const FontWeight regular = FontWeight.w400;
   static const FontWeight medium = FontWeight.w500;
   static const FontWeight semibold = FontWeight.w600;

@@ -69,7 +69,8 @@ const dartColor = (hex) => {
   return `Color(0x${(a + rgb).toUpperCase()})`;
 };
 const dartName = (k) => (/^\d/.test(k) ? `s${k}` : k.replace(/^(\d)/, "x$1"));
-const dartSize = (k) => (/^\d/.test(k) ? `x${k}` : k);
+// 2xl -> xxl, 3xl -> xxxl (Dart identifiers cannot start with a digit).
+const dartSize = (k) => k.replace(/^(\d)xl$/, (_, n) => "x".repeat(Number(n)) + "l");
 
 export function toDart(t) {
   const colorKeys = Object.keys(t.color.light);
@@ -93,7 +94,6 @@ export function toDart(t) {
   return `// ${HEADER}
 // ignore_for_file: public_member_api_docs, constant_identifier_names
 
-import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
 
 /// Theme-dependent tokens (colors, shadows). Read with

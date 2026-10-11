@@ -13,5 +13,8 @@
 	"error_invalid_response": "The server answered with an unexpected response.",
 	"error_client_too_old": "This app is too old for the server (server requires API {min}–{max}). Please update the app.",
 	"error_server_too_old": "The server is too old for this app (server supports API {min}–{max}). Please update the server.",
-	"retry": "Retry"
+	"retry": "Retry",
+	"error_not_found": "Page not found",
+	"error_generic": "Something went wrong",
+	"back_home": "Back to home"
 }

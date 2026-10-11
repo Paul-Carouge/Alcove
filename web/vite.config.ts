@@ -38,6 +38,7 @@ export default defineConfig({
 	test: {
 		expect: { requireAssertions: true },
 		include: ['src/**/*.{test,spec}.{js,ts}'],
+		exclude: ['e2e/**', 'node_modules/**'],
 		environment: 'node'
 	}
 });

@@ -60,7 +60,7 @@ lint-mobile:
 	cd mobile && flutter gen-l10n && dart format --output=none --set-exit-if-changed lib test && flutter analyze
 
 ## --- Test --------------------------------------------------------------
-.PHONY: test test-server test-web test-packages test-mobile
+.PHONY: test test-server test-web test-packages test-mobile test-e2e
 test: test-server test-web test-packages test-mobile ## Run all tests
 
 test-server:
@@ -74,6 +74,10 @@ test-packages:
 
 test-mobile:
 	cd mobile && flutter gen-l10n && flutter test
+
+test-e2e: build ## Browser tests against the built binary (Playwright)
+	pnpm --filter @alcove/web exec playwright install chromium
+	pnpm --filter @alcove/web test:e2e
 
 ## --- Build -------------------------------------------------------------
 .PHONY: build build-web build-server build-apk docker docker-up

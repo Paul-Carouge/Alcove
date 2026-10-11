@@ -13,5 +13,8 @@
 	"error_invalid_response": "Le serveur a renvoyé une réponse inattendue.",
 	"error_client_too_old": "Cette application est trop ancienne pour le serveur (API requise {min}–{max}). Mettez l’application à jour.",
 	"error_server_too_old": "Le serveur est trop ancien pour cette application (API prise en charge {min}–{max}). Mettez le serveur à jour.",
-	"retry": "Réessayer"
+	"retry": "Réessayer",
+	"error_not_found": "Page introuvable",
+	"error_generic": "Une erreur est survenue",
+	"back_home": "Retour à l’accueil"
 }

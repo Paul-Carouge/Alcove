@@ -29,6 +29,7 @@ make setup        # pnpm install, go mod download, flutter pub get, pre-commit h
 make dev          # server on :8090 + Vite on :5173 (proxies /health, /api, /_)
 make lint         # all linters      | make lint-server / lint-web / lint-packages / lint-mobile
 make test         # all tests        | make test-server / test-web / test-packages / test-mobile
+make test-e2e     # Playwright browser tests against the built binary (catches CSP/embedding bugs)
 make gen          # regenerate API clients (needs Docker) + design tokens
 make check-gen    # fail if generated files are stale
 make build        # server/bin/alcove with web UI embedded

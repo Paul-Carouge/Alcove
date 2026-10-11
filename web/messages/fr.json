@@ -1,0 +1,17 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"skip_to_content": "Aller au contenu",
+	"language": "Langue",
+	"server_status_title": "Serveur",
+	"checking_server": "Connexion au serveur…",
+	"server_connected": "Connecté",
+	"server_version": "Version",
+	"api_versions": "Versions d’API",
+	"modules": "Modules",
+	"setup_required": "Premier lancement : créez le compte administrateur avec le lien affiché dans les journaux du serveur.",
+	"error_unreachable": "Impossible de joindre le serveur. Vérifiez qu’il est démarré.",
+	"error_invalid_response": "Le serveur a renvoyé une réponse inattendue.",
+	"error_client_too_old": "Cette application est trop ancienne pour le serveur (API requise {min}–{max}). Mettez l’application à jour.",
+	"error_server_too_old": "Le serveur est trop ancien pour cette application (API prise en charge {min}–{max}). Mettez le serveur à jour.",
+	"retry": "Réessayer"
+}

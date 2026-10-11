@@ -1,0 +1,104 @@
+# Alcove monorepo tasks. `make help` lists targets.
+SHELL := /bin/bash
+.DEFAULT_GOAL := help
+
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo 0.0.0-dev)
+LDFLAGS := -s -w -X github.com/Paul-Carouge/Alcove/server/internal/buildinfo.Version=$(VERSION)
+WEBUI_DIST := server/internal/webui/dist
+
+.PHONY: help
+help: ## Show this help
+	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
+
+## --- Setup -------------------------------------------------------------
+.PHONY: setup
+setup: ## Install all dependencies and git hooks
+	pnpm install
+	cd server && go mod download
+	cd mobile && flutter pub get && flutter gen-l10n
+	pre-commit install --install-hooks -t pre-commit -t commit-msg
+
+## --- Dev ---------------------------------------------------------------
+.PHONY: dev dev-server dev-web
+dev: ## Run server (:8090) and web dev server (:5173) together
+	@$(MAKE) -j2 dev-server dev-web
+
+dev-server: ## Run the Go server with auto-migrations (go run)
+	cd server && go run . serve --http=127.0.0.1:8090
+
+dev-web: ## Run the SvelteKit dev server (proxies API to :8090)
+	pnpm --filter @alcove/web dev
+
+## --- Codegen -----------------------------------------------------------
+.PHONY: gen check-gen
+gen: ## Regenerate API clients and design tokens
+	pnpm --filter @alcove/api-spec gen
+	pnpm --filter @alcove/design-tokens build
+
+check-gen: ## Fail if generated files are out of date
+	pnpm --filter @alcove/design-tokens check
+	pnpm --filter @alcove/api-spec gen
+	git diff --exit-code -- packages/api-spec/clients || \
+	  (echo "Generated API clients are stale: run 'make gen' and commit." && exit 1)
+
+## --- Lint --------------------------------------------------------------
+.PHONY: lint lint-server lint-web lint-packages lint-mobile
+lint: lint-server lint-web lint-packages lint-mobile ## Lint everything
+
+lint-server:
+	cd server && test -z "$$(gofmt -l .)" && go vet ./... && golangci-lint run ./...
+
+lint-web:
+	pnpm --filter @alcove/web check
+	pnpm --filter @alcove/web lint
+
+lint-packages:
+	pnpm --filter @alcove/api-spec lint
+	pnpm --filter @alcove/design-tokens check
+
+lint-mobile:
+	cd mobile && flutter gen-l10n && dart format --output=none --set-exit-if-changed lib test && flutter analyze
+
+## --- Test --------------------------------------------------------------
+.PHONY: test test-server test-web test-packages test-mobile
+test: test-server test-web test-packages test-mobile ## Run all tests
+
+test-server:
+	cd server && go test -race ./...
+
+test-web:
+	pnpm --filter @alcove/web test
+
+test-packages:
+	pnpm --filter @alcove/design-tokens test
+
+test-mobile:
+	cd mobile && flutter gen-l10n && flutter test
+
+## --- Build -------------------------------------------------------------
+.PHONY: build build-web build-server build-apk docker docker-up
+build: build-server ## Build the server binary with the web UI embedded (server/bin/alcove)
+
+build-web:
+	pnpm --filter @alcove/web build
+	find $(WEBUI_DIST) -mindepth 1 ! -name .gitkeep -delete
+	cp -R web/build/. $(WEBUI_DIST)/
+
+build-server: build-web
+	cd server && CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/alcove .
+	@echo "built server/bin/alcove ($(VERSION))"
+
+build-apk: ## Build a release Android APK
+	cd mobile && flutter build apk --release
+
+docker: ## Build the Docker image
+	docker build -f deploy/Dockerfile --build-arg VERSION=$(VERSION) -t ghcr.io/paul-carouge/alcove:dev .
+
+docker-up: ## Start the compose stack (needs deploy/.env)
+	cd deploy && docker compose up -d --build
+
+## --- Housekeeping ------------------------------------------------------
+.PHONY: clean
+clean: ## Remove build outputs
+	rm -rf server/bin web/build web/.svelte-kit mobile/build
+	find $(WEBUI_DIST) -mindepth 1 ! -name .gitkeep -delete

@@ -1,0 +1,60 @@
+# Install: make setup  (or: pre-commit install -t pre-commit -t commit-msg)
+exclude: ^(packages/api-spec/clients/|mobile/lib/theme/tokens\.g\.dart|web/src/lib/styles/tokens\.css|mobile/(ios|android)/)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+        exclude: (tsconfig\.json|\.vscode/)
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: bash -c 'out=$(gofmt -l server); test -z "$out" || { echo "$out"; exit 1; }'
+        language: system
+        files: ^server/.*\.go$
+        pass_filenames: false
+      - id: golangci-lint
+        name: golangci-lint
+        entry: bash -c 'cd server && golangci-lint run ./...'
+        language: system
+        files: ^server/
+        pass_filenames: false
+      - id: web-lint
+        name: prettier + eslint (web)
+        entry: pnpm --filter @alcove/web lint
+        language: system
+        files: ^web/
+        pass_filenames: false
+      - id: dart-format
+        name: dart format (mobile)
+        entry: bash -c 'cd mobile && dart format --output=none --set-exit-if-changed lib test'
+        language: system
+        files: ^mobile/.*\.dart$
+        pass_filenames: false
+      - id: design-tokens
+        name: design tokens up to date
+        entry: pnpm --filter @alcove/design-tokens check
+        language: system
+        files: ^packages/design-tokens/
+        pass_filenames: false
+      - id: api-spec-lint
+        name: OpenAPI lint
+        entry: pnpm --filter @alcove/api-spec lint
+        language: system
+        files: ^packages/api-spec/openapi\.yaml$
+        pass_filenames: false
+      - id: commitlint
+        name: commitlint
+        entry: pnpm exec commitlint --edit
+        language: system
+        stages: [commit-msg]

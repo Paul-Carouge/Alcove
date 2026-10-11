@@ -3,6 +3,7 @@
 //   mobile/lib/theme/tokens.g.dart  (Dart constants + ThemeExtension)
 // Usage: node src/build.mjs [--check]   (--check fails if outputs are stale)
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -164,18 +165,31 @@ const outputs = [
   [resolve(repo, "mobile/lib/theme/tokens.g.dart"), toDart(tokens)],
 ];
 
+// Formatting is applied by `dart format` when available, so --check ignores
+// whitespace and the trailing commas the formatter adds.
+const normalize = (text) => text.replace(/\s+/g, "").replace(/,(?=[)\]}])/g, "");
+
+function formatDart(path) {
+  try {
+    execFileSync("dart", ["format", "--page-width=100", path], { stdio: "ignore" });
+  } catch {
+    console.warn("dart not found: tokens.g.dart left unformatted (run `dart format` in /mobile)");
+  }
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const check = process.argv.includes("--check");
   let stale = false;
   for (const [path, content] of outputs) {
     if (check) {
-      if (!existsSync(path) || readFileSync(path, "utf8") !== content) {
+      if (!existsSync(path) || normalize(readFileSync(path, "utf8")) !== normalize(content)) {
         console.error(`stale: ${path}`);
         stale = true;
       }
     } else {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, content);
+      if (path.endsWith(".dart")) formatDart(path);
       console.log(`wrote ${path.replace(repo + "/", "")}`);
     }
   }

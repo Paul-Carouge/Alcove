@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommitTypeAll(chore)", ":semanticCommitScope(deps)", "helpers:pinGitHubActionDigests"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "Europe/Paris",
+  "labels": ["dependencies"],
+  "postUpdateOptions": ["gomodTidy", "pnpmDedupe"],
+  "packageRules": [
+    { "matchManagers": ["gomod"], "groupName": "Go modules" },
+    { "matchManagers": ["pub"], "groupName": "Flutter packages" },
+    { "matchManagers": ["npm"], "matchDepTypes": ["devDependencies"], "matchUpdateTypes": ["minor", "patch"], "groupName": "npm dev dependencies" },
+    { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" },
+    { "matchPackageNames": ["github.com/pocketbase/pocketbase"], "groupName": "PocketBase", "dependencyDashboardApproval": true }
+  ]
+}

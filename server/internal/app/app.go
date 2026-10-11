@@ -10,6 +10,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/health"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
 	"github.com/Paul-Carouge/Alcove/server/internal/setup"
+	"github.com/Paul-Carouge/Alcove/server/internal/shares"
 	"github.com/Paul-Carouge/Alcove/server/internal/uploads"
 	"github.com/Paul-Carouge/Alcove/server/internal/webui"
 )
@@ -19,6 +20,7 @@ func Wire(app core.App, cfg config.Config) {
 	setup.Register(app, cfg)
 	security.RegisterHeaders(app, webui.ScriptSrc())
 	drive.Register(app)
+	shares.Register(app)
 	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
 	// Optional modules from ALCOVE_MODULES (ocr, faces) are not implemented yet.
 	health.Register(app, []string{drive.Module})

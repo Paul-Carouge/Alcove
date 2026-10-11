@@ -29,13 +29,21 @@ part 'auth/http_basic_auth.dart';
 part 'auth/http_bearer_auth.dart';
 
 part 'api/drive_api.dart';
+part 'api/public_api.dart';
+part 'api/shares_api.dart';
 part 'api/system_api.dart';
 part 'api/uploads_api.dart';
 
 part 'model/api_range.dart';
+part 'model/create_share.dart';
+part 'model/created_share.dart';
 part 'model/error.dart';
 part 'model/health.dart';
 part 'model/module.dart';
+part 'model/public_node.dart';
+part 'model/public_share.dart';
+part 'model/unlock_share200_response.dart';
+part 'model/unlock_share_request.dart';
 
 
 /// An [ApiClient] instance that uses the default values obtained from

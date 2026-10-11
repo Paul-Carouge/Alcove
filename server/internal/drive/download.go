@@ -49,6 +49,12 @@ func download(e *core.RequestEvent) error {
 		return e.NotFoundError("", nil)
 	}
 
+	return Serve(e, node, e.Request.URL.Query().Get("inline") == "1")
+}
+
+// Serve streams a file node under its drive name. inline is honored only for
+// passive types (inlineTypes); everything else is an attachment.
+func Serve(e *core.RequestEvent, node *core.Record, inline bool) error {
 	fsys, err := e.App.NewFilesystem()
 	if err != nil {
 		return err
@@ -59,7 +65,7 @@ func download(e *core.RequestEvent) error {
 	mimeType, _, _ := strings.Cut(node.GetString("mime"), ";")
 	disposition := "attachment"
 	h := e.Response.Header()
-	if e.Request.URL.Query().Get("inline") == "1" && inlineTypes[mimeType] {
+	if inline && inlineTypes[mimeType] {
 		disposition = "inline"
 		h.Set("Content-Type", node.GetString("mime")) // sniffed from content at upload, not client-declared
 		h.Set("Content-Security-Policy", inlineCSP(mimeType))

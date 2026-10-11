@@ -184,12 +184,24 @@ class ApiClient {
           return value is DateTime ? value : DateTime.tryParse(value);
         case 'ApiRange':
           return ApiRange.fromJson(value);
+        case 'CreateShare':
+          return CreateShare.fromJson(value);
+        case 'CreatedShare':
+          return CreatedShare.fromJson(value);
         case 'Error':
           return Error.fromJson(value);
         case 'Health':
           return Health.fromJson(value);
         case 'Module':
           return ModuleTypeTransformer().decode(value);
+        case 'PublicNode':
+          return PublicNode.fromJson(value);
+        case 'PublicShare':
+          return PublicShare.fromJson(value);
+        case 'UnlockShare200Response':
+          return UnlockShare200Response.fromJson(value);
+        case 'UnlockShareRequest':
+          return UnlockShareRequest.fromJson(value);
         default:
           dynamic match;
           if (value is List && (match = _regList.firstMatch(targetType)?.group(1)) != null) {

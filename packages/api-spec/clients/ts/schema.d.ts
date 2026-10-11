@@ -26,6 +26,92 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/shares": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a public link to one of your files or folders. */
+    post: operations["createShare"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/shares/{token}": {
+    parameters: {
+      query?: {
+        /** @description Access token from `unlock` (password-protected links only). */
+        access?: components["parameters"]["ShareAccess"];
+      };
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+      };
+      cookie?: never;
+    };
+    /** Describe a shared item (and list a shared folder's content). */
+    get: operations["getPublicShare"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/shares/{token}/unlock": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Exchange the link password for a 1-hour access token. */
+    post: operations["unlockShare"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/shares/{token}/files/{nodeId}": {
+    parameters: {
+      query?: {
+        /** @description Access token from `unlock` (password-protected links only). */
+        access?: components["parameters"]["ShareAccess"];
+        /** @description Same passive-type rules as `/api/v1/nodes/{nodeId}/download`. */
+        inline?: "1";
+      };
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+        nodeId: string;
+      };
+      cookie?: never;
+    };
+    /** Download (or display) a file that is the shared item or inside the shared folder. */
+    get: operations["downloadSharedFile"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/uploads/": {
     parameters: {
       query?: never;
@@ -123,6 +209,44 @@ export interface components {
       | "notes"
       | "calendar"
       | "contacts";
+    CreateShare: {
+      /** @description Id of a file or folder you own (not trashed). */
+      node: string;
+      /**
+       * Format: date-time
+       * @description Optional expiry, in the future and at most one year ahead.
+       */
+      expiresAt?: string;
+      /** @description Optional password visitors must enter. */
+      password?: string;
+    };
+    CreatedShare: {
+      id: string;
+      /** @description Secret link token. Shown only once. */
+      token: string;
+      /** Format: date-time */
+      expiresAt: string | null;
+      hasPassword: boolean;
+    };
+    PublicNode: {
+      id: string;
+      name: string;
+      /** @enum {string} */
+      kind: "file" | "folder";
+      size: number;
+      mime: string;
+      updated: string;
+    };
+    PublicShare: {
+      item: components["schemas"]["PublicNode"];
+      /** Format: date-time */
+      expiresAt: string | null;
+      /** @description The folder being listed (shared folders only). */
+      folder?: components["schemas"]["PublicNode"];
+      /** @description Folders from the shared root down to `folder`. */
+      path?: components["schemas"]["PublicNode"][];
+      children?: components["schemas"]["PublicNode"][];
+    };
     Error: {
       status: number;
       message: string;
@@ -145,6 +269,10 @@ export interface components {
     };
   };
   parameters: {
+    /** @description The link token (43 URL-safe characters). */
+    ShareToken: string;
+    /** @description Access token from `unlock` (password-protected links only). */
+    ShareAccess: string;
     TusResumable: "1.0.0";
   };
   requestBodies: never;
@@ -186,6 +314,203 @@ export interface operations {
            */
           "application/json": components["schemas"]["Health"];
         };
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  createShare: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateShare"];
+      };
+    };
+    responses: {
+      /** @description Link created. `token` is returned only here. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreatedShare"];
+        };
+      };
+      /** @description Invalid node, expiry or password. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getPublicShare: {
+    parameters: {
+      query?: {
+        /** @description Access token from `unlock` (password-protected links only). */
+        access?: components["parameters"]["ShareAccess"];
+        /** @description Folder inside a shared folder to list (default: the shared folder itself). */
+        folder?: string;
+      };
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shared item. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicShare"];
+        };
+      };
+      /** @description Password required (or wrong/expired access token). */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unknown or revoked link, or folder outside the share. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Link expired. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  unlockShare: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          password: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Access granted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description Pass as `access` query parameter. */
+            access: string;
+            /** Format: date-time */
+            expiresAt: string;
+          };
+        };
+      };
+      /** @description Wrong password. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown or revoked link. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Link expired. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  downloadSharedFile: {
+    parameters: {
+      query?: {
+        /** @description Access token from `unlock` (password-protected links only). */
+        access?: components["parameters"]["ShareAccess"];
+        /** @description Same passive-type rules as `/api/v1/nodes/{nodeId}/download`. */
+        inline?: "1";
+      };
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+        nodeId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description File content. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Password required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not a file within this share. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Link expired. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       429: components["responses"]["TooManyRequests"];
     };

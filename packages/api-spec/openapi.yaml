@@ -22,6 +22,13 @@ tags:
     description: Server metadata and compatibility.
   - name: drive
     description: Drive operations not covered by PocketBase's collection API.
+  - name: shares
+    description: |
+      Public links to a file or folder. The link token is shown once at creation; the server
+      only stores its SHA-256. Owners list and revoke their links through the PocketBase
+      `shares` collection (`GET /api/collections/shares/records`, `DELETE …/{id}`).
+  - name: public
+    description: Unauthenticated access through a share link (rate limited).
   - name: uploads
     description: |
       Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
@@ -61,6 +68,115 @@ paths:
                 setupRequired: false
         "429":
           $ref: "#/components/responses/TooManyRequests"
+  /api/v1/shares:
+    post:
+      tags: [shares]
+      operationId: createShare
+      summary: Create a public link to one of your files or folders.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateShare" }
+      responses:
+        "201":
+          description: Link created. `token` is returned only here.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreatedShare" }
+        "400": { description: "Invalid node, expiry or password." }
+        "401": { description: Authentication required. }
+  /api/v1/public/shares/{token}:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+      - $ref: "#/components/parameters/ShareAccess"
+    get:
+      tags: [public]
+      operationId: getPublicShare
+      summary: Describe a shared item (and list a shared folder's content).
+      security: []
+      parameters:
+        - name: folder
+          in: query
+          required: false
+          description: "Folder inside a shared folder to list (default: the shared folder itself)."
+          schema: { type: string, maxLength: 64 }
+      responses:
+        "200":
+          description: Shared item.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicShare" }
+        "401":
+          description: Password required (or wrong/expired access token).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { description: "Unknown or revoked link, or folder outside the share." }
+        "410": { description: Link expired. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/public/shares/{token}/unlock:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+    post:
+      tags: [public]
+      operationId: unlockShare
+      summary: Exchange the link password for a 1-hour access token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 1, maxLength: 256 }
+      responses:
+        "200":
+          description: Access granted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [access, expiresAt]
+                properties:
+                  access: { type: string, description: "Pass as `access` query parameter." }
+                  expiresAt: { type: string, format: date-time }
+        "401": { description: Wrong password. }
+        "404": { description: Unknown or revoked link. }
+        "410": { description: Link expired. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/public/shares/{token}/files/{nodeId}:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+      - name: nodeId
+        in: path
+        required: true
+        schema: { type: string, maxLength: 64 }
+      - $ref: "#/components/parameters/ShareAccess"
+      - name: inline
+        in: query
+        required: false
+        description: Same passive-type rules as `/api/v1/nodes/{nodeId}/download`.
+        schema: { type: string, enum: ["1"] }
+    get:
+      tags: [public]
+      operationId: downloadSharedFile
+      summary: Download (or display) a file that is the shared item or inside the shared folder.
+      security: []
+      responses:
+        "200":
+          description: File content.
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "401": { description: Password required. }
+        "404": { description: "Not a file within this share." }
+        "410": { description: Link expired. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
   /api/v1/uploads/:
     post:
       tags: [uploads]
@@ -200,6 +316,18 @@ components:
       name: Authorization
       description: PocketBase auth token of a `users` record (raw token, no "Bearer" prefix).
   parameters:
+    ShareToken:
+      name: token
+      in: path
+      required: true
+      description: The link token (43 URL-safe characters).
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    ShareAccess:
+      name: access
+      in: query
+      required: false
+      description: Access token from `unlock` (password-protected links only).
+      schema: { type: string, maxLength: 2048 }
     TusResumable:
       name: Tus-Resumable
       in: header
@@ -261,6 +389,55 @@ components:
     Module:
       type: string
       enum: [core, drive, photos, documents, ocr, faces, notes, calendar, contacts]
+    CreateShare:
+      type: object
+      additionalProperties: false
+      required: [node]
+      properties:
+        node: { type: string, maxLength: 64, description: "Id of a file or folder you own (not trashed)." }
+        expiresAt:
+          type: string
+          format: date-time
+          description: Optional expiry, in the future and at most one year ahead.
+        password:
+          type: string
+          minLength: 4
+          maxLength: 256
+          description: Optional password visitors must enter.
+    CreatedShare:
+      type: object
+      required: [id, token, expiresAt, hasPassword]
+      properties:
+        id: { type: string }
+        token: { type: string, description: "Secret link token. Shown only once." }
+        expiresAt: { type: [string, "null"], format: date-time }
+        hasPassword: { type: boolean }
+    PublicNode:
+      type: object
+      required: [id, name, kind, size, mime, updated]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [file, folder] }
+        size: { type: integer }
+        mime: { type: string }
+        updated: { type: string }
+    PublicShare:
+      type: object
+      required: [item, expiresAt]
+      properties:
+        item: { $ref: "#/components/schemas/PublicNode" }
+        expiresAt: { type: [string, "null"], format: date-time }
+        folder:
+          description: The folder being listed (shared folders only).
+          allOf: [{ $ref: "#/components/schemas/PublicNode" }]
+        path:
+          type: array
+          description: Folders from the shared root down to `folder`.
+          items: { $ref: "#/components/schemas/PublicNode" }
+        children:
+          type: array
+          items: { $ref: "#/components/schemas/PublicNode" }
     Error:
       type: object
       required: [status, message]

@@ -69,6 +69,10 @@ All URIs are relative to *http://localhost:8090*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
+*PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
+*PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's content).
+*PublicApi* | [**unlockShare**](doc//PublicApi.md#unlockshare) | **POST** /api/v1/public/shares/{token}/unlock | Exchange the link password for a 1-hour access token.
+*SharesApi* | [**createShare**](doc//SharesApi.md#createshare) | **POST** /api/v1/shares | Create a public link to one of your files or folders.
 *SystemApi* | [**getHealth**](doc//SystemApi.md#gethealth) | **GET** /health | Server health, version and compatibility information.
 *UploadsApi* | [**appendUpload**](doc//UploadsApi.md#appendupload) | **PATCH** /api/v1/uploads/{uploadId} | Append a chunk (max 64 MiB per request).
 *UploadsApi* | [**cancelUpload**](doc//UploadsApi.md#cancelupload) | **DELETE** /api/v1/uploads/{uploadId} | Cancel an upload and delete its partial data.
@@ -79,9 +83,15 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [ApiRange](doc//ApiRange.md)
+ - [CreateShare](doc//CreateShare.md)
+ - [CreatedShare](doc//CreatedShare.md)
  - [Error](doc//Error.md)
  - [Health](doc//Health.md)
  - [Module](doc//Module.md)
+ - [PublicNode](doc//PublicNode.md)
+ - [PublicShare](doc//PublicShare.md)
+ - [UnlockShare200Response](doc//UnlockShare200Response.md)
+ - [UnlockShareRequest](doc//UnlockShareRequest.md)
 
 
 ## Documentation For Authorization

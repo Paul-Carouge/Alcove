@@ -15,5 +15,8 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0008](0008-docker-compose-caddy.md) | Deployment: docker compose with Caddy | Accepted |
 | [0009](0009-no-e2ee-in-v1.md) | No end-to-end encryption in v1 | Accepted |
 | [0010](0010-no-firebase-unifiedpush.md) | No Firebase; sync on open and periodically, UnifiedPush optional | Accepted |
+| [0011](0011-resumable-uploads-tus.md) | Resumable uploads with tus (tusd embedded) | Accepted |
+| [0012](0012-web-token-localstorage.md) | Web session token in localStorage | Accepted |
+| [0013](0013-2fa-email-otp-then-totp.md) | 2FA: email OTP first, TOTP later in phase 1 | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

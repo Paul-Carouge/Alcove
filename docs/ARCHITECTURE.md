@@ -105,12 +105,11 @@ sequenceDiagram
 
 - Tokens are stateless JWTs signed per user. Changing the user's `tokenKey` (password change,
   "log out everywhere") invalidates all of them.
-- **2FA:** PocketBase MFA requires two different methods (password + email OTP). TOTP authenticator apps
-  are not built into PocketBase. Adding TOTP is a phase 1 decision (see ROADMAP).
+- **2FA:** PocketBase MFA (password + email OTP) first, custom TOTP at the end of phase 1
+  ([ADR 0013](adr/0013-2fa-email-otp-then-totp.md)).
 - Rate limits apply to `*:auth` (5/min per IP by default), password reset and record creation.
-- **Web token storage** *(to decide in phase 1)*: the PocketBase JS SDK stores the token in `localStorage`
-  by default. The strict CSP mitigates XSS. The alternative is an HttpOnly cookie set by a custom route,
-  which needs CSRF protection.
+- **Web token storage:** `localStorage` through the PocketBase JS SDK, protected by the strict CSP
+  ([ADR 0012](adr/0012-web-token-localstorage.md)).
 - **File access:** protected files require a short-lived file token (`POST /api/files/token`,
   minutes-long TTL) appended to the file URL, so leaked URLs expire quickly.
 
@@ -129,7 +128,7 @@ tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-
 - Default: local disk under `pb_data/storage` (Docker volume `alcove_data`).
 - Optional: S3-compatible storage (`ALCOVE_STORAGE=s3`, applied to PocketBase's S3 settings at boot).
 - *Planned:* content hashing (sha256) at upload for dedup and integrity checks, resumable uploads
-  (tus protocol or chunked custom route, decided in phase 1), per-user quotas.
+  with tus at `/api/v1/uploads/` ([ADR 0011](adr/0011-resumable-uploads-tus.md)), per-user quotas.
 - Thumbnails and previews are generated asynchronously into `derivatives`, never into the original.
 
 ## Versioning

@@ -12,9 +12,10 @@ OpenAPI → TS + Dart clients, Docker + Caddy deployment, CI, docs and ADRs.
 ## Phase 1: Server, accounts, drive
 
 - Accounts: sign-in, sign-out, password reset (SMTP), sessions, "log out everywhere", user admin, quotas.
-- 2FA: expose PocketBase MFA (password + email OTP). **Decide** on TOTP authenticator apps (custom).
-- **Decide** the web token storage (SDK `localStorage` vs HttpOnly cookie, see ARCHITECTURE).
-- Drive: folders, upload (drag & drop, multiple, **resumable**, decide tus vs chunked), download,
+- 2FA: PocketBase MFA (password + email OTP), then TOTP authenticator apps at the end of the phase ([ADR 0013](adr/0013-2fa-email-otp-then-totp.md)).
+- Web client only. Mobile login waits for phase 4.
+- End-to-end tests in a real browser (Playwright) against the built binary.
+- Drive: folders, upload (drag & drop, multiple, **resumable** via tus, [ADR 0011](adr/0011-resumable-uploads-tus.md)), download,
   rename, move, copy, trash with retention, search by name, sha256 integrity.
 - Previews: images, PDF, text; thumbnails generated asynchronously.
 - Sharing: public links (expiry, password, revoke), share with another user (read/edit).

@@ -21,7 +21,8 @@ func find(t *testing.T, file string) *core.Migration {
 	return nil
 }
 
-// Every app migration must apply, revert and re-apply cleanly.
+// Every app migration must revert and re-apply cleanly. The test app has
+// already applied them all, so: down newest-first, then up oldest-first, twice.
 func TestMigrationsAreReversible(t *testing.T) {
 	app, err := tests.NewTestApp()
 	if err != nil {
@@ -29,18 +30,18 @@ func TestMigrationsAreReversible(t *testing.T) {
 	}
 	defer app.Cleanup()
 
-	for _, mig := range core.AppMigrations.Items() {
-		t.Run(mig.File, func(t *testing.T) {
+	migs := core.AppMigrations.Items()
+	for round := range 2 {
+		for i := len(migs) - 1; i >= 0; i-- {
+			if err := migs[i].Down(app); err != nil {
+				t.Fatalf("round %d: down %s: %v", round, migs[i].File, err)
+			}
+		}
+		for _, mig := range migs {
 			if err := mig.Up(app); err != nil {
-				t.Fatalf("up: %v", err)
+				t.Fatalf("round %d: up %s: %v", round, mig.File, err)
 			}
-			if err := mig.Down(app); err != nil {
-				t.Fatalf("down: %v", err)
-			}
-			if err := mig.Up(app); err != nil {
-				t.Fatalf("up again: %v", err)
-			}
-		})
+		}
 	}
 }
 

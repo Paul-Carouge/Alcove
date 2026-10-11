@@ -64,7 +64,9 @@ PocketBase collections. System collections (`_superusers`, `_mfas`, `_otps`, `_a
 (`createRule = null`, accounts are created by an admin; invitations later), password-reset emails link
 to the web app (`/reset-password/{token}`). Settings set by migration: rate limits, log retention.
 
-**Planned (phase 1, drive):**
+**Drive (phase 1):** `nodes` exists (migration `1791684000_drive_nodes`, invariants in `internal/drive`):
+owner-only rules, server-computed `size`/`mime`/`sha256`, protected `blob`, case-insensitive unique names
+per folder among non-trashed nodes, cycle-free moves, cascading deletes. Still planned:
 
 | Collection | Key fields | Notes |
 |---|---|---|

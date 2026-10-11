@@ -10,6 +10,7 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
+	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 	"github.com/Paul-Carouge/Alcove/server/internal/health"
 	"github.com/Paul-Carouge/Alcove/server/internal/healthcheck"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
@@ -47,8 +48,9 @@ func main() {
 
 	setup.Register(app, cfg)
 	security.RegisterHeaders(app, webui.ScriptSrc())
-	// No optional module is implemented yet; requested ones are ignored.
-	health.Register(app, nil)
+	drive.Register(app)
+	// Optional modules from ALCOVE_MODULES (ocr, faces) are not implemented yet.
+	health.Register(app, []string{drive.Module})
 	webui.Register(app)
 
 	if err := app.Start(); err != nil {

@@ -60,8 +60,9 @@ the same shape: `internal/drive` registers its routes, hooks and jobs, and adds 
 PocketBase collections. System collections (`_superusers`, `_mfas`, `_otps`, `_authOrigins`,
 `_externalAuths`) are managed by PocketBase.
 
-**Current (phase 0):** only the default `users` auth collection, plus settings set by migration
-(rate limits, log retention).
+**Current:** the default `users` auth collection, locked down by migration: **no public sign-up**
+(`createRule = null`, accounts are created by an admin; invitations later), password-reset emails link
+to the web app (`/reset-password/{token}`). Settings set by migration: rate limits, log retention.
 
 **Planned (phase 1, drive):**
 

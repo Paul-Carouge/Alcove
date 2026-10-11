@@ -72,6 +72,8 @@ optional module containers; the client devices.
 | Rate limiting (auth, creates, global) | ✅ enabled by migration |
 | Hardened container (distroless, non-root, read-only, no caps) | ✅ |
 | Strict env validation (fail at boot) | ✅ |
+| Public sign-up disabled (admin-created accounts) | ✅ migration `1791680400_users_lockdown` |
+| No account enumeration on password reset | ✅ |
 | MFA (password + email OTP) | ✅ available in PocketBase, to expose in our UI (phase 1) |
 | TOTP authenticator apps | ⏳ phase 1 decision |
 | Time-limited file URLs | ✅ PocketBase file tokens, used by drive (phase 1) |

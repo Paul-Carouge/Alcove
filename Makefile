@@ -25,7 +25,7 @@ dev: ## Run server (:8090) and web dev server (:5173) together
 	@$(MAKE) -j2 dev-server dev-web
 
 dev-server: ## Run the Go server with auto-migrations (go run)
-	cd server && go run . serve --http=127.0.0.1:8090
+	cd server && go run -ldflags "-X github.com/Paul-Carouge/Alcove/server/internal/buildinfo.Version=$(VERSION)" . serve --http=127.0.0.1:8090
 
 dev-web: ## Run the SvelteKit dev server (proxies API to :8090)
 	pnpm --filter @alcove/web dev

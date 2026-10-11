@@ -1,0 +1,18 @@
+{
+  "name": "alcove-monorepo",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "tokens": "pnpm --filter @alcove/design-tokens build",
+    "api:gen": "pnpm --filter @alcove/api-spec gen"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "prettier": "^3.6.0"
+  }
+}

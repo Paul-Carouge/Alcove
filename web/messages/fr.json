@@ -133,5 +133,17 @@
 	"move_partial": "{failed} élément(s) sur {total} n’ont pas pu être déplacés (nom déjà pris dans la destination, ou dossier déplacé dans lui-même).",
 	"trash_partial": "{failed} élément(s) sur {total} n’ont pas pu être mis à la corbeille.",
 	"moved_announce": "{count} élément(s) déplacé(s) vers {folder}.",
-	"drag_hint": "Déposez sur un dossier pour déplacer"
+	"drag_hint": "Déposez sur un dossier pour déplacer",
+	"view_list": "Vue liste",
+	"view_grid": "Vue grille",
+	"view_mode": "Affichage",
+	"action_open": "Ouvrir",
+	"action_preview": "Aperçu",
+	"viewer_close": "Fermer l’aperçu",
+	"viewer_prev": "Fichier précédent",
+	"viewer_next": "Fichier suivant",
+	"viewer_position": "{index} sur {total}",
+	"viewer_unavailable": "Aucun aperçu disponible pour ce fichier.",
+	"viewer_text_truncated": "Seul le début du fichier est affiché.",
+	"open_pdf": "Ouvrir dans un nouvel onglet"
 }

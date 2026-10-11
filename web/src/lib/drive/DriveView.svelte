@@ -5,6 +5,8 @@
 		Download,
 		FolderInput,
 		FolderPlus,
+		LayoutGrid,
+		List,
 		Pencil,
 		Trash2,
 		Upload as UploadIcon,
@@ -19,7 +21,9 @@
 	import { downloadNode, forEachNode, listChildren, moveNode, pathTo, trashNode } from './api.js';
 	import MoveDialog from './MoveDialog.svelte';
 	import { Selection } from './selection.svelte.js';
-	import FileIcon from './FileIcon.svelte';
+	import { previewKind } from './files.js';
+	import Thumb from './Thumb.svelte';
+	import Viewer from './Viewer.svelte';
 	import { formatDate, formatSize } from './format.js';
 	import { onNodeChange } from './live.js';
 	import { compareNodes } from './names.js';
@@ -41,6 +45,28 @@
 	let moveItems = $state<DriveNode[]>([]);
 	let dropTarget = $state<string | null>(null);
 	const selection = new Selection();
+	let viewerIndex = $state(-1);
+
+	type Layout = 'list' | 'grid';
+	const LAYOUT_KEY = 'alcove-drive-layout';
+	let layout = $state<Layout>(readLayout());
+
+	function readLayout(): Layout {
+		try {
+			return localStorage.getItem(LAYOUT_KEY) === 'grid' ? 'grid' : 'list';
+		} catch {
+			return 'list';
+		}
+	}
+
+	function setLayout(value: Layout) {
+		layout = value;
+		try {
+			localStorage.setItem(LAYOUT_KEY, value);
+		} catch {
+			// Private mode: keep it for this session only.
+		}
+	}
 	let dragDepth = $state(0);
 	let fileInput: HTMLInputElement;
 
@@ -50,6 +76,13 @@
 	const order = $derived(sorted.map((n) => n.id));
 	const selected = $derived(sorted.filter((n) => selection.has(n.id)));
 	const allSelected = $derived(sorted.length > 0 && selection.size === sorted.length);
+	const files = $derived(sorted.filter((n) => n.kind === 'file'));
+
+	/** Opens the viewer for previewable files, downloads the others. */
+	function open(node: DriveNode) {
+		if (previewKind(node)) viewerIndex = files.indexOf(node);
+		else download(node);
+	}
 
 	// Keep the selection in sync with what is visible (live moves, trash, …).
 	$effect(() => selection.retain(order));
@@ -241,6 +274,22 @@
 			</div>
 		{:else}
 			<div class="actions">
+				<div class="segmented" role="radiogroup" aria-label={m.view_mode()}>
+					<button
+						role="radio"
+						aria-checked={layout === 'list'}
+						aria-label={m.view_list()}
+						title={m.view_list()}
+						onclick={() => setLayout('list')}><List size={18} aria-hidden="true" /></button
+					>
+					<button
+						role="radio"
+						aria-checked={layout === 'grid'}
+						aria-label={m.view_grid()}
+						title={m.view_grid()}
+						onclick={() => setLayout('grid')}><LayoutGrid size={18} aria-hidden="true" /></button
+					>
+				</div>
 				<Button
 					variant="secondary"
 					onclick={() => (newFolderOpen = true)}
@@ -277,29 +326,11 @@
 			<p>{folderId ? m.folder_empty_body() : m.files_empty_body()}</p>
 		</section>
 	{:else}
-		<table class="list">
-			<thead>
-				<tr>
-					<th scope="col" class="check">
-						<input
-							type="checkbox"
-							aria-label={m.select_all()}
-							checked={allSelected}
-							indeterminate={selection.size > 0 && !allSelected}
-							onchange={(e) => selection.setAll(order, e.currentTarget.checked)}
-						/>
-					</th>
-					<th scope="col">{m.col_name()}</th>
-					<th scope="col" class="num">{m.col_size()}</th>
-					<th scope="col" class="date">{m.col_modified()}</th>
-					<th scope="col" class="act"
-						><span class="visually-hidden">{m.actions_for({ name: '' })}</span></th
-					>
-				</tr>
-			</thead>
-			<tbody>
+		{#if layout === 'grid'}
+			<ul class="grid" aria-label={folderName}>
 				{#each sorted as node (node.id)}
-					<tr
+					<li
+						class="tile"
 						class:selected={selection.has(node.id)}
 						class:drop={dropTarget === node.id}
 						draggable="true"
@@ -309,36 +340,104 @@
 						ondragleave={node.kind === 'folder' ? () => (dropTarget = null) : undefined}
 						ondrop={node.kind === 'folder' ? (e) => onTargetDrop(e, node.id, node.name) : undefined}
 					>
-						<td class="check">
+						<div class="preview" class:folder={node.kind === 'folder'}>
+							<Thumb {node} size="320x320" iconSize={36} />
+						</div>
+						<div class="meta">
+							{#if node.kind === 'folder'}
+								<a class="tile-name" href={resolve('/(app)/folders/[id]', { id: node.id })}
+									>{node.name}</a
+								>
+							{:else}
+								<button class="tile-name as-link" onclick={() => open(node)}>{node.name}</button>
+							{/if}
+							<span class="muted small"
+								>{node.kind === 'folder' ? m.kind_folder() : formatSize(node.size, locale)}</span
+							>
+						</div>
+						<input
+							class="tile-check"
+							type="checkbox"
+							aria-label={m.select_item({ name: node.name })}
+							checked={selection.has(node.id)}
+							onclick={(e) => selection.toggle(node.id, order, e.shiftKey)}
+						/>
+						<div class="tile-menu">
+							<ActionsMenu label={m.actions_for({ name: node.name })} actions={actionsFor(node)} />
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<table class="list">
+				<thead>
+					<tr>
+						<th scope="col" class="check">
 							<input
 								type="checkbox"
-								aria-label={m.select_item({ name: node.name })}
-								checked={selection.has(node.id)}
-								onclick={(e) => selection.toggle(node.id, order, e.shiftKey)}
+								aria-label={m.select_all()}
+								checked={allSelected}
+								indeterminate={selection.size > 0 && !allSelected}
+								onchange={(e) => selection.setAll(order, e.currentTarget.checked)}
 							/>
-						</td>
-						<td>
-							<div class="name-cell">
-								<FileIcon kind={node.kind} mime={node.mime} />
-								{#if node.kind === 'folder'}
-									<a class="name" href={resolve('/(app)/folders/[id]', { id: node.id })}
-										>{node.name}</a
-									>
-								{:else}
-									<button class="name as-link" onclick={() => download(node)}>{node.name}</button>
-								{/if}
-							</div>
-						</td>
-						<td class="num muted">{node.kind === 'folder' ? '—' : formatSize(node.size, locale)}</td
+						</th>
+						<th scope="col">{m.col_name()}</th>
+						<th scope="col" class="num">{m.col_size()}</th>
+						<th scope="col" class="date">{m.col_modified()}</th>
+						<th scope="col" class="act"
+							><span class="visually-hidden">{m.actions_for({ name: '' })}</span></th
 						>
-						<td class="date muted">{formatDate(node.updated, locale)}</td>
-						<td class="act">
-							<ActionsMenu label={m.actions_for({ name: node.name })} actions={actionsFor(node)} />
-						</td>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each sorted as node (node.id)}
+						<tr
+							class:selected={selection.has(node.id)}
+							class:drop={dropTarget === node.id}
+							draggable="true"
+							ondragstart={(e) => onRowDragStart(e, node)}
+							ondragend={() => ((dragging = []), (dropTarget = null))}
+							ondragover={node.kind === 'folder' ? (e) => onTargetOver(e, node.id) : undefined}
+							ondragleave={node.kind === 'folder' ? () => (dropTarget = null) : undefined}
+							ondrop={node.kind === 'folder'
+								? (e) => onTargetDrop(e, node.id, node.name)
+								: undefined}
+						>
+							<td class="check">
+								<input
+									type="checkbox"
+									aria-label={m.select_item({ name: node.name })}
+									checked={selection.has(node.id)}
+									onclick={(e) => selection.toggle(node.id, order, e.shiftKey)}
+								/>
+							</td>
+							<td>
+								<div class="name-cell">
+									<span class="thumb"><Thumb {node} /></span>
+									{#if node.kind === 'folder'}
+										<a class="name" href={resolve('/(app)/folders/[id]', { id: node.id })}
+											>{node.name}</a
+										>
+									{:else}
+										<button class="name as-link" onclick={() => open(node)}>{node.name}</button>
+									{/if}
+								</div>
+							</td>
+							<td class="num muted"
+								>{node.kind === 'folder' ? '—' : formatSize(node.size, locale)}</td
+							>
+							<td class="date muted">{formatDate(node.updated, locale)}</td>
+							<td class="act">
+								<ActionsMenu
+									label={m.actions_for({ name: node.name })}
+									actions={actionsFor(node)}
+								/>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
 	{/if}
 
 	{#if dragDepth > 0}
@@ -361,6 +460,7 @@
 	}}
 />
 <p class="visually-hidden" aria-live="polite">{announcement}</p>
+<Viewer items={files} bind:index={viewerIndex} ondownload={download} />
 
 <style>
 	.drive {
@@ -491,6 +591,134 @@
 	}
 	.list {
 		overflow: visible;
+	}
+	.thumb {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+	}
+	.segmented {
+		display: inline-flex;
+		padding: 2px;
+		gap: 2px;
+		background: var(--color-surface-sunken);
+		border-radius: var(--radius-md);
+	}
+	.segmented button {
+		display: grid;
+		place-items: center;
+		width: 2.75rem;
+		height: 2.5rem;
+		border: 0;
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+	.segmented button[aria-checked='true'] {
+		background: var(--color-surface);
+		color: var(--color-text);
+		box-shadow: var(--shadow-sm);
+	}
+	.grid {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+		gap: var(--space-4);
+	}
+	.tile {
+		position: relative;
+		display: grid;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		overflow: hidden;
+		transition:
+			box-shadow var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard);
+	}
+	.tile:hover {
+		box-shadow: var(--shadow-md);
+	}
+	.tile.selected {
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 1px var(--color-accent);
+	}
+	.tile.drop {
+		outline: 2px dashed var(--color-accent);
+		outline-offset: -2px;
+		background: var(--color-accent-subtle);
+	}
+	.preview {
+		position: relative;
+		display: grid;
+		place-items: center;
+		aspect-ratio: 4 / 3;
+		overflow: hidden;
+		background: var(--color-surface-sunken);
+	}
+	.preview :global(img) {
+		position: absolute;
+		inset: 0;
+	}
+	.preview.folder {
+		background: var(--color-accent-subtle);
+	}
+	.meta {
+		display: grid;
+		gap: 2px;
+		padding: var(--space-2) var(--space-3) var(--space-3);
+		min-width: 0;
+	}
+	.tile-name {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
+		text-decoration: none;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.small {
+		font-size: var(--text-xs);
+	}
+	.tile-check {
+		position: absolute;
+		top: var(--space-2);
+		left: var(--space-2);
+		width: 1.25rem;
+		height: 1.25rem;
+		accent-color: var(--color-accent);
+		cursor: pointer;
+		opacity: 0;
+	}
+	.tile-menu {
+		position: absolute;
+		top: var(--space-1);
+		right: var(--space-1);
+		border-radius: var(--radius-md);
+		background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+		opacity: 0;
+	}
+	.tile:hover .tile-check,
+	.tile:hover .tile-menu,
+	.tile:focus-within .tile-check,
+	.tile:focus-within .tile-menu,
+	.tile.selected .tile-check,
+	.grid:has(.tile.selected) .tile-check {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		.tile-check,
+		.tile-menu {
+			opacity: 1;
+		}
 	}
 	.check {
 		width: 2.75rem;

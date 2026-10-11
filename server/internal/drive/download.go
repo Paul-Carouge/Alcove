@@ -2,6 +2,7 @@ package drive
 
 import (
 	"mime"
+	"strings"
 
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -9,6 +10,25 @@ import (
 // DownloadPath serves a file under its drive name (PocketBase's own file
 // route uses the random storage name).
 const DownloadPath = "/api/v1/nodes/{id}/download"
+
+// inlineTypes may be displayed (?inline=1). Anything able to run script on
+// the origin (HTML, SVG, XML, …) is never served inline.
+var inlineTypes = map[string]bool{
+	"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true, "image/avif": true,
+	"application/pdf": true, "text/plain": true,
+	"video/mp4": true, "video/webm": true,
+	"audio/mpeg": true, "audio/ogg": true, "audio/wav": true, "audio/flac": true, "audio/mp4": true, "audio/webm": true,
+}
+
+// inlineCSP locks down a displayed file. PDF viewers cannot run in a
+// sandboxed document, so PDFs get the same policy without "sandbox".
+func inlineCSP(mimeType string) string {
+	const base = "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'self'"
+	if mimeType == "application/pdf" {
+		return base
+	}
+	return base + "; sandbox"
+}
 
 func registerDownload(app core.App) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
@@ -36,10 +56,18 @@ func download(e *core.RequestEvent) error {
 	defer func() { _ = fsys.Close() }()
 
 	name := node.GetString("name")
-	// Always an attachment: user files are never rendered on the app origin.
+	mimeType, _, _ := strings.Cut(node.GetString("mime"), ";")
+	disposition := "attachment"
+	h := e.Response.Header()
+	if e.Request.URL.Query().Get("inline") == "1" && inlineTypes[mimeType] {
+		disposition = "inline"
+		h.Set("Content-Type", node.GetString("mime")) // sniffed from content at upload, not client-declared
+		h.Set("Content-Security-Policy", inlineCSP(mimeType))
+		h.Set("X-Frame-Options", "SAMEORIGIN")
+	}
 	// FormatMediaType emits an RFC 2231 filename* for non-ASCII names.
-	e.Response.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))
-	e.Response.Header().Set("Cache-Control", "private, no-store")
+	h.Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": name}))
+	h.Set("Cache-Control", "private, max-age=300")
 	key := node.BaseFilesPath() + "/" + node.GetString("blob")
 	if err := fsys.Serve(e.Response, e.Request, key, name); err != nil {
 		return e.NotFoundError("", err)

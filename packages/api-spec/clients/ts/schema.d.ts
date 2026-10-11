@@ -74,8 +74,8 @@ export interface paths {
     /**
      * Download a file under its drive name.
      * @description Authenticated with a short-lived **file token** in the query string (from PocketBase
-     *     `POST /api/files/token`), so the URL can be used in a plain link. Always served as an
-     *     attachment; supports Range requests.
+     *     `POST /api/files/token`), so the URL can be used in a plain link (or `<img>`/`<video>`).
+     *     Served as an attachment unless `inline=1` for a passive type; supports Range requests.
      */
     get: operations["downloadNode"];
     put?: never;
@@ -350,6 +350,12 @@ export interface operations {
       query: {
         /** @description File token of the node's owner (expires after a few minutes). */
         token: string;
+        /**
+         * @description `1` to display instead of download. Only honored for passive types (JPEG, PNG, GIF,
+         *     WebP, AVIF, PDF, plain text, MP4/WebM video, common audio); everything else, notably
+         *     HTML and SVG, is always an attachment. Inline responses carry a restrictive CSP.
+         */
+        inline?: "1";
       };
       header?: never;
       path: {
@@ -362,7 +368,7 @@ export interface operations {
       /** @description File content. */
       200: {
         headers: {
-          /** @description `attachment` with the node name (RFC 2231 `filename*` for non-ASCII). */
+          /** @description `attachment` (or `inline`) with the node name (RFC 2231 `filename*` for non-ASCII). */
           "Content-Disposition"?: string;
           [name: string]: unknown;
         };

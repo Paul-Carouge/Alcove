@@ -2,6 +2,7 @@ package drive_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"net/http"
 	"strings"
 	"testing"
@@ -331,4 +332,62 @@ func TestDownload(t *testing.T) {
 			ExpectedStatus: 404, ExpectedContent: []string{`"status":404`},
 		}
 	})
+}
+
+func TestInlineDisplay(t *testing.T) {
+	// 1x1 transparent PNG.
+	png, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
+	cases := []struct {
+		name, file    string
+		content       []byte
+		wantInline    bool
+		wantSandboxed bool
+	}{
+		{"images are displayed, sandboxed", "pic.png", png, true, true},
+		{"plain text is displayed", "notes.txt", []byte("hello"), true, true},
+		{"html is never displayed", "page.html", []byte("<html><script>alert(1)</script></html>"), false, false},
+		{"svg is never displayed", "logo.svg", []byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>`), false, false},
+	}
+	for _, c := range cases {
+		run(t, func(f *fixture) tests.ApiScenario {
+			file, err := filesystem.NewFileFromBytes(c.content, c.file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f.file.Set("name", c.file)
+			f.file.Set("blob", file)
+			if err := f.app.Save(f.file); err != nil {
+				t.Fatal(err)
+			}
+			tok, _ := f.alice.NewFileToken()
+			return tests.ApiScenario{
+				Name: c.name, Method: http.MethodGet,
+				URL:            "/api/v1/nodes/" + f.file.Id + "/download?inline=1&token=" + tok,
+				ExpectedStatus: 200, ExpectedContent: []string{""},
+				AfterTestFunc: func(t testing.TB, _ *tests.TestApp, res *http.Response) {
+					cd := res.Header.Get("Content-Disposition")
+					if got := strings.HasPrefix(cd, "inline"); got != c.wantInline {
+						t.Errorf("Content-Disposition = %q, inline want %v", cd, c.wantInline)
+					}
+					csp := res.Header.Get("Content-Security-Policy")
+					if c.wantSandboxed && !strings.Contains(csp, "sandbox") {
+						t.Errorf("inline response not sandboxed: CSP %q", csp)
+					}
+					if res.Header.Get("X-Content-Type-Options") != "nosniff" {
+						t.Error("missing nosniff")
+					}
+				},
+			}
+		})
+	}
+}
+
+func TestThumbnailsConfigured(t *testing.T) {
+	f := newFixture(t)
+	defer f.app.Cleanup()
+	col, _ := f.app.FindCollectionByNameOrId(drive.Collection)
+	thumbs := col.Fields.GetByName("blob").(*core.FileField).Thumbs
+	if strings.Join(thumbs, ",") != "96x96,320x320,1600x0" {
+		t.Errorf("thumbs = %v", thumbs)
+	}
 }

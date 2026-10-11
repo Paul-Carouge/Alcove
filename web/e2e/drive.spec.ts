@@ -108,9 +108,10 @@ test('rename with the keyboard and download a file', async ({ page }) => {
 	await dialog.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('row', { name: /final\.txt/ })).toBeVisible();
 
+	await page.getByRole('button', { name: 'Actions for final.txt' }).click();
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
-		page.getByRole('button', { name: 'final.txt', exact: true }).click()
+		page.getByRole('menuitem', { name: 'Download' }).click()
 	]);
 	expect(download.suggestedFilename()).toBe('final.txt');
 	const body = await download.createReadStream().then(async (s) => {

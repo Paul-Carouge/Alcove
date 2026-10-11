@@ -133,5 +133,17 @@
 	"move_partial": "{failed} of {total} items could not be moved (a name is already taken in the destination, or a folder cannot go inside itself).",
 	"trash_partial": "{failed} of {total} items could not be moved to the trash.",
 	"moved_announce": "{count} items moved to {folder}.",
-	"drag_hint": "Drop on a folder to move"
+	"drag_hint": "Drop on a folder to move",
+	"view_list": "List view",
+	"view_grid": "Grid view",
+	"view_mode": "View",
+	"action_open": "Open",
+	"action_preview": "Preview",
+	"viewer_close": "Close preview",
+	"viewer_prev": "Previous file",
+	"viewer_next": "Next file",
+	"viewer_position": "{index} of {total}",
+	"viewer_unavailable": "No preview available for this file.",
+	"viewer_text_truncated": "Only the beginning of the file is shown.",
+	"open_pdf": "Open in a new tab"
 }

@@ -132,7 +132,12 @@ tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-
 - Optional: S3-compatible storage (`ALCOVE_STORAGE=s3`, applied to PocketBase's S3 settings at boot).
 - *Planned:* content hashing (sha256) at upload for dedup and integrity checks, resumable uploads
   with tus at `/api/v1/uploads/` ([ADR 0011](adr/0011-resumable-uploads-tus.md)), per-user quotas.
-- Thumbnails and previews are generated asynchronously into `derivatives`, never into the original.
+- **Thumbnails (now):** PocketBase's built-in thumbnails for JPEG/PNG/GIF/WebP in `nodes.blob`
+  (`96x96`, `320x320`, `1600x0`), generated lazily on first request and cached next to the file.
+  Originals are never touched. **Later:** HEIC/RAW/video/PDF derivatives produced asynchronously into
+  a `derivatives` collection (photos module), since PocketBase cannot render those.
+- **Previews:** `GET /api/v1/nodes/{id}/download?inline=1` displays only passive types (images, PDF,
+  plain text, MP4/WebM, audio) with a restrictive CSP (sandboxed except PDF). HTML/SVG/XML are always attachments.
 
 ## Versioning
 

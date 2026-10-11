@@ -18,7 +18,7 @@ class DriveApi {
 
   /// Download a file under its drive name.
   ///
-  /// Authenticated with a short-lived **file token** in the query string (from PocketBase `POST /api/files/token`), so the URL can be used in a plain link. Always served as an attachment; supports Range requests. 
+  /// Authenticated with a short-lived **file token** in the query string (from PocketBase `POST /api/files/token`), so the URL can be used in a plain link (or `<img>`/`<video>`). Served as an attachment unless `inline=1` for a passive type; supports Range requests. 
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -28,7 +28,10 @@ class DriveApi {
   ///
   /// * [String] token (required):
   ///   File token of the node's owner (expires after a few minutes).
-  Future<Response> downloadNodeWithHttpInfo(String nodeId, String token,) async {
+  ///
+  /// * [String] inline:
+  ///   `1` to display instead of download. Only honored for passive types (JPEG, PNG, GIF, WebP, AVIF, PDF, plain text, MP4/WebM video, common audio); everything else, notably HTML and SVG, is always an attachment. Inline responses carry a restrictive CSP. 
+  Future<Response> downloadNodeWithHttpInfo(String nodeId, String token, { String? inline, }) async {
     // ignore: prefer_const_declarations
     final path = r'/api/v1/nodes/{nodeId}/download'
       .replaceAll('{nodeId}', nodeId);
@@ -41,6 +44,9 @@ class DriveApi {
     final formParams = <String, String>{};
 
       queryParams.addAll(_queryParams('', 'token', token));
+    if (inline != null) {
+      queryParams.addAll(_queryParams('', 'inline', inline));
+    }
 
     const contentTypes = <String>[];
 
@@ -58,7 +64,7 @@ class DriveApi {
 
   /// Download a file under its drive name.
   ///
-  /// Authenticated with a short-lived **file token** in the query string (from PocketBase `POST /api/files/token`), so the URL can be used in a plain link. Always served as an attachment; supports Range requests. 
+  /// Authenticated with a short-lived **file token** in the query string (from PocketBase `POST /api/files/token`), so the URL can be used in a plain link (or `<img>`/`<video>`). Served as an attachment unless `inline=1` for a passive type; supports Range requests. 
   ///
   /// Parameters:
   ///
@@ -66,8 +72,11 @@ class DriveApi {
   ///
   /// * [String] token (required):
   ///   File token of the node's owner (expires after a few minutes).
-  Future<MultipartFile?> downloadNode(String nodeId, String token,) async {
-    final response = await downloadNodeWithHttpInfo(nodeId, token,);
+  ///
+  /// * [String] inline:
+  ///   `1` to display instead of download. Only honored for passive types (JPEG, PNG, GIF, WebP, AVIF, PDF, plain text, MP4/WebM video, common audio); everything else, notably HTML and SVG, is always an attachment. Inline responses carry a restrictive CSP. 
+  Future<MultipartFile?> downloadNode(String nodeId, String token, { String? inline, }) async {
+    final response = await downloadNodeWithHttpInfo(nodeId, token,  inline: inline, );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

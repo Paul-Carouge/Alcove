@@ -51,9 +51,10 @@ import 'package:alcove_api/api.dart';
 final api_instance = DriveApi();
 final nodeId = nodeId_example; // String | 
 final token = token_example; // String | File token of the node's owner (expires after a few minutes).
+final inline = inline_example; // String | `1` to display instead of download. Only honored for passive types (JPEG, PNG, GIF, WebP, AVIF, PDF, plain text, MP4/WebM video, common audio); everything else, notably HTML and SVG, is always an attachment. Inline responses carry a restrictive CSP. 
 
 try {
-    final result = api_instance.downloadNode(nodeId, token);
+    final result = api_instance.downloadNode(nodeId, token, inline);
     print(result);
 } catch (e) {
     print('Exception when calling DriveApi->downloadNode: $e\n');

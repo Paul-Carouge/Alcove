@@ -30,11 +30,12 @@ jobs:
         id: filter
         with:
           filters: |
-            server: ['server/**']
-            web: ['web/**', 'packages/**', 'pnpm-lock.yaml']
-            mobile: ['mobile/**', 'packages/api-spec/clients/dart/**', 'packages/design-tokens/**']
-            packages: ['packages/**', 'pnpm-lock.yaml']
-            deploy: ['deploy/**', 'server/**', 'web/**', 'packages/**']
+            # A change to this workflow runs every job.
+            server: ['server/**', '.github/workflows/ci.yml']
+            web: ['web/**', 'packages/**', 'pnpm-lock.yaml', '.github/workflows/ci.yml']
+            mobile: ['mobile/**', 'packages/api-spec/clients/dart/**', 'packages/design-tokens/**', '.github/workflows/ci.yml']
+            packages: ['packages/**', 'pnpm-lock.yaml', '.github/workflows/ci.yml']
+            deploy: ['deploy/**', 'server/**', 'web/**', 'packages/**', '.github/workflows/ci.yml']
 
   commitlint:
     if: github.event_name == 'pull_request'

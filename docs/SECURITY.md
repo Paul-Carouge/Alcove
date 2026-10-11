@@ -34,7 +34,7 @@ optional module containers; the client devices.
 | Credential attacks | Brute force, credential stuffing | Rate limiting on auth (5/min/IP default), optional MFA, real client IP through the trusted proxy header only |
 | Account takeover via token theft | XSS, stolen device, leaked logs | Strict CSP (no inline/3rd-party scripts), tokens in Keychain/Keystore on mobile, `allowBackup=false`, tokens invalidated on password change, short-lived file tokens |
 | Broken access control | Reading another user's files, IDOR | PocketBase API rules on every collection (deny by default), owner checks in custom routes, rules reviewed in migrations, API tests per rule |
-| Share-link abuse | Guessing, link leaks, indexing | High-entropy tokens stored hashed, optional expiry and password, revocable, `Referrer-Policy`, *planned:* `noindex` |
+| Share-link abuse | Guessing, link leaks, indexing, password brute force | 256-bit tokens stored as SHA-256 (shown once), optional expiry (≤ 1 year) and bcrypt password, revocable, unlock tokens signed per share (1 h), folder links confined to their subtree, `noindex` + `no-referrer` on public pages, 10 password attempts/min/IP |
 | Malicious uploads | Stored XSS through SVG/HTML, zip bombs, decompression and image parser bugs | Type sniffed from content at upload (client type ignored); downloads are attachments; inline display only for a passive-type allowlist, with a sandboxing CSP and `nosniff`; HTML/SVG never inline; 64 GiB size cap. *Planned:* thumbnailing in a separate process with resource limits |
 | Injection | SQL, path traversal, header injection | Parameterized queries (dbx), storage keys generated server-side (never from file names), strict input validation |
 | Server compromise impact | RCE in a dependency | Distroless non-root image, read-only root FS, all capabilities dropped, `no-new-privileges`, server not exposed directly (internal network) |
@@ -74,6 +74,7 @@ optional module containers; the client devices.
 | Strict env validation (fail at boot) | ✅ |
 | Public sign-up disabled (admin-created accounts) | ✅ migration `1791680400_users_lockdown` |
 | No account enumeration on password reset | ✅ |
+| Share links (hashed tokens, expiry, password, revocation) | ✅ |
 | MFA (password + email OTP) | ✅ available in PocketBase, to expose in our UI (phase 1) |
 | TOTP authenticator apps | ⏳ phase 1 decision |
 | Time-limited file URLs | ✅ PocketBase file tokens, used by drive (phase 1) |

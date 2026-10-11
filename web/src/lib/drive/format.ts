@@ -32,3 +32,15 @@ export function formatDate(iso: string, locale: string, now = new Date()): strin
 				}
 	).format(date);
 }
+
+/** Short date with time ("11 Oct, 23:47"), for labels like "Created on …". */
+export function formatDateTime(iso: string, locale: string): string {
+	const date = new Date(iso.replace(' ', 'T'));
+	if (Number.isNaN(date.getTime())) return '';
+	return new Intl.DateTimeFormat(locale, {
+		day: 'numeric',
+		month: 'short',
+		hour: '2-digit',
+		minute: '2-digit'
+	}).format(date);
+}

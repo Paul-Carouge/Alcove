@@ -72,7 +72,7 @@ per folder among non-trashed nodes, cycle-free moves, cascading deletes. Still p
 |---|---|---|
 | `users` (auth) | email, name, avatar, locale, quota_bytes | PocketBase auth collection |
 | `nodes` | owner→users, parent→nodes (null = root), name, kind (`file`\|`folder`), size, mime, sha256, blob (file field), trashed_at | Unique (owner, parent, name) among non-trashed. Tree with adjacency list; path computed |
-| `shares` | node→nodes, created_by→users, token_hash, permission (`view`\|`edit`), expires_at, password_hash | Public link shares. Only a hash of the token is stored |
+| `shares` | node→nodes, created_by→users, token_hash, access_secret, password_hash, has_password, expires_at | **Implemented** (read-only links). Token shown once, SHA-256 stored; secrets hidden; public routes under `/api/v1/public/` |
 | `devices` | user→users, name, platform, push_endpoint, last_seen | For sync state and UnifiedPush |
 
 **Planned (phase 2+):** `media` (node→nodes, taken_at, width, height, duration, exif JSON, geo),

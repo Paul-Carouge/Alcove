@@ -6,13 +6,14 @@
 		FolderInput,
 		FolderPlus,
 		LayoutGrid,
+		Link,
 		List,
 		Pencil,
 		Trash2,
 		Upload as UploadIcon,
 		X
 	} from '@lucide/svelte';
-	import { ClientResponseError } from 'pocketbase';
+	import { ClientResponseError, type RecordSubscription } from 'pocketbase';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Alert from '#lib/ui/Alert.svelte';
@@ -24,6 +25,7 @@
 	import { previewKind } from './files.js';
 	import Thumb from './Thumb.svelte';
 	import Viewer from './Viewer.svelte';
+	import ShareDialog from '#lib/shares/ShareDialog.svelte';
 	import { formatDate, formatSize } from './format.js';
 	import { onNodeChange } from './live.js';
 	import { compareNodes } from './names.js';
@@ -46,6 +48,7 @@
 	let dropTarget = $state<string | null>(null);
 	const selection = new Selection();
 	let viewerIndex = $state(-1);
+	let sharing = $state<DriveNode | null>(null);
 
 	type Layout = 'list' | 'grid';
 	const LAYOUT_KEY = 'alcove-drive-layout';
@@ -93,24 +96,32 @@
 		let cancelled = false;
 		view = 'loading';
 
+		// Live events that arrive while the listing loads are replayed on top of
+		// it; otherwise a file uploaded during the load would be overwritten.
+		let buffered: RecordSubscription<DriveNode>[] | null = [];
+
+		const apply = ({ action, record }: RecordSubscription<DriveNode>) => {
+			if (record.id === id && (action === 'delete' || record.trashed_at)) view = 'not-found';
+			const inHere = action !== 'delete' && record.parent === id && !record.trashed_at;
+			const others = children.filter((c) => c.id !== record.id);
+			children = inHere ? [...others, record] : others;
+		};
+
 		Promise.all([listChildren(id), id ? pathTo(id) : Promise.resolve([])])
 			.then(([items, chain]) => {
 				if (cancelled) return;
 				children = items;
 				path = chain;
 				view = 'ready';
+				buffered?.forEach(apply);
+				buffered = null;
 			})
 			.catch((err) => {
 				if (!cancelled)
 					view = err instanceof ClientResponseError && err.status === 404 ? 'not-found' : 'error';
 			});
 
-		const stopListening = onNodeChange(({ action, record }) => {
-			if (record.id === id && (action === 'delete' || record.trashed_at)) view = 'not-found';
-			const inHere = action !== 'delete' && record.parent === id && !record.trashed_at;
-			const others = children.filter((c) => c.id !== record.id);
-			children = inHere ? [...others, record] : others;
-		});
+		const stopListening = onNodeChange((event) => (buffered ? buffered.push(event) : apply(event)));
 
 		return () => {
 			cancelled = true;
@@ -197,6 +208,7 @@
 			...(node.kind === 'file'
 				? [{ label: m.action_download(), icon: Download, onselect: () => download(node) }]
 				: []),
+			{ label: m.action_share(), icon: Link, onselect: () => (sharing = node) },
 			{ label: m.action_rename(), icon: Pencil, onselect: () => (renaming = node) },
 			{ label: m.action_move(), icon: FolderInput, onselect: () => openMove([node]) },
 			{ label: m.action_trash(), icon: Trash2, danger: true, onselect: () => trash([node]) }
@@ -450,6 +462,7 @@
 
 <NewFolderDialog bind:open={newFolderOpen} parent={folderId} />
 <RenameDialog bind:node={renaming} />
+<ShareDialog bind:node={sharing} />
 <MoveDialog
 	bind:open={moveOpen}
 	items={moveItems}

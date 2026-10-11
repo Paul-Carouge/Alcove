@@ -100,7 +100,9 @@ test('rename with the keyboard and download a file', async ({ page }) => {
 	await page.getByRole('button', { name: 'Actions for draft.txt' }).focus();
 	await page.keyboard.press('Enter');
 	await expect(page.getByRole('menuitem', { name: 'Download' })).toBeFocused();
-	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('ArrowDown'); // Share…
+	await page.keyboard.press('ArrowDown'); // Rename
+	await expect(page.getByRole('menuitem', { name: 'Rename' })).toBeFocused();
 	await page.keyboard.press('Enter');
 
 	const dialog = page.getByRole('dialog', { name: 'Rename' });

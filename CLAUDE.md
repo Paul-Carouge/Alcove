@@ -85,7 +85,10 @@ Dev data lives in `server/pb_data/` (git-ignored). Admin UI: http://127.0.0.1:80
 - Imports via `#lib/...` with `.js` extension for TS files (Node subpath imports).
 - Styling: plain CSS in components, values **only** from token variables (`var(--space-4)`, `var(--color-text)`).
   No hex colors or magic px in components.
-- API calls through `@alcove/api-spec` (`createApiClient`); PocketBase built-ins through the PocketBase JS SDK (to add in phase 1).
+- Custom API calls through `@alcove/api-spec` (`createApiClient`); PocketBase built-ins through the shared SDK
+  client `#lib/pb.js`. Auth state: `#lib/auth/session.svelte.js`. Routes needing login live in `src/routes/(app)/`
+  (guarded by its `+layout.ts`); public ones in `(public)/`. `resolve()` takes route ids, e.g. `resolve('/(public)/login')`.
+- Reuse `#lib/ui/*` components (Button, TextField, Alert, …) before writing new markup.
 - Prettier: tabs, single quotes, width 100.
 
 **Flutter**

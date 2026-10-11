@@ -7,9 +7,11 @@ import { join } from 'node:path';
 // (`make build` first). Each run uses a fresh, throwaway data directory.
 const port = 8097;
 const dataDir = mkdtempSync(join(tmpdir(), 'alcove-e2e-'));
+process.env.ALCOVE_E2E_DATA_DIR = dataDir;
 
 export default defineConfig({
 	testDir: 'e2e',
+	globalSetup: './e2e/global-setup.ts',
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 1 : 0,

@@ -13,7 +13,7 @@
 <section class="card" aria-labelledby="error-title">
 	<p class="code" aria-hidden="true">{page.status}</p>
 	<h1 id="error-title">{title}</h1>
-	<a href={resolve('/')}>{m.back_home()}</a>
+	<a href={resolve('/(app)')}>{m.back_home()}</a>
 </section>
 
 <style>

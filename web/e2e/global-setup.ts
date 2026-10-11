@@ -23,6 +23,20 @@ export default async function globalSetup(config: FullConfig) {
 	if (!auth.ok) throw new Error(`admin auth failed: ${auth.status} ${await auth.text()}`);
 	const { token } = (await auth.json()) as { token: string };
 
+	// This throwaway instance logs in far more often than a human would: relax
+	// the per-IP auth limit (production defaults come from the migration).
+	const settings = await fetch(`${baseURL}/api/settings`, { headers: { Authorization: token } });
+	const { rateLimits } = (await settings.json()) as {
+		rateLimits: { rules: { label: string; maxRequests: number; duration: number }[] };
+	};
+	for (const rule of rateLimits.rules) if (rule.label === '*:auth') rule.maxRequests = 1000;
+	const patched = await fetch(`${baseURL}/api/settings`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', Authorization: token },
+		body: JSON.stringify({ rateLimits })
+	});
+	if (!patched.ok) throw new Error(`settings update failed: ${patched.status}`);
+
 	const created = await fetch(`${baseURL}/api/collections/users/records`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', Authorization: token },

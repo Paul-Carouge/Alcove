@@ -44,7 +44,7 @@
 	async function done() {
 		// `next` is a runtime path (validated by safeNext), not a static route id.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		await goto(safeNext(page.url.searchParams.get('next')), { replaceState: true });
+		await goto(safeNext(page.url.searchParams.get('next')), { replace: true });
 	}
 
 	async function signIn(event: SubmitEvent) {

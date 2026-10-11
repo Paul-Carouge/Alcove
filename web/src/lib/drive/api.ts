@@ -1,0 +1,32 @@
+import { pb } from '#lib/pb.js';
+import type { DriveNode } from './types.js';
+
+const nodes = () => pb.collection<DriveNode>('nodes');
+
+/** Non-trashed children of a folder ('' = root). Access rules scope it to the user. */
+export function listChildren(parent: string) {
+	return nodes().getFullList({
+		filter: pb.filter('parent = {:parent} && trashed_at = ""', { parent }),
+		batch: 500
+	});
+}
+
+export function getNode(id: string) {
+	return nodes().getOne(id);
+}
+
+/** Ancestors from the root down to (and including) the given folder. */
+export async function pathTo(folderId: string): Promise<DriveNode[]> {
+	const chain: DriveNode[] = [];
+	let id = folderId;
+	for (let depth = 0; id && depth < 64; depth++) {
+		const node = await getNode(id);
+		chain.unshift(node);
+		id = node.parent;
+	}
+	return chain;
+}
+
+export function createFolder(parent: string, name: string) {
+	return nodes().create({ owner: pb.authStore.record?.id, parent, name, kind: 'folder' });
+}

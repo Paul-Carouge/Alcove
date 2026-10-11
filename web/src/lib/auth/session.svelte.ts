@@ -1,4 +1,5 @@
 import type { RecordModel } from 'pocketbase';
+import { stopLiveUpdates } from '#lib/drive/live.js';
 import { pb } from '#lib/pb.js';
 
 /** Reactive view of the PocketBase auth store. */
@@ -26,6 +27,7 @@ class Session {
 	}
 
 	signOut() {
+		void stopLiveUpdates();
 		pb.authStore.clear();
 	}
 }

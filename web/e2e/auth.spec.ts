@@ -53,10 +53,10 @@ test('mobile navigation drawer opens and closes', async ({ page }) => {
 	await page.getByLabel('Password').fill(USER.password);
 	await page.getByRole('button', { name: 'Sign in' }).click();
 	await page.getByRole('button', { name: 'Open navigation' }).click();
-	await expect(page.getByRole('link', { name: 'Files' })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Files', exact: true })).toBeVisible();
 	await expectNoA11yViolations(page);
 	await page.getByRole('button', { name: 'Close navigation' }).first().click();
-	await expect(page.getByRole('link', { name: 'Files' })).toBeHidden();
+	await expect(page.getByRole('link', { name: 'Files', exact: true })).toBeHidden();
 });
 
 test('wrong password shows an error and validation is announced', async ({ page }) => {

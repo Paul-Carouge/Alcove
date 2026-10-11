@@ -6,6 +6,7 @@
 	import { session } from '#lib/auth/session.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
+	import UploadPanel from '#lib/drive/UploadPanel.svelte';
 	import Logo from '#lib/ui/Logo.svelte';
 	import UserMenu from '#lib/ui/UserMenu.svelte';
 	import type { LayoutProps } from './$types';
@@ -28,7 +29,7 @@
 
 	// Token revoked or expired elsewhere: back to the login page.
 	$effect(() => {
-		if (!session.isSignedIn) goto(resolve('/(public)/login'), { replaceState: true });
+		if (!session.isSignedIn) goto(resolve('/(public)/login'), { replace: true });
 	});
 
 	// Close the mobile drawer after navigating.
@@ -58,7 +59,10 @@
 							<a
 								href={item.href}
 								class="nav-item"
-								aria-current={page.url.pathname === item.href ? 'page' : undefined}
+								aria-current={page.url.pathname === item.href ||
+								page.url.pathname.startsWith('/folders/')
+									? 'page'
+									: undefined}
 							>
 								<item.icon size={18} aria-hidden="true" />
 								<span>{item.label()}</span>
@@ -106,6 +110,8 @@
 		</main>
 	</div>
 </div>
+
+<UploadPanel />
 
 <style>
 	.shell {

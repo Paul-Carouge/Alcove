@@ -6,6 +6,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -27,7 +28,14 @@ func Register(app core.App) {
 	app.OnServe().Bind(&hook.Handler[*core.ServeEvent]{
 		Func: func(se *core.ServeEvent) error {
 			if built {
-				se.Router.GET("/{path...}", apis.Static(sub, true))
+				static := apis.Static(sub, true)
+				se.Router.GET("/{path...}", func(e *core.RequestEvent) error {
+					// Unknown API routes must stay JSON 404s, not the SPA's index.html.
+					if strings.HasPrefix(e.Request.URL.Path, "/api/") {
+						return e.NotFoundError("", nil)
+					}
+					return static(e)
+				})
 			} else {
 				se.Router.GET("/{$}", func(e *core.RequestEvent) error {
 					return e.HTML(http.StatusOK, placeholder)

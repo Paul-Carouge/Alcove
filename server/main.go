@@ -8,15 +8,10 @@ import (
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/pocketbase/pocketbase/tools/osutils"
 
+	alcove "github.com/Paul-Carouge/Alcove/server/internal/app"
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
-	"github.com/Paul-Carouge/Alcove/server/internal/drive"
-	"github.com/Paul-Carouge/Alcove/server/internal/health"
 	"github.com/Paul-Carouge/Alcove/server/internal/healthcheck"
-	"github.com/Paul-Carouge/Alcove/server/internal/security"
-	"github.com/Paul-Carouge/Alcove/server/internal/setup"
-	"github.com/Paul-Carouge/Alcove/server/internal/uploads"
-	"github.com/Paul-Carouge/Alcove/server/internal/webui"
 	_ "github.com/Paul-Carouge/Alcove/server/migrations"
 )
 
@@ -47,13 +42,7 @@ func main() {
 		Dir:          "migrations",
 	})
 
-	setup.Register(app, cfg)
-	security.RegisterHeaders(app, webui.ScriptSrc())
-	drive.Register(app)
-	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
-	// Optional modules from ALCOVE_MODULES (ocr, faces) are not implemented yet.
-	health.Register(app, []string{drive.Module})
-	webui.Register(app)
+	alcove.Wire(app, cfg)
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)

@@ -57,8 +57,11 @@ func Register(app core.App, behindProxy bool) {
 		if err != nil {
 			return err
 		}
-		se.Router.Any(BasePath+"{path...}", s.serve).
-			Bind(apis.RequireAuth("users"), apis.BodyLimit(maxChunk))
+		// Explicit methods: a method-less pattern would conflict with the SPA's GET catch-all.
+		for _, method := range []string{http.MethodPost, http.MethodHead, http.MethodPatch, http.MethodDelete} {
+			se.Router.Route(method, BasePath+"{path...}", s.serve).
+				Bind(apis.RequireAuth("users"), apis.BodyLimit(maxChunk))
+		}
 		return se.Next()
 	})
 

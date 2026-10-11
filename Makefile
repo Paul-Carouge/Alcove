@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo 0.0.0-dev)
+# From the latest tag (v0.5.0 -> 0.5.0, or 0.5.0-3-gabc123 between releases).
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//' || echo 0.0.0-dev)
 LDFLAGS := -s -w -X github.com/Paul-Carouge/Alcove/server/internal/buildinfo.Version=$(VERSION)
 WEBUI_DIST := server/internal/webui/dist
 
@@ -100,6 +101,11 @@ docker: ## Build the Docker image
 
 docker-up: ## Start the compose stack (needs deploy/.env)
 	cd deploy && docker compose up -d --build
+
+## --- Release -----------------------------------------------------------
+.PHONY: release
+release: ## Cut a release: make release V=0.6.0 (needs CHANGELOG section + devlog)
+	@scripts/release.sh "$(V)"
 
 ## --- Housekeeping ------------------------------------------------------
 .PHONY: clean

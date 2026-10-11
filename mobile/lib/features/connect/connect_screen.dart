@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/api_compat.dart';
+import '../../core/brand.dart';
 import '../../core/secure_store.dart';
 import '../../core/server_checker.dart';
 import '../../core/server_url.dart';
@@ -179,6 +180,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     const SizedBox(height: AlcoveSpace.s5),
                     _ResultCard(text: _statusText(l, result), result: result),
                   ],
+                  const SizedBox(height: AlcoveSpace.s6),
+                  Text(
+                    l.madeBy(kAuthor),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colors.textMuted),
+                  ),
                 ],
               ),
             ),

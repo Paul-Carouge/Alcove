@@ -9,7 +9,16 @@
   "comingSoon": "Coming soon",
   "checking": "Checking the server…",
   "connectedTo": "Connected to {name} {version}",
-  "@connectedTo": { "placeholders": { "name": { "type": "String" }, "version": { "type": "String" } } },
+  "@connectedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "continueButton": "Continue",
   "setupRequired": "This server has no administrator yet. Finish the first-launch setup in a browser first.",
   "errorEmpty": "Enter a server address.",
@@ -19,7 +28,33 @@
   "errorTls": "Secure connection failed. The server certificate is not trusted.",
   "errorInvalidResponse": "This address does not look like an Alcove server.",
   "errorClientTooOld": "This app is too old for the server (API {min}–{max}). Update the app.",
-  "@errorClientTooOld": { "placeholders": { "min": { "type": "int" }, "max": { "type": "int" } } },
+  "@errorClientTooOld": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "errorServerTooOld": "The server is too old for this app (API {min}–{max}). Ask your administrator to update it.",
-  "@errorServerTooOld": { "placeholders": { "min": { "type": "int" }, "max": { "type": "int" } } }
+  "@errorServerTooOld": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "madeBy": "Made by {author}",
+  "@madeBy": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  }
 }

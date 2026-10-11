@@ -34,6 +34,7 @@ make gen          # regenerate API clients (needs Docker) + design tokens
 make check-gen    # fail if generated files are stale
 make build        # server/bin/alcove with web UI embedded
 make docker       # build the image; `cd deploy && docker compose up -d` to run the stack
+make release V=X.Y.Z  # bump versions, commit, tag (needs CHANGELOG section + devlog)
 ```
 
 Per package, if needed:
@@ -60,6 +61,10 @@ Dev data lives in `server/pb_data/` (git-ignored). Admin UI: http://127.0.0.1:80
    `down`, both tested). Never edit a migration that has been released.
 7. Never modify original photos/videos. Derivatives (thumbnails, transcodes) are separate files.
 8. Never commit secrets. Credentials come from env (`ALCOVE_*`) or the admin UI.
+9. **Every delivered batch of work is a release**: add a `CHANGELOG.md` section, a devlog
+   `docs/devlog/YYYY-MM-DD-vX.Y.Z.md` (what, why, what went wrong) and its row in `docs/devlog/README.md`,
+   then `make release V=X.Y.Z` and `git push --follow-tags`. 0.x SemVer: minor = features, patch = fixes.
+10. Keep the author credit (Paul Carouge) in README, AUTHORS, package metadata and `web/src/lib/brand.ts`.
 
 ## Conventions
 

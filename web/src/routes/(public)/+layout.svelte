@@ -3,6 +3,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
 	import LanguageSelect from '#lib/ui/LanguageSelect.svelte';
+	import Credit from '#lib/ui/Credit.svelte';
 	import Logo from '#lib/ui/Logo.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -19,20 +20,21 @@
 </script>
 
 <div class="split">
-	<aside class="brand-panel" aria-hidden="true">
+	<aside class="brand-panel" aria-label={m.app_tagline()}>
 		<Logo name={health?.name} size={36} />
 		<div class="pitch">
 			<p class="headline">{m.brand_headline()}</p>
 			<p class="body">{m.brand_body()}</p>
 			<ul>
 				{#each features as f (f.text)}
-					<li><span class="ic"><f.icon size={16} /></span>{f.text()}</li>
+					<li><span class="ic" aria-hidden="true"><f.icon size={16} /></span>{f.text()}</li>
 				{/each}
 			</ul>
 		</div>
-		{#if health}<p class="foot">
-				{m.server_info({ name: health.name, version: health.version })}
-			</p>{/if}
+		<p class="foot">
+			{#if health}{m.server_info({ name: health.name, version: health.version })} ·{/if}
+			<Credit />
+		</p>
 	</aside>
 
 	<div class="form-side">
@@ -43,6 +45,7 @@
 		<main id="main" tabindex="-1">
 			{@render children()}
 		</main>
+		<p class="mobile-credit"><Credit /></p>
 	</div>
 </div>
 
@@ -135,6 +138,12 @@
 		display: none;
 		margin-right: auto;
 	}
+	.mobile-credit {
+		display: none;
+		margin: 0;
+		padding: var(--space-4);
+		text-align: center;
+	}
 	main {
 		flex: 1;
 		display: grid;
@@ -153,6 +162,9 @@
 		}
 		.mobile-logo {
 			display: inline-flex;
+		}
+		.mobile-credit {
+			display: block;
 		}
 		main {
 			align-items: start;

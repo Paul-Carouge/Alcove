@@ -8,6 +8,7 @@
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
 	import UploadPanel from '#lib/drive/UploadPanel.svelte';
 	import Logo from '#lib/ui/Logo.svelte';
+	import Credit from '#lib/ui/Credit.svelte';
 	import UserMenu from '#lib/ui/UserMenu.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -78,9 +79,10 @@
 				{/each}
 			</ul>
 		</nav>
-		{#if health}
-			<p class="version">{m.server_info({ name: health.name, version: health.version })}</p>
-		{/if}
+		<footer class="version">
+			{#if health}<span>{m.server_info({ name: health.name, version: health.version })}</span>{/if}
+			<Credit />
+		</footer>
 	</aside>
 
 	{#if drawerOpen}
@@ -183,6 +185,8 @@
 		color: var(--color-text-muted);
 	}
 	.version {
+		display: grid;
+		gap: 2px;
 		margin: auto 0 0;
 		padding: 0 var(--space-3);
 		font-size: var(--text-xs);

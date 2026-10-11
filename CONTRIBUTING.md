@@ -33,6 +33,14 @@ Mobile: `cd mobile && flutter run`. Debug builds accept `http://10.0.2.2:8090` (
 6. Open a PR describing **what** and **why**, with screenshots for UI changes (light + dark) and notes
    on accessibility for new components.
 
+## Releases (maintainers)
+
+1. Move the `[Unreleased]` entries of `CHANGELOG.md` into `## [X.Y.Z] - YYYY-MM-DD`.
+2. Write the devlog `docs/devlog/YYYY-MM-DD-vX.Y.Z.md` and add it to `docs/devlog/README.md`.
+3. `make release V=X.Y.Z` (bumps npm and Flutter versions, commits `chore(release): vX.Y.Z`, tags).
+4. `git push --follow-tags`: the Release workflow publishes `ghcr.io/paul-carouge/alcove:X.Y.Z`
+   (amd64 + arm64) and a GitHub Release with the changelog notes.
+
 ## Standards
 
 - Tests for new behavior (Go `ApiScenario` for routes, Vitest for web logic, `flutter_test` for widgets).

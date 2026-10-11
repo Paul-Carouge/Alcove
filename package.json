@@ -2,6 +2,11 @@
   "name": "alcove-monorepo",
   "private": true,
   "license": "AGPL-3.0-only",
+  "author": "Paul Carouge (https://github.com/Paul-Carouge)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Paul-Carouge/Alcove.git"
+  },
   "packageManager": "pnpm@11.20.0",
   "engines": {
     "node": ">=22"

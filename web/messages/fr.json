@@ -185,5 +185,6 @@
 	"public_not_found": "Ce lien n’existe pas ou a été révoqué.",
 	"public_expired": "Ce lien a expiré.",
 	"public_expires": "Disponible jusqu’au {date}",
-	"public_open": "Ouvrir {name}"
+	"public_open": "Ouvrir {name}",
+	"made_by": "Créé par"
 }

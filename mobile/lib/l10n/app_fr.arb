@@ -18,5 +18,6 @@
   "errorTls": "La connexion sécurisée a échoué : le certificat du serveur n’est pas reconnu.",
   "errorInvalidResponse": "Cette adresse ne semble pas être un serveur Alcove.",
   "errorClientTooOld": "Cette application est trop ancienne pour le serveur (API {min}–{max}). Mettez-la à jour.",
-  "errorServerTooOld": "Le serveur est trop ancien pour cette application (API {min}–{max}). Demandez à l’administrateur de le mettre à jour."
+  "errorServerTooOld": "Le serveur est trop ancien pour cette application (API {min}–{max}). Demandez à l’administrateur de le mettre à jour.",
+  "madeBy": "Créé par {author}"
 }

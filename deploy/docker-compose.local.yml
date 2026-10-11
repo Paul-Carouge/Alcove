@@ -1,0 +1,7 @@
+# Override: expose Alcove on 127.0.0.1:8090 for an existing reverse proxy or
+# `tailscale serve`. Start only the server:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d alcove
+services:
+  alcove:
+    ports:
+      - "127.0.0.1:8090:8090"

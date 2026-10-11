@@ -46,7 +46,7 @@ func main() {
 	})
 
 	setup.Register(app, cfg)
-	security.RegisterHeaders(app)
+	security.RegisterHeaders(app, webui.ScriptSrc())
 	// No optional module is implemented yet; requested ones are ignored.
 	health.Register(app, nil)
 	webui.Register(app)

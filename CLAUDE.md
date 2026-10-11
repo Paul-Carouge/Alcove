@@ -97,7 +97,9 @@ Dev data lives in `server/pb_data/` (git-ignored). Admin UI: http://127.0.0.1:80
 
 - Dart client generation runs openapi-generator in Docker (`packages/api-spec/scripts/gen-dart.sh`).
 - `pnpm --filter @alcove/web check` compiles Paraglide first; messages must exist in both `en.json` and `fr.json`.
-- The web CSP: `script-src` comes from SvelteKit's hash-based `<meta>`, the rest from `server/internal/security`.
-  Inline scripts or third-party origins will be blocked by design.
+- The web CSP is one header built by `server/internal/security`; its `script-src` (with SvelteKit's
+  inline-script hashes) is read from the embedded `index.html` at boot (`webui.ScriptSrc`). Browsers
+  enforce header **and** meta CSPs together, so never add a second, stricter policy. Inline scripts or
+  third-party origins are blocked by design.
 - Rate limits are enabled by migration `1791676800_security_defaults.go` and tunable in the admin UI.
 - PocketBase is pre-1.0: upgrades can break things. Read its changelog, bump deliberately (Renovate requires approval).

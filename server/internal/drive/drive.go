@@ -8,8 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
+	"regexp"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/pocketbase/dbx"
 	validation "github.com/pocketbase/ozzo-validation/v4"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -24,7 +29,46 @@ const (
 
 	// maxDepth bounds ancestor walks (cycle detection) on corrupted data.
 	maxDepth = 1000
+
+	// MaxFileSize caps a single file (also the blob field limit).
+	MaxFileSize int64 = 64 << 30
+
+	// NamePattern: 1-255 chars, no "/" or control characters, not only dots.
+	NamePattern = `^(?:[^/\x00-\x1f\x7f]*[^/\x00-\x1f\x7f.][^/\x00-\x1f\x7f]*)$`
+	NameMaxLen  = 255
 )
+
+var nameRe = regexp.MustCompile(NamePattern)
+
+// ValidName reports whether name is acceptable for a node.
+func ValidName(name string) bool {
+	return name != "" && utf8.RuneCountInString(name) <= NameMaxLen && nameRe.MatchString(name)
+}
+
+// AvailableName returns name, or "name (2).ext", "name (3).ext"… if a
+// non-trashed sibling already uses it (case-insensitively).
+func AvailableName(app core.App, owner, parent, name string) (string, error) {
+	ext := path.Ext(name)
+	base := strings.TrimSuffix(name, ext)
+	if base == "" { // ".bashrc": the whole name is the base
+		base, ext = name, ""
+	}
+	candidate := name
+	for i := 2; i < 1000; i++ {
+		n, err := app.CountRecords(Collection, dbx.NewExp(
+			"owner = {:owner} AND parent = {:parent} AND trashed_at = '' AND name = {:name} COLLATE NOCASE",
+			dbx.Params{"owner": owner, "parent": parent, "name": candidate},
+		))
+		if err != nil {
+			return "", err
+		}
+		if n == 0 {
+			return candidate, nil
+		}
+		candidate = fmt.Sprintf("%s (%d)%s", base, i, ext)
+	}
+	return "", errors.New("no available name")
+}
 
 // Register binds the model hooks. They run for every write (API, admin UI,
 // internal code), before the record is persisted.

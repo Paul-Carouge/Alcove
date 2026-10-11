@@ -66,6 +66,10 @@ All URIs are relative to *http://localhost:8090*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *SystemApi* | [**getHealth**](doc//SystemApi.md#gethealth) | **GET** /health | Server health, version and compatibility information.
+*UploadsApi* | [**appendUpload**](doc//UploadsApi.md#appendupload) | **PATCH** /api/v1/uploads/{uploadId} | Append a chunk (max 64 MiB per request).
+*UploadsApi* | [**cancelUpload**](doc//UploadsApi.md#cancelupload) | **DELETE** /api/v1/uploads/{uploadId} | Cancel an upload and delete its partial data.
+*UploadsApi* | [**createUpload**](doc//UploadsApi.md#createupload) | **POST** /api/v1/uploads/ | Start a resumable upload (tus creation).
+*UploadsApi* | [**getUploadOffset**](doc//UploadsApi.md#getuploadoffset) | **HEAD** /api/v1/uploads/{uploadId} | Get the current offset of an upload (to resume).
 
 
 ## Documentation For Models
@@ -78,7 +82,13 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Authorization
 
-Endpoints do not require authorization.
+
+Authentication schemes defined for the API:
+### userToken
+
+- **Type**: API key
+- **API key parameter name**: Authorization
+- **Location**: HTTP header
 
 
 ## Author

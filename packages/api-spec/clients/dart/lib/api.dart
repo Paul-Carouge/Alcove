@@ -29,6 +29,7 @@ part 'auth/http_basic_auth.dart';
 part 'auth/http_bearer_auth.dart';
 
 part 'api/system_api.dart';
+part 'api/uploads_api.dart';
 
 part 'model/api_range.dart';
 part 'model/error.dart';

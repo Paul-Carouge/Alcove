@@ -20,6 +20,13 @@ servers:
 tags:
   - name: system
     description: Server metadata and compatibility.
+  - name: uploads
+    description: |
+      Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
+      (core + creation + termination), see ADR 0011. Use a tus client (tus-js-client, …)
+      rather than calling these endpoints by hand. When the last chunk is stored, the server
+      creates the drive node and returns its id in `Alcove-Node-Id`. If the name is taken in
+      the target folder, the node is renamed (`name (2).ext`).
 paths:
   /health:
     get:
@@ -52,7 +59,110 @@ paths:
                 setupRequired: false
         "429":
           $ref: "#/components/responses/TooManyRequests"
+  /api/v1/uploads/:
+    post:
+      tags: [uploads]
+      operationId: createUpload
+      summary: Start a resumable upload (tus creation).
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/TusResumable"
+        - name: Upload-Length
+          in: header
+          required: true
+          description: Total size in bytes (deferred length is not supported). Max 64 GiB.
+          schema: { type: integer, minimum: 0, maximum: 68719476736 }
+        - name: Upload-Metadata
+          in: header
+          required: true
+          description: |
+            tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required,
+            a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root).
+            Other keys are ignored.
+          schema: { type: string, example: "filename aGVsbG8udHh0,parent " }
+      responses:
+        "201":
+          description: Upload created.
+          headers:
+            Location:
+              description: Absolute URL of the upload resource.
+              schema: { type: string, format: uri }
+        "400": { description: "Invalid name, parent, or missing length." }
+        "401": { description: Authentication required. }
+        "413": { description: File larger than the server limit. }
+  /api/v1/uploads/{uploadId}:
+    parameters:
+      - name: uploadId
+        in: path
+        required: true
+        schema: { type: string, maxLength: 64 }
+    head:
+      tags: [uploads]
+      operationId: getUploadOffset
+      summary: Get the current offset of an upload (to resume).
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/TusResumable"
+      responses:
+        "200":
+          description: Upload state.
+          headers:
+            Upload-Offset: { schema: { type: integer } }
+            Upload-Length: { schema: { type: integer } }
+        "404": { description: "Unknown upload, or owned by another user." }
+    patch:
+      tags: [uploads]
+      operationId: appendUpload
+      summary: Append a chunk (max 64 MiB per request).
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/TusResumable"
+        - name: Upload-Offset
+          in: header
+          required: true
+          schema: { type: integer, minimum: 0 }
+      requestBody:
+        required: true
+        content:
+          application/offset+octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        "204":
+          description: Chunk stored. On the last chunk, the node has been created.
+          headers:
+            Upload-Offset: { schema: { type: integer } }
+            Alcove-Node-Id:
+              description: Id of the created drive node (last chunk only).
+              schema: { type: string }
+        "404": { description: "Unknown upload, or owned by another user." }
+        "409": { description: "Offset mismatch, or the target folder no longer exists." }
+    delete:
+      tags: [uploads]
+      operationId: cancelUpload
+      summary: Cancel an upload and delete its partial data.
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/TusResumable"
+      responses:
+        "204": { description: Upload cancelled. }
+        "404": { description: "Unknown upload, or owned by another user." }
 components:
+  securitySchemes:
+    userToken:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: PocketBase auth token of a `users` record (raw token, no "Bearer" prefix).
+  parameters:
+    TusResumable:
+      name: Tus-Resumable
+      in: header
+      required: true
+      schema: { type: string, enum: ["1.0.0"] }
   responses:
     TooManyRequests:
       description: Rate limit exceeded.

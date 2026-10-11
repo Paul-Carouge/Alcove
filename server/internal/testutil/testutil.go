@@ -2,8 +2,11 @@
 package testutil
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 
@@ -57,4 +60,27 @@ func Node(tb testing.TB, app core.App, owner *core.Record, parent, name, kind st
 		tb.Fatal(err)
 	}
 	return n
+}
+
+// Server serves the app's full router (after OnServe hooks) over real HTTP,
+// for multi-request flows that tests.ApiScenario cannot express.
+func Server(tb testing.TB, app *tests.TestApp) *httptest.Server {
+	tb.Helper()
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	var mux http.Handler
+	se := &core.ServeEvent{App: app, Router: router}
+	err = app.OnServe().Trigger(se, func(e *core.ServeEvent) error {
+		var buildErr error
+		mux, buildErr = e.Router.BuildMux()
+		return buildErr
+	})
+	if err != nil {
+		tb.Fatal(err)
+	}
+	srv := httptest.NewServer(mux)
+	tb.Cleanup(srv.Close)
+	return srv
 }

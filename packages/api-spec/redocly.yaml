@@ -4,3 +4,5 @@ rules:
   info-contact: off
   security-defined: off
   no-server-example.com: off
+  # tus clients POST to the collection URL with its trailing slash.
+  no-path-trailing-slash: off

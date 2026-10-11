@@ -4,6 +4,8 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 	"github.com/pocketbase/pocketbase/tools/types"
+
+	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 )
 
 // Creates the drive tree: one record per file or folder.
@@ -24,10 +26,9 @@ func init() {
 		nodes := core.NewBaseCollection("nodes")
 		nodes.Fields.Add(
 			&core.RelationField{Name: "owner", CollectionId: users.Id, Required: true, MaxSelect: 1, CascadeDelete: true},
-			// Max 255 chars, no "/" or control characters, not "." or "..".
-			&core.TextField{Name: "name", Required: true, Max: 255, Pattern: `^(?:[^/\x00-\x1f\x7f]*[^/\x00-\x1f\x7f.][^/\x00-\x1f\x7f]*)$`},
+			&core.TextField{Name: "name", Required: true, Max: drive.NameMaxLen, Pattern: drive.NamePattern},
 			&core.SelectField{Name: "kind", Required: true, MaxSelect: 1, Values: []string{"file", "folder"}},
-			&core.FileField{Name: "blob", MaxSelect: 1, MaxSize: 64 << 30, Protected: true},
+			&core.FileField{Name: "blob", MaxSelect: 1, MaxSize: drive.MaxFileSize, Protected: true},
 			&core.NumberField{Name: "size", Min: types.Pointer(0.0), OnlyInt: true},
 			&core.TextField{Name: "mime", Max: 255},
 			&core.TextField{Name: "sha256", Pattern: `^[a-f0-9]{64}$`},

@@ -15,6 +15,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/healthcheck"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
 	"github.com/Paul-Carouge/Alcove/server/internal/setup"
+	"github.com/Paul-Carouge/Alcove/server/internal/uploads"
 	"github.com/Paul-Carouge/Alcove/server/internal/webui"
 	_ "github.com/Paul-Carouge/Alcove/server/migrations"
 )
@@ -49,6 +50,7 @@ func main() {
 	setup.Register(app, cfg)
 	security.RegisterHeaders(app, webui.ScriptSrc())
 	drive.Register(app)
+	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
 	// Optional modules from ALCOVE_MODULES (ocr, faces) are not implemented yet.
 	health.Register(app, []string{drive.Module})
 	webui.Register(app)

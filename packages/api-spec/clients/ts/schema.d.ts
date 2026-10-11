@@ -26,6 +26,44 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/uploads/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start a resumable upload (tus creation). */
+    post: operations["createUpload"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/uploads/{uploadId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        uploadId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Cancel an upload and delete its partial data. */
+    delete: operations["cancelUpload"];
+    options?: never;
+    /** Get the current offset of an upload (to resume). */
+    head: operations["getUploadOffset"];
+    /** Append a chunk (max 64 MiB per request). */
+    patch: operations["appendUpload"];
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -84,7 +122,9 @@ export interface components {
       };
     };
   };
-  parameters: never;
+  parameters: {
+    TusResumable: "1.0.0";
+  };
   requestBodies: never;
   headers: never;
   pathItems: never;
@@ -126,6 +166,161 @@ export interface operations {
         };
       };
       429: components["responses"]["TooManyRequests"];
+    };
+  };
+  createUpload: {
+    parameters: {
+      query?: never;
+      header: {
+        "Tus-Resumable": components["parameters"]["TusResumable"];
+        /** @description Total size in bytes (deferred length is not supported). Max 64 GiB. */
+        "Upload-Length": number;
+        /**
+         * @description tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required,
+         *     a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root).
+         *     Other keys are ignored.
+         */
+        "Upload-Metadata": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Upload created. */
+      201: {
+        headers: {
+          /** @description Absolute URL of the upload resource. */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid name, parent, or missing length. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description File larger than the server limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancelUpload: {
+    parameters: {
+      query?: never;
+      header: {
+        "Tus-Resumable": components["parameters"]["TusResumable"];
+      };
+      path: {
+        uploadId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Upload cancelled. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown upload, or owned by another user. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getUploadOffset: {
+    parameters: {
+      query?: never;
+      header: {
+        "Tus-Resumable": components["parameters"]["TusResumable"];
+      };
+      path: {
+        uploadId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Upload state. */
+      200: {
+        headers: {
+          "Upload-Offset"?: number;
+          "Upload-Length"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown upload, or owned by another user. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  appendUpload: {
+    parameters: {
+      query?: never;
+      header: {
+        "Tus-Resumable": components["parameters"]["TusResumable"];
+        "Upload-Offset": number;
+      };
+      path: {
+        uploadId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/offset+octet-stream": string;
+      };
+    };
+    responses: {
+      /** @description Chunk stored. On the last chunk, the node has been created. */
+      204: {
+        headers: {
+          "Upload-Offset"?: number;
+          /** @description Id of the created drive node (last chunk only). */
+          "Alcove-Node-Id"?: string;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown upload, or owned by another user. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Offset mismatch, or the target folder no longer exists. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
   };
 }

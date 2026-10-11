@@ -34,6 +34,8 @@ importers:
         specifier: ^3.6.0
         version: 3.9.10
 
+  packages/design-tokens: {}
+
 packages:
 
   '@babel/code-frame@7.29.7':

@@ -1,0 +1,12 @@
+{
+  "name": "@alcove/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "check": "node src/build.mjs --check",
+    "test": "node --test test/*.test.mjs"
+  }
+}

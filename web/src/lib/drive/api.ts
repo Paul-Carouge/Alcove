@@ -70,3 +70,35 @@ export async function downloadNode(node: DriveNode) {
 	a.rel = 'noopener';
 	a.click();
 }
+
+export function moveNode(id: string, parent: string) {
+	return nodes().update(id, { parent });
+}
+
+/** Folder children only, for the move picker. */
+export function listFolders(parent: string) {
+	return nodes().getFullList({
+		filter: pb.filter('parent = {:parent} && kind = "folder" && trashed_at = ""', { parent }),
+		batch: 500
+	});
+}
+
+/**
+ * Runs an operation on many ids with bounded concurrency; returns the ids
+ * that failed (the caller reports them, successes arrive via live updates).
+ */
+export async function forEachNode(
+	ids: string[],
+	op: (id: string) => Promise<unknown>,
+	concurrency = 4
+): Promise<string[]> {
+	const failed: string[] = [];
+	const queue = [...ids];
+	const worker = async () => {
+		for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+			await op(id).catch(() => failed.push(id));
+		}
+	};
+	await Promise.all(Array.from({ length: Math.min(concurrency, ids.length) }, worker));
+	return failed;
+}

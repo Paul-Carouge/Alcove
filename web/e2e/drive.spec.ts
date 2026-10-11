@@ -149,3 +149,67 @@ test('trash, restore and delete forever', async ({ page }) => {
 	await expect(confirm).toBeHidden();
 	await expect(page.getByRole('row', { name: /old\.txt/ })).toBeHidden();
 });
+
+async function openFolderWithFiles(page: Page, folder: string, files: string[]) {
+	await newFolder(page, folder);
+	await page.getByRole('link', { name: folder }).click();
+	await expect(page.getByRole('heading', { name: folder, level: 1 })).toBeVisible();
+	await page
+		.locator('input[type=file]')
+		.setInputFiles(
+			files.map((name) => ({ name, mimeType: 'text/plain', buffer: Buffer.from(name) }))
+		);
+	for (const name of files)
+		await expect(page.getByRole('row', { name: new RegExp(name) })).toBeVisible();
+}
+
+test('select a range with shift and move it into a folder', async ({ page }) => {
+	await signIn(page);
+	await openFolderWithFiles(page, unique('Sel'), ['a1.txt', 'a2.txt', 'a3.txt']);
+	await newFolder(page, 'Target');
+
+	await page.getByRole('checkbox', { name: 'Select a1.txt' }).click();
+	await page.getByRole('checkbox', { name: 'Select a3.txt' }).click({ modifiers: ['Shift'] });
+	const bar = page.getByRole('toolbar', { name: '3 selected' });
+	await expect(bar).toBeVisible();
+	for (const name of ['a1.txt', 'a2.txt', 'a3.txt']) {
+		await expect(page.getByRole('checkbox', { name: `Select ${name}` })).toBeChecked();
+	}
+
+	await bar.getByRole('button', { name: 'Move to…' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Move 3 items' });
+	await dialog.getByRole('button', { name: 'Target' }).click();
+	await dialog.getByRole('button', { name: 'Move here' }).click();
+
+	for (const name of ['a1.txt', 'a2.txt', 'a3.txt']) {
+		await expect(page.getByRole('row', { name: new RegExp(name) })).toBeHidden();
+	}
+	await expect(bar).toBeHidden();
+	await page.getByRole('link', { name: 'Target' }).click();
+	await expect(page.getByRole('row', { name: /a2\.txt/ })).toBeVisible();
+});
+
+test('drag a row onto a folder to move it', async ({ page }) => {
+	await signIn(page);
+	await openFolderWithFiles(page, unique('Drag'), ['moveme.txt']);
+	await newFolder(page, 'Inbox');
+
+	await page
+		.getByRole('row', { name: /moveme\.txt/ })
+		.dragTo(page.getByRole('row', { name: /Inbox/ }));
+	await expect(page.getByRole('row', { name: /moveme\.txt/ })).toBeHidden();
+	await page.getByRole('link', { name: 'Inbox' }).click();
+	await expect(page.getByRole('row', { name: /moveme\.txt/ })).toBeVisible();
+});
+
+test('select all and move everything to the trash', async ({ page }) => {
+	await signIn(page);
+	await openFolderWithFiles(page, unique('Bulk'), ['x1.txt', 'x2.txt']);
+
+	await page.getByRole('checkbox', { name: 'Select all' }).check();
+	await page
+		.getByRole('toolbar', { name: '2 selected' })
+		.getByRole('button', { name: 'Move to trash' })
+		.click();
+	await expect(page.getByText('This folder is empty')).toBeVisible();
+});

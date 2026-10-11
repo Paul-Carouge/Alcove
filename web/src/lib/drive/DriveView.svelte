@@ -3,10 +3,12 @@
 	import {
 		ChevronRight,
 		Download,
+		FolderInput,
 		FolderPlus,
 		Pencil,
 		Trash2,
-		Upload as UploadIcon
+		Upload as UploadIcon,
+		X
 	} from '@lucide/svelte';
 	import { ClientResponseError } from 'pocketbase';
 	import { m } from '#lib/paraglide/messages.js';
@@ -14,7 +16,9 @@
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ActionsMenu from '#lib/ui/ActionsMenu.svelte';
-	import { downloadNode, listChildren, pathTo, trashNode } from './api.js';
+	import { downloadNode, forEachNode, listChildren, moveNode, pathTo, trashNode } from './api.js';
+	import MoveDialog from './MoveDialog.svelte';
+	import { Selection } from './selection.svelte.js';
 	import FileIcon from './FileIcon.svelte';
 	import { formatDate, formatSize } from './format.js';
 	import { onNodeChange } from './live.js';
@@ -32,12 +36,23 @@
 	let newFolderOpen = $state(false);
 	let renaming = $state<DriveNode | null>(null);
 	let actionError = $state<string | null>(null);
+	let announcement = $state('');
+	let moveOpen = $state(false);
+	let moveItems = $state<DriveNode[]>([]);
+	let dropTarget = $state<string | null>(null);
+	const selection = new Selection();
 	let dragDepth = $state(0);
 	let fileInput: HTMLInputElement;
 
 	const locale = getLocale();
 	const sorted = $derived([...children].sort((a, b) => compareNodes(a, b, locale)));
 	const folderName = $derived(path.at(-1)?.name ?? m.drive_root());
+	const order = $derived(sorted.map((n) => n.id));
+	const selected = $derived(sorted.filter((n) => selection.has(n.id)));
+	const allSelected = $derived(sorted.length > 0 && selection.size === sorted.length);
+
+	// Keep the selection in sync with what is visible (live moves, trash, …).
+	$effect(() => selection.retain(order));
 
 	// Load the folder, then follow changes live (other tabs, devices, uploads).
 	$effect(() => {
@@ -89,13 +104,59 @@
 		}
 	}
 
-	async function trash(node: DriveNode) {
+	async function trash(items: DriveNode[]) {
 		actionError = null;
-		try {
-			await trashNode(node.id); // the live update removes the row
-		} catch {
-			actionError = m.error_unexpected();
-		}
+		const failed = await forEachNode(
+			items.map((n) => n.id),
+			trashNode
+		); // live updates remove the rows
+		if (failed.length)
+			actionError = m.trash_partial({ failed: failed.length, total: items.length });
+	}
+
+	function openMove(items: DriveNode[]) {
+		moveItems = items;
+		moveOpen = true;
+	}
+
+	async function move(items: DriveNode[], destination: string, destinationName: string) {
+		actionError = null;
+		const ids = items
+			.filter((n) => n.id !== destination && n.parent !== destination)
+			.map((n) => n.id);
+		if (!ids.length) return;
+		const failed = await forEachNode(ids, (id) => moveNode(id, destination));
+		if (failed.length) actionError = m.move_partial({ failed: failed.length, total: ids.length });
+		const moved = ids.length - failed.length;
+		if (moved) announcement = m.moved_announce({ count: moved, folder: destinationName });
+	}
+
+	// Internal drag & drop: rows carry node ids; folders and breadcrumbs accept them.
+	const DRAG_TYPE = 'application/x-alcove-nodes';
+	let dragging: DriveNode[] = [];
+
+	function onRowDragStart(e: DragEvent, node: DriveNode) {
+		dragging = selection.has(node.id) ? selected : [node];
+		e.dataTransfer?.setData(DRAG_TYPE, dragging.map((n) => n.id).join(','));
+		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+	}
+
+	const isNodeDrag = (e: DragEvent) => e.dataTransfer?.types.includes(DRAG_TYPE) ?? false;
+
+	function onTargetOver(e: DragEvent, targetId: string) {
+		if (!isNodeDrag(e) || dragging.some((n) => n.id === targetId)) return;
+		e.preventDefault();
+		dropTarget = targetId;
+	}
+
+	function onTargetDrop(e: DragEvent, targetId: string, targetName: string) {
+		if (!isNodeDrag(e)) return;
+		e.preventDefault();
+		e.stopPropagation();
+		dropTarget = null;
+		const items = dragging;
+		dragging = [];
+		move(items, targetId, targetName);
 	}
 
 	function actionsFor(node: DriveNode) {
@@ -104,7 +165,8 @@
 				? [{ label: m.action_download(), icon: Download, onselect: () => download(node) }]
 				: []),
 			{ label: m.action_rename(), icon: Pencil, onselect: () => (renaming = node) },
-			{ label: m.action_trash(), icon: Trash2, danger: true, onselect: () => trash(node) }
+			{ label: m.action_move(), icon: FolderInput, onselect: () => openMove([node]) },
+			{ label: m.action_trash(), icon: Trash2, danger: true, onselect: () => trash([node]) }
 		];
 	}
 
@@ -135,8 +197,12 @@
 		<nav aria-label={m.breadcrumb_label()} class="crumbs">
 			<ol>
 				<li>
-					<a href={resolve('/(app)')} aria-current={folderId ? undefined : 'page'}
-						>{m.drive_root()}</a
+					<a
+						href={resolve('/(app)')}
+						class:drop={dropTarget === ''}
+						ondragover={(e) => onTargetOver(e, '')}
+						ondragleave={() => (dropTarget = null)}
+						ondrop={(e) => onTargetDrop(e, '', m.drive_root())}>{m.drive_root()}</a
 					>
 				</li>
 				{#each path as node, i (node.id)}
@@ -144,7 +210,11 @@
 						<ChevronRight size={16} aria-hidden="true" />
 						<a
 							href={resolve('/(app)/folders/[id]', { id: node.id })}
-							aria-current={i === path.length - 1 ? 'page' : undefined}>{node.name}</a
+							aria-current={i === path.length - 1 ? 'page' : undefined}
+							class:drop={dropTarget === node.id}
+							ondragover={(e) => onTargetOver(e, node.id)}
+							ondragleave={() => (dropTarget = null)}
+							ondrop={(e) => onTargetDrop(e, node.id, node.name)}>{node.name}</a
 						>
 					</li>
 				{/each}
@@ -154,21 +224,38 @@
 
 	<div class="head">
 		<h1>{folderName}</h1>
-		<div class="actions">
-			<Button
-				variant="secondary"
-				onclick={() => (newFolderOpen = true)}
-				disabled={view !== 'ready'}
-			>
-				<FolderPlus size={18} aria-hidden="true" />
-				{m.new_folder_button()}
-			</Button>
-			<Button onclick={pickFiles} disabled={view !== 'ready'}>
-				<UploadIcon size={18} aria-hidden="true" />
-				{m.upload_button()}
-			</Button>
-			<input bind:this={fileInput} type="file" multiple hidden onchange={onPicked} />
-		</div>
+		{#if selection.size > 0}
+			<div class="selbar" role="toolbar" aria-label={m.selected_count({ count: selection.size })}>
+				<span class="count">{m.selected_count({ count: selection.size })}</span>
+				<Button variant="secondary" onclick={() => openMove(selected)}>
+					<FolderInput size={18} aria-hidden="true" />
+					{m.action_move()}
+				</Button>
+				<Button variant="secondary" onclick={() => trash(selected)}>
+					<Trash2 size={18} aria-hidden="true" />
+					{m.action_trash()}
+				</Button>
+				<button class="icon-btn" aria-label={m.clear_selection()} onclick={() => selection.clear()}>
+					<X size={18} aria-hidden="true" />
+				</button>
+			</div>
+		{:else}
+			<div class="actions">
+				<Button
+					variant="secondary"
+					onclick={() => (newFolderOpen = true)}
+					disabled={view !== 'ready'}
+				>
+					<FolderPlus size={18} aria-hidden="true" />
+					{m.new_folder_button()}
+				</Button>
+				<Button onclick={pickFiles} disabled={view !== 'ready'}>
+					<UploadIcon size={18} aria-hidden="true" />
+					{m.upload_button()}
+				</Button>
+			</div>
+		{/if}
+		<input bind:this={fileInput} type="file" multiple hidden onchange={onPicked} />
 	</div>
 
 	{#if actionError}<div class="action-error"><Alert>{actionError}</Alert></div>{/if}
@@ -193,6 +280,15 @@
 		<table class="list">
 			<thead>
 				<tr>
+					<th scope="col" class="check">
+						<input
+							type="checkbox"
+							aria-label={m.select_all()}
+							checked={allSelected}
+							indeterminate={selection.size > 0 && !allSelected}
+							onchange={(e) => selection.setAll(order, e.currentTarget.checked)}
+						/>
+					</th>
 					<th scope="col">{m.col_name()}</th>
 					<th scope="col" class="num">{m.col_size()}</th>
 					<th scope="col" class="date">{m.col_modified()}</th>
@@ -203,7 +299,24 @@
 			</thead>
 			<tbody>
 				{#each sorted as node (node.id)}
-					<tr>
+					<tr
+						class:selected={selection.has(node.id)}
+						class:drop={dropTarget === node.id}
+						draggable="true"
+						ondragstart={(e) => onRowDragStart(e, node)}
+						ondragend={() => ((dragging = []), (dropTarget = null))}
+						ondragover={node.kind === 'folder' ? (e) => onTargetOver(e, node.id) : undefined}
+						ondragleave={node.kind === 'folder' ? () => (dropTarget = null) : undefined}
+						ondrop={node.kind === 'folder' ? (e) => onTargetDrop(e, node.id, node.name) : undefined}
+					>
+						<td class="check">
+							<input
+								type="checkbox"
+								aria-label={m.select_item({ name: node.name })}
+								checked={selection.has(node.id)}
+								onclick={(e) => selection.toggle(node.id, order, e.shiftKey)}
+							/>
+						</td>
 						<td>
 							<div class="name-cell">
 								<FileIcon kind={node.kind} mime={node.mime} />
@@ -238,6 +351,16 @@
 
 <NewFolderDialog bind:open={newFolderOpen} parent={folderId} />
 <RenameDialog bind:node={renaming} />
+<MoveDialog
+	bind:open={moveOpen}
+	items={moveItems}
+	start={folderId}
+	onmove={(destination, name) => {
+		selection.clear();
+		move(moveItems, destination, name);
+	}}
+/>
+<p class="visually-hidden" aria-live="polite">{announcement}</p>
 
 <style>
 	.drive {
@@ -368,6 +491,53 @@
 	}
 	.list {
 		overflow: visible;
+	}
+	.check {
+		width: 2.75rem;
+		padding: 0 0 0 var(--space-4);
+	}
+	.check input {
+		width: 1.125rem;
+		height: 1.125rem;
+		accent-color: var(--color-accent);
+		cursor: pointer;
+		vertical-align: middle;
+	}
+	tbody tr.selected {
+		background: var(--color-accent-subtle);
+	}
+	tbody tr.drop,
+	.crumbs a.drop {
+		background: var(--color-accent-subtle);
+		outline: 2px dashed var(--color-accent);
+		outline-offset: -2px;
+	}
+	.selbar {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+		border-radius: var(--radius-md);
+		background: var(--color-accent-subtle);
+	}
+	.count {
+		font-weight: var(--weight-medium);
+		color: var(--color-accent);
+		margin-right: var(--space-2);
+	}
+	.icon-btn {
+		display: grid;
+		place-items: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border: 0;
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+	.icon-btn:hover {
+		background: var(--color-surface-sunken);
 	}
 	.action-error {
 		margin-bottom: var(--space-4);

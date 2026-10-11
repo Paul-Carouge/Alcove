@@ -120,5 +120,18 @@
 	"delete_forever_title": "Delete forever?",
 	"delete_forever_body": "“{name}” and everything inside it will be permanently deleted. This cannot be undone.",
 	"error_restore_conflict": "An item named “{name}” already exists in its original folder. Rename one of them first.",
-	"error_download": "The download could not start. Try again."
+	"error_download": "The download could not start. Try again.",
+	"select_all": "Select all",
+	"select_item": "Select {name}",
+	"selected_count": "{count} selected",
+	"clear_selection": "Clear selection",
+	"action_move": "Move to…",
+	"move_title_one": "Move “{name}”",
+	"move_title_many": "Move {count} items",
+	"move_here": "Move here",
+	"move_no_subfolders": "No folders here.",
+	"move_partial": "{failed} of {total} items could not be moved (a name is already taken in the destination, or a folder cannot go inside itself).",
+	"trash_partial": "{failed} of {total} items could not be moved to the trash.",
+	"moved_announce": "{count} items moved to {folder}.",
+	"drag_hint": "Drop on a folder to move"
 }

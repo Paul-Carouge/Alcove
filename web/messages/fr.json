@@ -120,5 +120,18 @@
 	"delete_forever_title": "Supprimer définitivement ?",
 	"delete_forever_body": "« {name} » et tout son contenu seront supprimés définitivement. Cette action est irréversible.",
 	"error_restore_conflict": "Un élément nommé « {name} » existe déjà dans son dossier d’origine. Renommez l’un des deux d’abord.",
-	"error_download": "Le téléchargement n’a pas pu démarrer. Réessayez."
+	"error_download": "Le téléchargement n’a pas pu démarrer. Réessayez.",
+	"select_all": "Tout sélectionner",
+	"select_item": "Sélectionner {name}",
+	"selected_count": "{count} sélectionné(s)",
+	"clear_selection": "Annuler la sélection",
+	"action_move": "Déplacer vers…",
+	"move_title_one": "Déplacer « {name} »",
+	"move_title_many": "Déplacer {count} éléments",
+	"move_here": "Déplacer ici",
+	"move_no_subfolders": "Aucun dossier ici.",
+	"move_partial": "{failed} élément(s) sur {total} n’ont pas pu être déplacés (nom déjà pris dans la destination, ou dossier déplacé dans lui-même).",
+	"trash_partial": "{failed} élément(s) sur {total} n’ont pas pu être mis à la corbeille.",
+	"moved_announce": "{count} élément(s) déplacé(s) vers {folder}.",
+	"drag_hint": "Déposez sur un dossier pour déplacer"
 }

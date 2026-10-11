@@ -3,14 +3,18 @@
 package setup
 
 import (
+	"cmp"
 	"fmt"
+	"strings"
+	"time"
 
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 )
+
+const installerTokenTTL = 30 * time.Minute
 
 // Register wires boot-time settings sync and the installer link.
 func Register(app core.App, cfg config.Config) {
@@ -22,15 +26,27 @@ func Register(app core.App, cfg config.Config) {
 	})
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-		// In Docker the listen address (0.0.0.0:8090) is not what the admin
-		// opens in a browser: print the installer link with the public URL.
-		if cfg.PublicURL != "" && se.InstallerFunc != nil {
-			se.InstallerFunc = func(app core.App, su *core.Record, _ string) error {
-				return apis.DefaultInstallerFunc(app, su, cfg.PublicURL)
+		if se.InstallerFunc != nil {
+			se.InstallerFunc = func(app core.App, su *core.Record, listenURL string) error {
+				return printInstallerLink(app, su, cmp.Or(cfg.PublicURL, listenURL))
 			}
 		}
 		return se.Next()
 	})
+}
+
+// printInstallerLink logs the one-time admin setup link. Unlike PocketBase's
+// default, it never opens a browser: servers start headless (Docker, tests,
+// CI) and the link must use the public URL, not the listen address.
+func printInstallerLink(app core.App, su *core.Record, baseURL string) error {
+	token, err := su.NewStaticAuthToken(installerTokenTTL)
+	if err != nil {
+		return err
+	}
+	link := strings.TrimRight(baseURL, "/") + "/_/#/pbinstall/" + token
+	app.Logger().Info("first launch: open the setup link to create the administrator account", "url", link)
+	fmt.Printf("\n(!) First launch: create the administrator account (link valid %s):\n%s\n\n", installerTokenTTL, link)
+	return nil
 }
 
 func applySettings(app core.App, cfg config.Config) error {

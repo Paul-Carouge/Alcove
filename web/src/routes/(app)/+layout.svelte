@@ -24,7 +24,7 @@
 		{ label: m.nav_photos, icon: Image, href: null, ready: false },
 		{ label: m.nav_documents, icon: FileText, href: null, ready: false },
 		{ label: m.nav_shared, icon: Share2, href: null, ready: false },
-		{ label: m.nav_trash, icon: Trash2, href: null, ready: false }
+		{ label: m.nav_trash, icon: Trash2, href: resolve('/(app)/trash'), ready: true }
 	];
 
 	// Token revoked or expired elsewhere: back to the login page.
@@ -60,7 +60,7 @@
 								href={item.href}
 								class="nav-item"
 								aria-current={page.url.pathname === item.href ||
-								page.url.pathname.startsWith('/folders/')
+								(item.href === resolve('/(app)') && page.url.pathname.startsWith('/folders/'))
 									? 'page'
 									: undefined}
 							>
@@ -165,7 +165,8 @@
 		background: var(--color-surface-sunken);
 		color: var(--color-text);
 	}
-	.nav-item[aria-current='page'] {
+	.nav-item[aria-current='page'],
+	a.nav-item[aria-current='page']:hover {
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 	}

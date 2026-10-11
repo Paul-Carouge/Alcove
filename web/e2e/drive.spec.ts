@@ -79,3 +79,73 @@ test('unknown folders show a not-found message', async ({ page }) => {
 	await page.goto('/folders/doesnotexist123');
 	await expect(page.getByText('This folder does not exist or was deleted.')).toBeVisible();
 });
+
+async function uploadInto(page: Page, folder: string, file: string, content: string) {
+	await newFolder(page, folder);
+	await page.getByRole('link', { name: folder }).click();
+	await expect(page.getByRole('heading', { name: folder, level: 1 })).toBeVisible();
+	await page.locator('input[type=file]').setInputFiles({
+		name: file,
+		mimeType: 'text/plain',
+		buffer: Buffer.from(content)
+	});
+	await expect(page.getByRole('row', { name: new RegExp(file.replace('.', '\\.')) })).toBeVisible();
+}
+
+test('rename with the keyboard and download a file', async ({ page }) => {
+	await signIn(page);
+	await uploadInto(page, unique('Actions'), 'draft.txt', 'content to download');
+
+	// Menu button pattern: Enter opens, arrows move, Enter selects.
+	await page.getByRole('button', { name: 'Actions for draft.txt' }).focus();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('menuitem', { name: 'Download' })).toBeFocused();
+	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('Enter');
+
+	const dialog = page.getByRole('dialog', { name: 'Rename' });
+	await dialog.getByLabel('New name').fill('final.txt');
+	await dialog.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('row', { name: /final\.txt/ })).toBeVisible();
+
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		page.getByRole('button', { name: 'final.txt', exact: true }).click()
+	]);
+	expect(download.suggestedFilename()).toBe('final.txt');
+	const body = await download.createReadStream().then(async (s) => {
+		const chunks: Buffer[] = [];
+		for await (const c of s) chunks.push(c as Buffer);
+		return Buffer.concat(chunks).toString();
+	});
+	expect(body).toBe('content to download');
+});
+
+test('trash, restore and delete forever', async ({ page }) => {
+	await signIn(page);
+	const folder = unique('Trash');
+	await uploadInto(page, folder, 'old.txt', 'bye');
+
+	await page.getByRole('button', { name: 'Actions for old.txt' }).click();
+	await page.getByRole('menuitem', { name: 'Move to trash' }).click();
+	await expect(page.getByRole('row', { name: /old\.txt/ })).toBeHidden();
+
+	await page.getByRole('link', { name: 'Trash', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Trash', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: 'Actions for old.txt' }).click();
+	await page.getByRole('menuitem', { name: 'Restore' }).click();
+	await expect(page.getByRole('row', { name: /old\.txt/ })).toBeHidden();
+
+	// Back in its folder, then trashed again and deleted for good.
+	await page.getByRole('link', { name: 'Files', exact: true }).click();
+	await page.getByRole('link', { name: folder }).click();
+	await page.getByRole('button', { name: 'Actions for old.txt' }).click();
+	await page.getByRole('menuitem', { name: 'Move to trash' }).click();
+	await page.getByRole('link', { name: 'Trash', exact: true }).click();
+	await page.getByRole('button', { name: 'Actions for old.txt' }).click();
+	await page.getByRole('menuitem', { name: 'Delete forever' }).click();
+	const confirm = page.getByRole('dialog', { name: 'Delete forever?' });
+	await confirm.getByRole('button', { name: 'Delete forever' }).click();
+	await expect(confirm).toBeHidden();
+	await expect(page.getByRole('row', { name: /old\.txt/ })).toBeHidden();
+});

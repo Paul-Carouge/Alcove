@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+	"github.com/pocketbase/pocketbase/tools/filesystem"
 
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 	"github.com/Paul-Carouge/Alcove/server/internal/testutil"
@@ -236,4 +238,97 @@ func TestBlobIsProtected(t *testing.T) {
 	if !ok || !field.Protected {
 		t.Fatal("blob must be a protected file field (served only with short-lived file tokens)")
 	}
+}
+
+func TestPurgeTrash(t *testing.T) {
+	f := newFixture(t)
+	defer f.app.Cleanup()
+	now := time.Now()
+	trash := func(n *core.Record, at time.Time) {
+		n.Set("trashed_at", at)
+		if err := f.app.Save(n); err != nil {
+			t.Fatal(err)
+		}
+	}
+	trash(f.docs, now.Add(-31*24*time.Hour)) // old: purged with its child "Sub"
+	trash(f.file, now.Add(-time.Hour))       // recent: kept
+
+	n, err := drive.PurgeTrash(f.app, now.Add(-drive.TrashRetention))
+	if err != nil || n != 1 {
+		t.Fatalf("PurgeTrash = %d, %v; want 1, nil", n, err)
+	}
+	for _, gone := range []*core.Record{f.docs, f.sub} {
+		if _, err := f.app.FindRecordById(drive.Collection, gone.Id); err == nil {
+			t.Errorf("%s should have been purged", gone.GetString("name"))
+		}
+	}
+	if _, err := f.app.FindRecordById(drive.Collection, f.file.Id); err != nil {
+		t.Error("recently trashed file was purged")
+	}
+}
+
+func TestDownload(t *testing.T) {
+	withBlob := func(tb testing.TB, f *fixture) {
+		file, err := filesystem.NewFileFromBytes([]byte("report body"), "x.txt")
+		if err != nil {
+			tb.Fatal(err)
+		}
+		f.file.Set("name", "Rapport été.txt")
+		f.file.Set("blob", file)
+		if err := f.app.Save(f.file); err != nil {
+			tb.Fatal(err)
+		}
+	}
+	url := func(f *fixture, id string, user *core.Record) string {
+		tok := ""
+		if user != nil {
+			var err error
+			if tok, err = user.NewFileToken(); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return "/api/v1/nodes/" + id + "/download?token=" + tok
+	}
+
+	run(t, func(f *fixture) tests.ApiScenario {
+		withBlob(t, f)
+		return tests.ApiScenario{
+			Name: "owner downloads under the drive name", Method: http.MethodGet, URL: url(f, f.file.Id, f.alice),
+			ExpectedStatus: 200, ExpectedContent: []string{"report body"},
+			AfterTestFunc: func(t testing.TB, _ *tests.TestApp, res *http.Response) {
+				cd := res.Header.Get("Content-Disposition")
+				if !strings.HasPrefix(cd, "attachment;") || !strings.Contains(cd, "filename*=utf-8''Rapport%20%C3%A9t%C3%A9.txt") {
+					t.Errorf("Content-Disposition = %q", cd)
+				}
+			},
+		}
+	})
+	run(t, func(f *fixture) tests.ApiScenario {
+		withBlob(t, f)
+		return tests.ApiScenario{
+			Name: "another user gets a 404", Method: http.MethodGet, URL: url(f, f.file.Id, f.bob),
+			ExpectedStatus: 404, ExpectedContent: []string{`"status":404`},
+		}
+	})
+	run(t, func(f *fixture) tests.ApiScenario {
+		withBlob(t, f)
+		return tests.ApiScenario{
+			Name: "no token is a 401", Method: http.MethodGet, URL: url(f, f.file.Id, nil),
+			ExpectedStatus: 401, ExpectedContent: []string{`"status":401`},
+		}
+	})
+	run(t, func(f *fixture) tests.ApiScenario {
+		withBlob(t, f)
+		return tests.ApiScenario{
+			Name: "an auth token is not accepted as a file token", Method: http.MethodGet,
+			URL:            "/api/v1/nodes/" + f.file.Id + "/download?token=" + f.aliceToken,
+			ExpectedStatus: 401, ExpectedContent: []string{`"status":401`},
+		}
+	})
+	run(t, func(f *fixture) tests.ApiScenario {
+		return tests.ApiScenario{
+			Name: "folders cannot be downloaded", Method: http.MethodGet, URL: url(f, f.docs.Id, f.alice),
+			ExpectedStatus: 404, ExpectedContent: []string{`"status":404`},
+		}
+	})
 }

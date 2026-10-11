@@ -64,6 +64,28 @@ export interface paths {
     patch: operations["appendUpload"];
     trace?: never;
   };
+  "/api/v1/nodes/{nodeId}/download": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download a file under its drive name.
+     * @description Authenticated with a short-lived **file token** in the query string (from PocketBase
+     *     `POST /api/files/token`), so the URL can be used in a plain link. Always served as an
+     *     attachment; supports Range requests.
+     */
+    get: operations["downloadNode"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -316,6 +338,47 @@ export interface operations {
       };
       /** @description Offset mismatch, or the target folder no longer exists. */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  downloadNode: {
+    parameters: {
+      query: {
+        /** @description File token of the node's owner (expires after a few minutes). */
+        token: string;
+      };
+      header?: never;
+      path: {
+        nodeId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description File content. */
+      200: {
+        headers: {
+          /** @description `attachment` with the node name (RFC 2231 `filename*` for non-ASCII). */
+          "Content-Disposition"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Missing, expired or non-file token. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not a file, or not owned by the token's user. */
+      404: {
         headers: {
           [name: string]: unknown;
         };

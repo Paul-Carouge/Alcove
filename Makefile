@@ -104,5 +104,5 @@ docker-up: ## Start the compose stack (needs deploy/.env)
 ## --- Housekeeping ------------------------------------------------------
 .PHONY: clean
 clean: ## Remove build outputs
-	rm -rf server/bin web/build web/.svelte-kit mobile/build
+	rm -rf server/bin web/build mobile/build
 	find $(WEBUI_DIST) -mindepth 1 ! -name .gitkeep -delete

@@ -11,12 +11,14 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/pocketbase/dbx"
 	validation "github.com/pocketbase/ozzo-validation/v4"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 // Module is the name advertised in /health when the drive is available.
@@ -26,6 +28,9 @@ const (
 	Collection = "nodes"
 	KindFile   = "file"
 	KindFolder = "folder"
+
+	// TrashRetention: trashed nodes older than this are deleted for good.
+	TrashRetention = 30 * 24 * time.Hour
 
 	// maxDepth bounds ancestor walks (cycle detection) on corrupted data.
 	maxDepth = 1000
@@ -85,6 +90,34 @@ func Register(app core.App) {
 		}
 		return e.Next()
 	})
+	registerDownload(app)
+	app.Cron().MustAdd("alcovePurgeTrash", "30 3 * * *", func() {
+		if n, err := PurgeTrash(app, time.Now().Add(-TrashRetention)); err != nil {
+			app.Logger().Error("trash purge failed", "error", err)
+		} else if n > 0 {
+			app.Logger().Info("trash purged", "nodes", n)
+		}
+	})
+}
+
+// PurgeTrash permanently deletes nodes trashed before cutoff (children go
+// with them through the cascading parent relation) and returns the count.
+func PurgeTrash(app core.App, cutoff time.Time) (int, error) {
+	old, err := app.FindRecordsByFilter(Collection, "trashed_at != '' && trashed_at < {:cutoff}", "", 0, 0,
+		dbx.Params{"cutoff": cutoff.UTC().Format(types.DefaultDateLayout)})
+	if err != nil {
+		return 0, err
+	}
+	var errs []error
+	deleted := 0
+	for _, node := range old {
+		if err := app.Delete(node); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		deleted++
+	}
+	return deleted, errors.Join(errs...)
 }
 
 func beforeSave(app core.App, node *core.Record) error {

@@ -1,17 +1,26 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { ChevronRight, FolderPlus, Upload as UploadIcon } from '@lucide/svelte';
+	import {
+		ChevronRight,
+		Download,
+		FolderPlus,
+		Pencil,
+		Trash2,
+		Upload as UploadIcon
+	} from '@lucide/svelte';
 	import { ClientResponseError } from 'pocketbase';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { listChildren, pathTo } from './api.js';
+	import ActionsMenu from '#lib/ui/ActionsMenu.svelte';
+	import { downloadNode, listChildren, pathTo, trashNode } from './api.js';
 	import FileIcon from './FileIcon.svelte';
 	import { formatDate, formatSize } from './format.js';
 	import { onNodeChange } from './live.js';
 	import { compareNodes } from './names.js';
 	import NewFolderDialog from './NewFolderDialog.svelte';
+	import RenameDialog from './RenameDialog.svelte';
 	import type { DriveNode } from './types.js';
 	import { uploads } from './uploads.svelte.js';
 
@@ -21,6 +30,8 @@
 	let path = $state<DriveNode[]>([]);
 	let view = $state<'loading' | 'ready' | 'not-found' | 'error'>('loading');
 	let newFolderOpen = $state(false);
+	let renaming = $state<DriveNode | null>(null);
+	let actionError = $state<string | null>(null);
 	let dragDepth = $state(0);
 	let fileInput: HTMLInputElement;
 
@@ -67,6 +78,34 @@
 		const input = event.currentTarget as HTMLInputElement;
 		if (input.files?.length) uploads.add(input.files, folderId);
 		input.value = '';
+	}
+
+	async function download(node: DriveNode) {
+		actionError = null;
+		try {
+			await downloadNode(node);
+		} catch {
+			actionError = m.error_download();
+		}
+	}
+
+	async function trash(node: DriveNode) {
+		actionError = null;
+		try {
+			await trashNode(node.id); // the live update removes the row
+		} catch {
+			actionError = m.error_unexpected();
+		}
+	}
+
+	function actionsFor(node: DriveNode) {
+		return [
+			...(node.kind === 'file'
+				? [{ label: m.action_download(), icon: Download, onselect: () => download(node) }]
+				: []),
+			{ label: m.action_rename(), icon: Pencil, onselect: () => (renaming = node) },
+			{ label: m.action_trash(), icon: Trash2, danger: true, onselect: () => trash(node) }
+		];
 	}
 
 	const hasFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files') ?? false;
@@ -132,6 +171,8 @@
 		</div>
 	</div>
 
+	{#if actionError}<div class="action-error"><Alert>{actionError}</Alert></div>{/if}
+
 	{#if view === 'loading'}
 		<p class="muted" aria-busy="true">{m.loading()}</p>
 	{:else if view === 'not-found'}
@@ -155,6 +196,9 @@
 					<th scope="col">{m.col_name()}</th>
 					<th scope="col" class="num">{m.col_size()}</th>
 					<th scope="col" class="date">{m.col_modified()}</th>
+					<th scope="col" class="act"
+						><span class="visually-hidden">{m.actions_for({ name: '' })}</span></th
+					>
 				</tr>
 			</thead>
 			<tbody>
@@ -168,13 +212,16 @@
 										>{node.name}</a
 									>
 								{:else}
-									<span class="name">{node.name}</span>
+									<button class="name as-link" onclick={() => download(node)}>{node.name}</button>
 								{/if}
 							</div>
 						</td>
 						<td class="num muted">{node.kind === 'folder' ? '—' : formatSize(node.size, locale)}</td
 						>
 						<td class="date muted">{formatDate(node.updated, locale)}</td>
+						<td class="act">
+							<ActionsMenu label={m.actions_for({ name: node.name })} actions={actionsFor(node)} />
+						</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -190,6 +237,7 @@
 </div>
 
 <NewFolderDialog bind:open={newFolderOpen} parent={folderId} />
+<RenameDialog bind:node={renaming} />
 
 <style>
 	.drive {
@@ -300,8 +348,29 @@
 		text-decoration: none;
 		overflow-wrap: anywhere;
 	}
-	a.name:hover {
+	a.name:hover,
+	.as-link:hover {
 		text-decoration: underline;
+	}
+	.as-link {
+		border: 0;
+		padding: 0;
+		background: none;
+		font: inherit;
+		font-size: var(--text-md);
+		text-align: left;
+		cursor: pointer;
+	}
+	.act {
+		width: 3.5rem;
+		padding: 0 var(--space-2);
+		text-align: right;
+	}
+	.list {
+		overflow: visible;
+	}
+	.action-error {
+		margin-bottom: var(--space-4);
 	}
 	@media (max-width: 600px) {
 		.date {

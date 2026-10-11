@@ -20,6 +20,8 @@ servers:
 tags:
   - name: system
     description: Server metadata and compatibility.
+  - name: drive
+    description: Drive operations not covered by PocketBase's collection API.
   - name: uploads
     description: |
       Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
@@ -150,6 +152,38 @@ paths:
       responses:
         "204": { description: Upload cancelled. }
         "404": { description: "Unknown upload, or owned by another user." }
+  /api/v1/nodes/{nodeId}/download:
+    get:
+      tags: [drive]
+      operationId: downloadNode
+      summary: Download a file under its drive name.
+      description: |
+        Authenticated with a short-lived **file token** in the query string (from PocketBase
+        `POST /api/files/token`), so the URL can be used in a plain link. Always served as an
+        attachment; supports Range requests.
+      security: []
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 64 }
+        - name: token
+          in: query
+          required: true
+          description: File token of the node's owner (expires after a few minutes).
+          schema: { type: string }
+      responses:
+        "200":
+          description: File content.
+          headers:
+            Content-Disposition:
+              description: '`attachment` with the node name (RFC 2231 `filename*` for non-ASCII).'
+              schema: { type: string }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "401": { description: "Missing, expired or non-file token." }
+        "404": { description: "Not a file, or not owned by the token's user." }
 components:
   securitySchemes:
     userToken:

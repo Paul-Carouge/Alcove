@@ -30,3 +30,43 @@ export async function pathTo(folderId: string): Promise<DriveNode[]> {
 export function createFolder(parent: string, name: string) {
 	return nodes().create({ owner: pb.authStore.record?.id, parent, name, kind: 'folder' });
 }
+
+export function renameNode(id: string, name: string) {
+	return nodes().update(id, { name });
+}
+
+export function trashNode(id: string) {
+	return nodes().update(id, { trashed_at: new Date().toISOString() });
+}
+
+/** Top-level trashed items (children of a trashed folder stay with it). */
+export function listTrash() {
+	return nodes().getFullList({ filter: 'trashed_at != ""', sort: '-trashed_at', batch: 500 });
+}
+
+/** Restores into the original folder, or the root if that folder is gone or trashed. */
+export async function restoreNode(node: DriveNode) {
+	let parent = node.parent;
+	if (parent) {
+		const original = await getNode(parent).catch(() => null);
+		if (!original || original.trashed_at) parent = '';
+	}
+	return nodes().update(node.id, { trashed_at: '', parent });
+}
+
+export function deleteForever(id: string) {
+	return nodes().delete(id);
+}
+
+/**
+ * Downloads under the drive name (see /api/v1/nodes/{id}/download in the
+ * OpenAPI spec), with a short-lived file token since the blob is protected.
+ */
+export async function downloadNode(node: DriveNode) {
+	const token = await pb.files.getToken();
+	const url = `/api/v1/nodes/${encodeURIComponent(node.id)}/download?token=${encodeURIComponent(token)}`;
+	const a = document.createElement('a');
+	a.href = url;
+	a.rel = 'noopener';
+	a.click();
+}

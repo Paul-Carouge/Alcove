@@ -48,13 +48,15 @@ Please follow the [installation procedure](#installation--usage) and then run th
 import 'package:alcove_api/api.dart';
 
 
-final api_instance = SystemApi();
+final api_instance = DriveApi();
+final nodeId = nodeId_example; // String | 
+final token = token_example; // String | File token of the node's owner (expires after a few minutes).
 
 try {
-    final result = api_instance.getHealth();
+    final result = api_instance.downloadNode(nodeId, token);
     print(result);
 } catch (e) {
-    print('Exception when calling SystemApi->getHealth: $e\n');
+    print('Exception when calling DriveApi->downloadNode: $e\n');
 }
 
 ```
@@ -65,6 +67,7 @@ All URIs are relative to *http://localhost:8090*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *SystemApi* | [**getHealth**](doc//SystemApi.md#gethealth) | **GET** /health | Server health, version and compatibility information.
 *UploadsApi* | [**appendUpload**](doc//UploadsApi.md#appendupload) | **PATCH** /api/v1/uploads/{uploadId} | Append a chunk (max 64 MiB per request).
 *UploadsApi* | [**cancelUpload**](doc//UploadsApi.md#cancelupload) | **DELETE** /api/v1/uploads/{uploadId} | Cancel an upload and delete its partial data.

@@ -1,0 +1,11 @@
+**/node_modules
+**/.svelte-kit
+web/build
+server/bin
+server/pb_data
+mobile
+desktop
+docs
+deploy/data
+.git
+.env

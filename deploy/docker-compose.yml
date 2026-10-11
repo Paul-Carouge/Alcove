@@ -1,0 +1,53 @@
+# Alcove: server + Caddy (automatic HTTPS).
+#   cp ../.env.example .env   # then edit ALCOVE_DOMAIN and ALCOVE_ACME_EMAIL
+#   docker compose up -d
+name: alcove
+
+services:
+  alcove:
+    image: ghcr.io/paul-carouge/alcove:${ALCOVE_VERSION:-latest}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Only Caddy can reach this container, so its X-Forwarded-For is trusted.
+      ALCOVE_TRUSTED_PROXY_HEADER: X-Forwarded-For
+    volumes:
+      - alcove_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [internal]
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      alcove:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ALCOVE_DOMAIN: ${ALCOVE_DOMAIN:?set ALCOVE_DOMAIN in .env}
+      ALCOVE_ACME_EMAIL: ${ALCOVE_ACME_EMAIL:?set ALCOVE_ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    networks: [internal]
+
+volumes:
+  alcove_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

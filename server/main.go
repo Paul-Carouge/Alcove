@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
@@ -10,6 +11,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 	"github.com/Paul-Carouge/Alcove/server/internal/health"
+	"github.com/Paul-Carouge/Alcove/server/internal/healthcheck"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
 	"github.com/Paul-Carouge/Alcove/server/internal/setup"
 	"github.com/Paul-Carouge/Alcove/server/internal/webui"
@@ -17,6 +19,16 @@ import (
 )
 
 func main() {
+	// Runs without bootstrapping PocketBase (no data dir access needed).
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		cmd := healthcheck.Command()
+		cmd.SetArgs(os.Args[2:])
+		if err := cmd.Execute(); err != nil {
+			os.Exit(1)
+		}
+		return
+	}
+
 	cfg := config.MustFromOSEnv()
 
 	app := pocketbase.New()

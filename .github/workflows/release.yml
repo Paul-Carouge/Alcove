@@ -9,7 +9,33 @@ permissions:
   packages: write
 
 jobs:
+  binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm }
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - run: pnpm install --frozen-lockfile
+      - name: Build, checksum and sign archives for every platform
+        env:
+          ALCOVE_SIGNING_KEY: ${{ secrets.ALCOVE_SIGNING_KEY }}
+        run: |
+          test -n "$ALCOVE_SIGNING_KEY" || { echo "ALCOVE_SIGNING_KEY secret missing"; exit 1; }
+          scripts/dist.sh "${GITHUB_REF_NAME#v}"
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
   publish:
+    needs: binaries
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -47,6 +73,10 @@ jobs:
           sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       - name: GitHub release from the CHANGELOG
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,4 +86,5 @@ jobs:
           devlog=$(ls docs/devlog/*-v"$V".md 2>/dev/null | head -1)
           [ -n "$devlog" ] && printf '\n---\nThe story behind this release: [devlog](%s)\n\n**Docker:** `ghcr.io/paul-carouge/alcove:%s`\n' \
             "https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/${devlog}" "$V" >> notes.md
-          gh release create "$GITHUB_REF_NAME" --title "Alcove $GITHUB_REF_NAME" --notes-file notes.md
+          printf '\n**Install:** `curl -fsSL https://github.com/%s/releases/latest/download/install.sh | sh`\n' "$GITHUB_REPOSITORY" >> notes.md
+          gh release create "$GITHUB_REF_NAME" --title "Alcove $GITHUB_REF_NAME" --notes-file notes.md dist/*

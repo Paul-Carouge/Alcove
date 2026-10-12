@@ -7,15 +7,16 @@ archive with full-text search (OCR). Notes, calendar and contacts come later. It
 binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
 data on hardware you control.
 
-> **Status: early development (v0.8).** The web app has accounts with two-factor, a drive with
-> resumable uploads, previews, share links and quotas. Expect breaking changes before 1.0 and keep backups.
+> **Status: early development (v0.9).** The web app has accounts with two-factor, a drive with
+> resumable uploads, previews, share links and quotas; one-command install and updates. Expect breaking changes before 1.0 and keep backups.
 
 <!-- Screenshots: coming with phase 1 (drive). -->
 
 ## Why Alcove
 
-- **One binary, one command.** A Go server built on [PocketBase](https://pocketbase.io) with the
-  web app embedded. Caddy provides automatic HTTPS.
+- **One command to install, one to update.** A single Go binary built on
+  [PocketBase](https://pocketbase.io), web app included, automatic HTTPS. Signed updates from the
+  command line or with one click in the app.
 - **Realtime.** Changes made on one device show up on the others right away (server-sent events).
 - **Secure by default.** HTTPS everywhere, rate limiting, strict input validation, time-limited file
   links, optional 2FA, tokens stored in the OS keychain.
@@ -26,19 +27,19 @@ data on hardware you control.
 
 ## Quickstart (self-host)
 
-You need Docker with Compose, and a domain name pointing to your server with ports 80 and 443 open.
+On Linux, macOS or a Raspberry Pi, one command installs Alcove as a service (with automatic HTTPS
+if you use a domain name) and prints the link to finish the setup in your browser:
 
 ```sh
-git clone https://github.com/Paul-Carouge/Alcove.git && cd Alcove/deploy
-cp ../.env.example .env && nano .env      # set ALCOVE_DOMAIN and ALCOVE_ACME_EMAIL
-docker compose up -d
+curl -fsSL https://github.com/Paul-Carouge/Alcove/releases/latest/download/install.sh | sh
 ```
 
-Then run `docker compose logs alcove` and open the setup link it prints: a short wizard creates the
-administrator account, optionally sets up email, and checks storage. To try it on your machine, set
-`ALCOVE_DOMAIN=localhost`.
+On Windows (PowerShell as administrator):
+`irm https://github.com/Paul-Carouge/Alcove/releases/latest/download/install.ps1 | iex`
 
-Backups, updates, Tailscale and reverse-proxy setups: see [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md).
+Updating is just as simple: `sudo alcove update`, or the **Update** button on the System page.
+Prefer Docker? `docker compose up -d` works too. See [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md) for
+every option, backups, Tailscale and reverse proxies.
 
 ## Mobile app
 
@@ -51,6 +52,7 @@ server's address, and the app checks that it is compatible before going further.
 |---|---|---|
 | 0 | Foundations: monorepo, `/health`, skeleton clients, deployment, CI | ✅ v0.1.0 |
 | 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | ✅ v0.2–v0.8 |
+| – | One-command install and signed updates | ✅ v0.9 |
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | ⏳ next |
 | 3 | Documents (OCR, full-text search) | |
 | 4 | Mobile app and automatic photo backup | |

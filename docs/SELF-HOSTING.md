@@ -4,14 +4,48 @@
 
 ## Requirements
 
-- A 64-bit Linux host (x86_64 or arm64; a Raspberry Pi 4/5 works), 1 GB RAM minimum, 2 GB+ once photos arrive.
-  Disk: your data plus about 10% for thumbnails.
-- Docker Engine 24+ with the Compose plugin (`docker compose version`).
-- For public HTTPS: a domain or subdomain whose DNS `A`/`AAAA` record points to the host, with ports
-  **80 and 443** reachable from the internet (Let's Encrypt uses them).
-  For private use only, see [Tailscale](#private-access-with-tailscale) instead.
+- Linux (x86-64, ARM64 or ARMv7: Raspberry Pi 3+), macOS (Intel or Apple Silicon) or Windows 10/11 (x86-64).
+  1 GB RAM minimum. Disk: your data plus about 10%.
+- Linux: systemd (Debian, Ubuntu, Fedora, Arch…) or OpenRC (Alpine).
+- For public HTTPS: a domain name whose DNS points to the machine, with ports **80 and 443** reachable.
+  For private use only, choose "local network" during install and see [Tailscale](#private-access-with-tailscale).
 
-## Install
+## Install (recommended)
+
+```sh
+curl -fsSL https://github.com/Paul-Carouge/Alcove/releases/latest/download/install.sh | sh
+```
+
+The script downloads the binary for your system, checks its checksum and runs `alcove install`, which
+asks how you will reach Alcove:
+
+1. **From the internet with a domain name**: automatic HTTPS (Let's Encrypt), ports 80/443.
+2. **On your local network or Tailscale**: `http://<machine>:8090`.
+3. **Behind your own reverse proxy**: listens on `127.0.0.1:8090`.
+
+It then creates a dedicated system user (Linux), installs the service (systemd, OpenRC, launchd or a
+Windows startup task), offers to install ffmpeg, starts Alcove and prints the setup link.
+
+Non-interactive (scripts, cloud-init):
+
+```sh
+curl -fsSL …/install.sh | sh -s -- --mode public --domain cloud.example.com --yes
+```
+
+Windows: in PowerShell as administrator, `irm https://github.com/Paul-Carouge/Alcove/releases/latest/download/install.ps1 | iex`.
+
+Where things live:
+
+| | Linux | macOS (sudo) | macOS (user) | Windows |
+|---|---|---|---|---|
+| Binary | `/var/lib/alcove/bin/alcove` (+ `/usr/local/bin/alcove`) | `/usr/local/lib/alcove/alcove` | `~/Library/Application Support/Alcove/bin` | `%ProgramFiles%\Alcove` |
+| Data | `/var/lib/alcove` | `/usr/local/var/alcove` | `~/Library/Application Support/Alcove` | `%ProgramData%\Alcove` |
+| Config | `/etc/alcove/alcove.env` | `/usr/local/etc/alcove/alcove.env` | same folder as data | `%ProgramData%\Alcove\alcove.env` |
+
+Useful commands: `alcove status`, `sudo alcove update`, `sudo alcove rollback`, `sudo alcove uninstall`
+(keeps data; `--purge` removes it).
+
+## Install with Docker (alternative)
 
 ```sh
 git clone https://github.com/Paul-Carouge/Alcove.git && cd Alcove/deploy
@@ -19,9 +53,6 @@ cp ../.env.example .env && chmod 600 .env
 nano .env                     # ALCOVE_DOMAIN=cloud.example.com, ALCOVE_ACME_EMAIL=you@example.com
 docker compose up -d
 ```
-
-The first start builds the image (a few minutes). Once images are published, it will pull
-`ghcr.io/paul-carouge/alcove` instead.
 
 **First-run setup:** run `docker compose logs alcove` and open the printed link
 (`https://<domain>/setup?token=…`). The wizard creates the administrator (admin console **and** app
@@ -33,7 +64,8 @@ Check it is up: `curl https://<domain>/health`.
 
 **Users and quotas:** create accounts in the admin UI (`users` collection → New record). Set
 `quota_bytes` to limit a user's storage (trash included), e.g. `53687091200` for 50 GB; `0` means
-unlimited. Users see their usage in the sidebar and cannot change their own quota.
+unlimited. Set `role` to `admin` to give access to the System page. Users see their usage in the
+sidebar and cannot change their own quota or role.
 
 **Recommended next steps** in the admin UI (`https://<domain>/_/`): Settings → Backups (schedule),
 and turn on two-factor in the app (account menu → Security).
@@ -49,6 +81,7 @@ All settings are environment variables in `deploy/.env` (documented in [`.env.ex
 | `ALCOVE_STORAGE` | `local` | `local` or `s3` |
 | `ALCOVE_S3_*` | | Endpoint, region, bucket, keys, path style (when `s3`) |
 | `ALCOVE_MODULES` | empty | Optional modules (`ocr`, `faces`). Not implemented yet |
+| `ALCOVE_UPDATE_CHECK` | `true` | Daily check for new releases (contacts GitHub); `false` to disable |
 | `ALCOVE_SETUP_TOKEN` | random | Presets the first-run wizard token (16+ chars); the link is printed in the logs otherwise |
 | `ALCOVE_SECRET_KEY` | generated | Encrypts two-factor secrets (32+ chars). If unset, `pb_data/secret.key` is created: keep it in your backups |
 | `ALCOVE_TRUSTED_PROXY_HEADER` | set by compose | Header with the real client IP |
@@ -129,18 +162,20 @@ Restore into a test instance from time to time to check that your backups work.
 
 ## Updates
 
-1. Read the release notes (breaking changes, migration notes).
-2. **Back up** (see above).
-3. Update:
+Every release is signed; Alcove refuses to install anything whose signature or checksum does not verify.
 
-```sh
-cd Alcove && git pull                 # until images are published: rebuilds from source
-cd deploy && docker compose up -d --build
-# once images are published:  docker compose pull && docker compose up -d
-```
+- **From the app:** administrators see a banner when a new version is out. The **System** page shows the
+  release notes and, for native installs, an **Update** button: database backup, install, restart (about a
+  minute).
+- **From the command line (native):** `sudo alcove update` (`--check` to only look). It backs up the
+  database, installs, restarts and checks that the new version answers; if not, it **rolls back
+  automatically** (binary and database).
+- **Docker:** `./update.sh` next to `docker-compose.yml` (database backup, `docker compose pull`, restart).
+  Pin a version with `ALCOVE_VERSION=x.y.z` in `.env` if you prefer to update deliberately.
 
-Database migrations run automatically at start. If something goes wrong, restore the backup and run the
-previous version (`ALCOVE_VERSION=<previous>`). Released migrations are reversible, but restoring the
-backup is the safest way back.
+If something goes wrong after an update made from the app: `sudo alcove rollback` restores the previous
+binary and the pre-update database backup. Database backups made before updates are kept in
+`pb_data/alcove_backups` (last 5); `alcove backup --dir=<data>/pb_data` makes one on demand.
 
-Pin a version in production with `ALCOVE_VERSION=x.y.z` and update deliberately.
+Read the release notes before major versions; breaking changes are announced in the
+[CHANGELOG](../CHANGELOG.md).

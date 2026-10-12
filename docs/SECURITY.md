@@ -38,7 +38,7 @@ optional module containers; the client devices.
 | Malicious uploads | Stored XSS through SVG/HTML, zip bombs, decompression and image parser bugs | Type sniffed from content at upload (client type ignored); downloads are attachments; inline display only for a passive-type allowlist, with a sandboxing CSP and `nosniff`; HTML/SVG never inline; 64 GiB size cap. *Planned:* thumbnailing in a separate process with resource limits |
 | Injection | SQL, path traversal, header injection | Parameterized queries (dbx), storage keys generated server-side (never from file names), strict input validation |
 | Server compromise impact | RCE in a dependency | Distroless non-root image, read-only root FS, all capabilities dropped, `no-new-privileges`, server not exposed directly (internal network) |
-| Supply chain | Malicious dependency update | Lockfiles, Renovate with grouped reviewable PRs, CI on every change, PocketBase bumps need approval, GitHub Actions pinned by digest (Renovate) |
+| Supply chain | Malicious dependency update, tampered release | Lockfiles, Renovate with grouped reviewable PRs, CI on every change, PocketBase bumps need approval, GitHub Actions pinned by digest; releases ship SHA256SUMS signed with an Ed25519 key (public key compiled in), verified before any self-update, which also backs up the database first |
 | Data loss | Disk failure, bad migration, ransomware on host | Documented backups and restores, reversible migrations, *planned:* automatic pre-migration backup |
 
 **Out of scope (v1):**
@@ -63,7 +63,8 @@ optional module containers; the client devices.
 - Keep the host updated, enable automatic security updates, use a firewall (only 80/443 open, SSH by key).
 - Prefer [Tailscale](SELF-HOSTING.md#private-access-with-tailscale) or another VPN if only you and your family use the instance.
 - Back up regularly **and test restores**. Store one copy off-site, encrypted.
-- Keep Alcove up to date. Watch the repository's releases/security advisories.
+- Keep Alcove up to date: `sudo alcove update` or the Update button (System page). Security fixes ship as
+  regular releases.
 - `.env` contains secrets (S3 keys): `chmod 600 deploy/.env`. Never commit it.
 
 ## Security features checklist
@@ -78,6 +79,7 @@ optional module containers; the client devices.
 | Public sign-up disabled (admin-created accounts) | ✅ migration `1791680400_users_lockdown` |
 | No account enumeration on password reset | ✅ |
 | Share links (hashed tokens, expiry, password, revocation) | ✅ |
+| Signed self-updates with automatic backup and rollback | ✅ |
 | MFA (password + email OTP) | ✅ available in PocketBase, to expose in our UI (phase 1) |
 | TOTP authenticator apps + recovery codes | ✅ secrets encrypted at rest, replay-protected, rate limited |
 | Time-limited file URLs | ✅ PocketBase file tokens, used by drive (phase 1) |

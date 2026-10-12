@@ -36,6 +36,8 @@ FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=server /out/alcove /alcove
 COPY --from=server --chown=nonroot:nonroot /out/data /data
 USER nonroot
+# alcove update / the System page know this is a Docker installation.
+ENV ALCOVE_INSTALL_MODE=docker
 EXPOSE 8090
 VOLUME /data
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD ["/alcove", "healthcheck"]

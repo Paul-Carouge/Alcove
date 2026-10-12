@@ -35,6 +35,7 @@ make check-gen    # fail if generated files are stale
 make build        # server/bin/alcove with web UI embedded
 make docker       # build the image; `cd deploy && docker compose up -d` to run the stack
 make release V=X.Y.Z  # bump versions, commit, tag (needs CHANGELOG section + devlog)
+make dist         # release archives for 6 platforms + SHA256SUMS (signed with ALCOVE_SIGNING_KEY)
 ```
 
 Per package, if needed:
@@ -64,7 +65,9 @@ Dev data lives in `server/pb_data/` (git-ignored). Admin UI: http://127.0.0.1:80
 9. **Every delivered batch of work is a release**: add a `CHANGELOG.md` section, a devlog
    `docs/devlog/YYYY-MM-DD-vX.Y.Z.md` (what, why, what went wrong) and its row in `docs/devlog/README.md`,
    then `make release V=X.Y.Z` and `git push --follow-tags`. 0.x SemVer: minor = features, patch = fixes.
-10. Keep the author credit (Paul Carouge) in README, AUTHORS, package metadata and `web/src/lib/brand.ts`.
+10. Ease of self-hosting is a core goal: every new dependency must be handled by `alcove install`,
+   the Docker image and `alcove update` (ADR 0014–0016). Never break the update path of existing installs.
+11. Keep the author credit (Paul Carouge) in README, AUTHORS, package metadata and `web/src/lib/brand.ts`.
 
 ## Conventions
 

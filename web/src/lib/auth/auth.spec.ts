@@ -1,6 +1,6 @@
 import { ClientResponseError } from 'pocketbase';
 import { describe, expect, it } from 'vitest';
-import { authErrorKind, mfaIdFrom } from './errors';
+import { authErrorKind, mfaIdFrom, totpChallenge } from './errors';
 import { safeNext } from './redirect';
 import { isEmail } from './validation';
 
@@ -43,5 +43,18 @@ describe('isEmail', () => {
 		expect(isEmail(' a@b.co ')).toBe(true);
 		expect(isEmail('nope')).toBe(false);
 		expect(isEmail('a@b')).toBe(false);
+	});
+});
+
+describe('totpChallenge', () => {
+	it('detects the two-factor challenge', () => {
+		expect(totpChallenge(sdkError(401, { data: { totpRequired: true } }))).toEqual({
+			invalid: false
+		});
+		expect(totpChallenge(sdkError(401, { data: { totpRequired: true, invalid: true } }))).toEqual({
+			invalid: true
+		});
+		expect(totpChallenge(sdkError(401))).toBeNull();
+		expect(totpChallenge(sdkError(400, { data: { totpRequired: true } }))).toBeNull();
 	});
 });

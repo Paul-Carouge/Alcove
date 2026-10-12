@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { authErrorKind, mfaIdFrom, type AuthErrorKind } from '#lib/auth/errors.js';
+	import { authErrorKind, mfaIdFrom, totpChallenge, type AuthErrorKind } from '#lib/auth/errors.js';
 	import { safeNext } from '#lib/auth/redirect.js';
 	import { isEmail } from '#lib/auth/validation.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -20,6 +20,11 @@
 	let error = $state<AuthErrorKind | 'otp-invalid' | null>(null);
 	/** Set when the server asks for a second factor. */
 	let mfa = $state<{ mfaId: string; otpId: string } | null>(null);
+	/** Set when the account has an authenticator app (TOTP). */
+	let totpStep = $state(false);
+	let totpMode = $state<'app' | 'recovery'>('app');
+	let totpCode = $state('');
+	let totpInvalid = $state(false);
 
 	const emailError = $derived(
 		!submitted
@@ -47,6 +52,19 @@
 		await goto(safeNext(page.url.searchParams.get('next')), { replace: true });
 	}
 
+	/** Password sign-in, with the authenticator code once the server asked for it. */
+	async function attempt(totp?: string) {
+		const identity = email.trim();
+		await pb
+			.collection('users')
+			.authWithPassword(
+				identity,
+				password,
+				totp ? { body: { identity, password, totp } } : undefined
+			);
+		await done();
+	}
+
 	async function signIn(event: SubmitEvent) {
 		event.preventDefault();
 		submitted = true;
@@ -54,9 +72,12 @@
 		if (emailError || passwordError) return;
 		busy = true;
 		try {
-			await pb.collection('users').authWithPassword(email.trim(), password);
-			await done();
+			await attempt();
 		} catch (err) {
+			if (totpChallenge(err)) {
+				totpStep = true;
+				return;
+			}
 			const mfaId = mfaIdFrom(err);
 			if (mfaId) {
 				try {
@@ -71,6 +92,34 @@
 		} finally {
 			busy = false;
 		}
+	}
+
+	async function verifyTotp(event: SubmitEvent) {
+		event.preventDefault();
+		if (!totpCode.trim()) return;
+		busy = true;
+		error = null;
+		totpInvalid = false;
+		try {
+			await attempt(totpCode.trim());
+		} catch (err) {
+			const challenge = totpChallenge(err);
+			if (challenge) totpInvalid = true;
+			else if (mfaIdFrom(err)) {
+				// Account also uses email MFA: continue with the email code.
+				const { otpId } = await pb.collection('users').requestOTP(email.trim());
+				mfa = { mfaId: mfaIdFrom(err)!, otpId };
+				totpStep = false;
+			} else error = authErrorKind(err);
+		} finally {
+			busy = false;
+		}
+	}
+
+	function switchTotpMode() {
+		totpMode = totpMode === 'app' ? 'recovery' : 'app';
+		totpCode = '';
+		totpInvalid = false;
 	}
 
 	async function verifyOtp(event: SubmitEvent) {
@@ -91,10 +140,36 @@
 </script>
 
 <svelte:head>
-	<title>{mfa ? m.mfa_title() : m.sign_in_title()}</title>
+	<title>{mfa ? m.mfa_title() : totpStep ? m.totp_step_title() : m.sign_in_title()}</title>
 </svelte:head>
 
-{#if mfa}
+{#if totpStep}
+	<AuthCard title={m.totp_step_title()}>
+		<p>{m.totp_step_body()}</p>
+		<form onsubmit={verifyTotp} novalidate>
+			{#key totpMode}
+				<TextField
+					label={totpMode === 'app' ? m.totp_code_label() : m.totp_recovery_label()}
+					bind:value={totpCode}
+					inputmode={totpMode === 'app' ? 'numeric' : 'text'}
+					autocomplete="one-time-code"
+					maxlength={totpMode === 'app' ? 6 : 11}
+					autofocus
+					required
+					error={totpInvalid ? m.totp_invalid() : null}
+				/>
+			{/key}
+			{#if error}<Alert>{errorText(error)}</Alert>{/if}
+			<Button type="submit" loading={busy}>{m.verify_button()}</Button>
+		</form>
+		<Button variant="ghost" onclick={switchTotpMode}>
+			{totpMode === 'app' ? m.totp_use_recovery() : m.totp_use_app()}
+		</Button>
+		<Button variant="ghost" onclick={() => ((totpStep = false), (totpCode = ''), (error = null))}>
+			{m.back_to_sign_in()}
+		</Button>
+	</AuthCard>
+{:else if mfa}
 	<AuthCard title={m.mfa_title()}>
 		<p>{m.mfa_description({ email })}</p>
 		<form onsubmit={verifyOtp} novalidate>

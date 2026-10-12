@@ -47,6 +47,7 @@ All settings are environment variables in `deploy/.env` (documented in [`.env.ex
 | `ALCOVE_STORAGE` | `local` | `local` or `s3` |
 | `ALCOVE_S3_*` | | Endpoint, region, bucket, keys, path style (when `s3`) |
 | `ALCOVE_MODULES` | empty | Optional modules (`ocr`, `faces`). Not implemented yet |
+| `ALCOVE_SECRET_KEY` | generated | Encrypts two-factor secrets (32+ chars). If unset, `pb_data/secret.key` is created: keep it in your backups |
 | `ALCOVE_TRUSTED_PROXY_HEADER` | set by compose | Header with the real client IP |
 | `ALCOVE_VERSION` | `latest` | Image tag to run |
 

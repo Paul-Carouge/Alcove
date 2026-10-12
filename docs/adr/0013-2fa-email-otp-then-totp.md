@@ -1,6 +1,6 @@
 # 0013. Two-factor authentication: email OTP first, TOTP later in phase 1
 
-- Status: Accepted (2026-10-11)
+- Status: Accepted (2026-10-11), TOTP implemented in v0.7.0 (2026-10-12)
 
 ## Context
 

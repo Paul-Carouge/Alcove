@@ -7,8 +7,8 @@ archive with full-text search (OCR). Notes, calendar and contacts come later. It
 binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
 data on hardware you control.
 
-> **Status: early development (v0.5).** The web app has accounts, a drive with resumable uploads,
-> previews and share links. Expect breaking changes before 1.0 and keep backups.
+> **Status: early development (v0.7).** The web app has accounts with two-factor, a drive with
+> resumable uploads, previews, share links and quotas. Expect breaking changes before 1.0 and keep backups.
 
 <!-- Screenshots: coming with phase 1 (drive). -->
 
@@ -49,7 +49,7 @@ server's address, and the app checks that it is compatible before going further.
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Foundations: monorepo, `/health`, skeleton clients, deployment, CI | ✅ v0.1.0 |
-| 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | 🚧 v0.2–0.5 done; quotas, TOTP, setup wizard next |
+| 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | 🚧 v0.2–0.7 done; setup wizard next |
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | |
 | 3 | Documents (OCR, full-text search) | |
 | 4 | Mobile app and automatic photo backup | |

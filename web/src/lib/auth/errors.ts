@@ -20,3 +20,12 @@ export function mfaIdFrom(err: unknown): string | null {
 	}
 	return null;
 }
+
+/** The server asks for an authenticator code (TOTP enabled on the account). */
+export function totpChallenge(err: unknown): { invalid: boolean } | null {
+	if (err instanceof ClientResponseError && err.status === 401) {
+		const data = (err.response as { data?: { totpRequired?: boolean; invalid?: boolean } })?.data;
+		if (data?.totpRequired) return { invalid: data.invalid === true };
+	}
+	return null;
+}

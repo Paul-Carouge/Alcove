@@ -6,3 +6,4 @@ export const QUOTA_USER = {
 	password: 'e2e-quota-password-123',
 	quota: 100
 };
+export const TOTP_USER = { email: 'totp@e2e.test', password: 'e2e-totp-password-123' };

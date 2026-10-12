@@ -9,7 +9,7 @@ Monorepo, `GET /health` with API-range negotiation, PocketBase server with secur
 limits, SvelteKit SPA embedded in the binary, Flutter "connect to server" screen, design tokens → CSS + Dart,
 OpenAPI → TS + Dart clients, Docker + Caddy deployment, CI, docs and ADRs.
 
-## Phase 1: Server, accounts, drive (v0.2 – v0.6 done; TOTP, setup wizard and release polish left)
+## Phase 1: Server, accounts, drive (v0.2 – v0.7 done; setup wizard left)
 
 - Accounts: sign-in, sign-out, password reset (SMTP), sessions, "log out everywhere", user admin, quotas.
 - 2FA: PocketBase MFA (password + email OTP), then TOTP authenticator apps at the end of the phase ([ADR 0013](adr/0013-2fa-email-otp-then-totp.md)).

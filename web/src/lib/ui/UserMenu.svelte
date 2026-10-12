@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { LogOut, Monitor, Moon, Sun } from '@lucide/svelte';
+	import { resolve } from '$app/paths';
+	import { LogOut, Monitor, Moon, Shield, Sun } from '@lucide/svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { theme, type ThemeMode } from '#lib/theme/theme.svelte.js';
 	import Avatar from './Avatar.svelte';
@@ -82,6 +83,10 @@
 				<LanguageSelect />
 			</div>
 
+			<a class="item link" href={resolve('/(app)/security')} onclick={() => close()}>
+				<Shield size={16} aria-hidden="true" />
+				{m.nav_security()}
+			</a>
 			<button class="item danger" onclick={onsignout}>
 				<LogOut size={16} aria-hidden="true" />
 				{m.sign_out_button()}
@@ -198,6 +203,14 @@
 		color: var(--color-text);
 		cursor: pointer;
 		text-align: left;
+	}
+	.item.link {
+		border-top: 1px solid var(--color-border);
+		border-radius: 0;
+		text-decoration: none;
+	}
+	.item.link + .item {
+		margin-top: 0;
 	}
 	.item:hover {
 		background: var(--color-surface-sunken);

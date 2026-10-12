@@ -55,7 +55,10 @@ optional module containers; the client devices.
 - Complete the first-run setup immediately after the first start: the setup link creates the administrator
   account and is valid for 30 minutes. If it expires, restart the container to get a new one, or run
   `docker compose exec alcove /alcove superuser upsert EMAIL PASSWORD`.
-- Use a long unique admin password and enable MFA for the admin and users (admin UI → collection → Options).
+- Use a long unique admin password and enable MFA for the admin. Users can turn on authenticator-app
+  two-factor themselves (account menu → Security).
+- Set `ALCOVE_SECRET_KEY` (32+ characters) or back up `pb_data/secret.key` with your data: it decrypts
+  two-factor secrets, and losing it turns off every user's authenticator codes (recovery codes still work).
 - Configure SMTP (admin UI → Settings → Mail) so password resets and OTP emails work. Use a dedicated sender.
 - Keep the host updated, enable automatic security updates, use a firewall (only 80/443 open, SSH by key).
 - Prefer [Tailscale](SELF-HOSTING.md#private-access-with-tailscale) or another VPN if only you and your family use the instance.
@@ -76,7 +79,7 @@ optional module containers; the client devices.
 | No account enumeration on password reset | ✅ |
 | Share links (hashed tokens, expiry, password, revocation) | ✅ |
 | MFA (password + email OTP) | ✅ available in PocketBase, to expose in our UI (phase 1) |
-| TOTP authenticator apps | ⏳ phase 1 decision |
+| TOTP authenticator apps + recovery codes | ✅ secrets encrypted at rest, replay-protected, rate limited |
 | Time-limited file URLs | ✅ PocketBase file tokens, used by drive (phase 1) |
 | Tokens in Keystore/Keychain (mobile) | ✅ `SecureStore`, used from login (phase 1) |
 | Audit log of sensitive actions | ⏳ planned |

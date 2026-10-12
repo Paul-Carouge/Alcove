@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import type { FullConfig } from '@playwright/test';
-import { ADMIN, QUOTA_USER, USER } from './fixtures';
+import { ADMIN, QUOTA_USER, TOTP_USER, USER } from './fixtures';
 
 // Creates an admin (via the CLI, on the same data dir) and a regular user
 // (via the API, since public sign-up is disabled).
@@ -62,4 +62,16 @@ export default async function globalSetup(config: FullConfig) {
 		})
 	});
 	if (!quotaUser.ok) throw new Error(`quota user creation failed: ${quotaUser.status}`);
+
+	const totpUser = await fetch(`${baseURL}/api/collections/users/records`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', Authorization: token },
+		body: JSON.stringify({
+			email: TOTP_USER.email,
+			password: TOTP_USER.password,
+			passwordConfirm: TOTP_USER.password,
+			verified: true
+		})
+	});
+	if (!totpUser.ok) throw new Error(`totp user creation failed: ${totpUser.status}`);
 }

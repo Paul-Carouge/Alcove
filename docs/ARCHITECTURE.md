@@ -108,8 +108,10 @@ sequenceDiagram
 
 - Tokens are stateless JWTs signed per user. Changing the user's `tokenKey` (password change,
   "log out everywhere") invalidates all of them.
-- **2FA:** PocketBase MFA (password + email OTP) first, custom TOTP at the end of phase 1
-  ([ADR 0013](adr/0013-2fa-email-otp-then-totp.md)).
+- **2FA:** PocketBase MFA (password + email OTP) and authenticator apps (TOTP, `internal/totp`,
+  [ADR 0013](adr/0013-2fa-email-otp-then-totp.md)). With TOTP on, `auth-with-password` needs a `totp`
+  body field (code or recovery code), checked only after the password is verified; the `totp`
+  collection has no API rules; secrets are AES-GCM encrypted with `ALCOVE_SECRET_KEY` or `pb_data/secret.key`.
 - Rate limits apply to `*:auth` (5/min per IP by default), password reset and record creation.
 - **Web token storage:** `localStorage` through the PocketBase JS SDK, protected by the strict CSP
   ([ADR 0012](adr/0012-web-token-localstorage.md)).

@@ -7,6 +7,19 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-10-12
+
+### Added
+- Native Linux installs get Alcove's own recent ffmpeg (8.1, from Alpine packages, with its libraries)
+  when the system one is missing or older than 7.1, so iPhone HEIC photos get thumbnails on Debian 12
+  and Ubuntu 24.04. Releases ship it for amd64, arm64 and armv7, signed like the binary; it lives next to
+  the binary and never changes the system ([ADR 0017](docs/adr/0017-ffmpeg-bundle-for-native-linux.md)).
+- `alcove status` shows which ffmpeg is used.
+
+### Changed
+- `alcove update`, the in-app update and `sudo alcove update` on an up-to-date server keep that ffmpeg
+  current. Servers installed earlier: run `sudo alcove update` once after updating to 0.10.2.
+
 ## [0.10.1] - 2026-10-12
 
 ### Fixed
@@ -170,7 +183,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.2...HEAD
+[0.10.2]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.0...v0.9.1

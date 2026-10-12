@@ -7,6 +7,24 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-12
+
+### Added
+- One-line installers (`install.sh`, `install.ps1`) and `alcove install`: public domain with automatic
+  HTTPS, local network/Tailscale, or behind a reverse proxy; dedicated service user; systemd, OpenRC,
+  launchd or Windows startup task; offers to install ffmpeg; prints the setup link.
+- `alcove update` (verify, back up, install, restart, automatic rollback), `alcove rollback`,
+  `alcove status`, `alcove uninstall`, `alcove backup`.
+- Releases ship binaries for Linux (amd64, arm64, armv7), macOS (amd64, arm64) and Windows (amd64),
+  with SHA256SUMS signed by an Ed25519 key.
+- Administrators: `role` on accounts, daily update check, update banner, System page with release
+  notes and an Update button (native installs); `deploy/update.sh` for Docker.
+- `ALCOVE_UPDATE_CHECK`, `ALCOVE_UPDATE_URL`, `ALCOVE_INSTALL_MODE`; `--env-file` for services.
+
+### Security
+- Updates are refused unless the signature and checksum verify; the database is backed up first.
+- Hardened systemd unit (dedicated user, read-only system, only the data directory writable).
+
 ## [0.8.0] - 2026-10-12
 
 Phase 1 (server, accounts, drive) is complete.
@@ -121,7 +139,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.5.0...v0.6.0

@@ -7,6 +7,14 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-10-12
+
+### Fixed
+- **HEIC photos from phones** got no thumbnail: phone cameras store them as a grid of tiles, which the
+  thumbnail step did not handle ("Invalid argument"). Their date, camera and size are now read too, including
+  from phones that place the metadata unusually (e.g. OPPO). Photos that had failed are processed again at
+  the next start.
+
 ## [0.18.0] - 2026-10-12
 
 ### Added
@@ -304,7 +312,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.18.1...HEAD
+[0.18.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.15.0...v0.16.0

@@ -25,5 +25,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0018](0018-albums-and-sharing-between-accounts.md) | Albums, and sharing them between accounts | Accepted |
 | [0019](0019-public-album-links.md) | Public album links | Accepted |
 | [0020](0020-photo-map.md) | Photo map: offline basemap, optional OpenStreetMap tiles | Accepted |
+| [0021](0021-mobile-app-stack.md) | Mobile app: PocketBase Dart SDK, official Flutter packages, no framework | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

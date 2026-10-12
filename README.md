@@ -7,7 +7,7 @@ archive with full-text search (OCR). Notes, calendar and contacts come later. It
 binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
 data on hardware you control.
 
-> **Status: early development (v0.16).** The web app has accounts with two-factor, a drive with
+> **Status: early development (v0.17).** The web app has accounts with two-factor, a drive with
 > resumable uploads, previews, share links and quotas, a photo and video timeline with albums shared between
 > accounts; one-command install and updates. Expect breaking changes before 1.0 and keep backups.
 

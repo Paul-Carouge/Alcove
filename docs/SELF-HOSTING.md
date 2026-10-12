@@ -72,10 +72,11 @@ deployments, preset it with `ALCOVE_SETUP_TOKEN` (16+ characters) and open `http
 
 Check it is up: `curl https://<domain>/health`.
 
-**Users and quotas:** create accounts in the admin UI (`users` collection → New record). Set
-`quota_bytes` to limit a user's storage (trash included), e.g. `53687091200` for 50 GB; `0` means
-unlimited. Set `role` to `admin` to give access to the System page. Users see their usage in the
-sidebar and cannot change their own quota or role.
+**Users and quotas:** in the app, account menu → **Users** (administrators). Create an account (a
+password is generated for you to hand over), set a storage quota in GB (trash included; empty means
+unlimited), make someone an administrator, reset a password or delete an account. Users change their
+name and password in **Account**, see their usage in the sidebar, and cannot change their own quota or
+role.
 
 **Recommended next steps** in the admin UI (`https://<domain>/_/`): Settings → Backups (schedule),
 and turn on two-factor in the app (account menu → Security).

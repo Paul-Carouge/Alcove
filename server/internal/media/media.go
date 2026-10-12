@@ -246,6 +246,9 @@ func (w *worker) fill(rec, node *core.Record, tmp string) error {
 	if !HaveFFmpeg() {
 		return errors.New("ffmpeg is not installed (needed for " + mime + " thumbnails)")
 	}
+	if strings.HasPrefix(mime, "image/hei") && !HEICSupported() {
+		return errors.New("HEIC thumbnails need ffmpeg 7.1 or newer")
+	}
 	thumb, preview := filepath.Join(tmp, "thumb.jpg"), filepath.Join(tmp, "preview.jpg")
 	if err := Derivatives(ctx, src, thumb, preview, video, info.Duration); err != nil {
 		return err

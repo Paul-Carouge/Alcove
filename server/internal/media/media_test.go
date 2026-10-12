@@ -212,8 +212,8 @@ func TestUsersCannotWriteMediaDirectly(t *testing.T) {
 // testdata/iphone.heic was made with macOS sips from a mediatest JPEG
 // (640×480, taken 2025-06-01 12:00 UTC, Apple iPhone 16, Lyon).
 func TestHEIC(t *testing.T) {
-	if !media.HaveFFmpeg() {
-		t.Skip("ffmpeg not installed")
+	if !media.HEICSupported() {
+		t.Skip("needs ffmpeg 7.1 or newer")
 	}
 	e := setup(t)
 	content, err := os.ReadFile("testdata/iphone.heic")

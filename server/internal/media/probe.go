@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/evanoberholster/imagemeta"
@@ -46,6 +47,38 @@ func HaveFFmpeg() bool {
 	_, e1 := exec.LookPath("ffmpeg")
 	_, e2 := exec.LookPath("ffprobe")
 	return e1 == nil && e2 == nil
+}
+
+var ffmpegVersionRe = regexp.MustCompile(`ffmpeg version n?(\d+)\.(\d+)`)
+
+// parseFFmpegVersion reads "ffmpeg version 6.1.1-3ubuntu5 …"; ok is false for git builds ("N-…").
+func parseFFmpegVersion(out string) (major, minor int, ok bool) {
+	m := ffmpegVersionRe.FindStringSubmatch(out)
+	if m == nil {
+		return 0, 0, false
+	}
+	major, _ = strconv.Atoi(m[1])
+	minor, _ = strconv.Atoi(m[2])
+	return major, minor, true
+}
+
+// ffmpegVersion is read once: it is "6.1" on Ubuntu 24.04, "8.1" in the Docker image.
+var ffmpegVersion = sync.OnceValue(func() string {
+	out, err := exec.Command("ffmpeg", "-hide_banner", "-version").Output() // #nosec G204 -- fixed arguments
+	if err != nil {
+		return ""
+	}
+	return string(out)
+})
+
+// HEICSupported reports whether the installed ffmpeg decodes HEIC as saved by phones (tiled HEIF,
+// ffmpeg 7.1+). Unknown versions (git builds) are assumed recent.
+func HEICSupported() bool {
+	if !HaveFFmpeg() {
+		return false
+	}
+	major, minor, ok := parseFFmpegVersion(ffmpegVersion())
+	return !ok || major > 7 || (major == 7 && minor >= 1)
 }
 
 // ImageInfo reads EXIF metadata. The size comes from the image header when Go can decode it (EXIF

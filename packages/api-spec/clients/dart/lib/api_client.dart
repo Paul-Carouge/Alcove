@@ -200,6 +200,12 @@ class ApiClient {
           return CreateShare.fromJson(value);
         case 'CreatedShare':
           return CreatedShare.fromJson(value);
+        case 'DismissDuplicatesRequest':
+          return DismissDuplicatesRequest.fromJson(value);
+        case 'DuplicateGroup':
+          return DuplicateGroup.fromJson(value);
+        case 'DuplicateItem':
+          return DuplicateItem.fromJson(value);
         case 'EnableTotpRequest':
           return EnableTotpRequest.fromJson(value);
         case 'Error':
@@ -214,6 +220,8 @@ class ApiClient {
           return ListAlbumItems200Response.fromJson(value);
         case 'ListAlbums200Response':
           return ListAlbums200Response.fromJson(value);
+        case 'ListDuplicates200Response':
+          return ListDuplicates200Response.fromJson(value);
         case 'MediaFiles':
           return MediaFiles.fromJson(value);
         case 'Module':

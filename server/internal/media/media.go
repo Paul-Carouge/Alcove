@@ -196,6 +196,35 @@ func (w *worker) backfill() {
 		r.Set("status", "pending")
 		_ = w.app.Save(r)
 	}
+	w.hashMissing()
+}
+
+// hashMissing computes the perceptual hash of items processed before v0.13, from their stored thumbnail.
+func (w *worker) hashMissing() {
+	recs, err := w.app.FindRecordsByFilter(Collection, "status = 'ready' && thumb != '' && phash = ''", "", 0, 0)
+	if err != nil || len(recs) == 0 {
+		return
+	}
+	fsys, err := w.app.NewFilesystem()
+	if err != nil {
+		return
+	}
+	defer func() { _ = fsys.Close() }()
+	for _, r := range recs {
+		if w.stopping() {
+			return
+		}
+		rd, err := fsys.GetReader(r.BaseFilesPath() + "/" + r.GetString("thumb"))
+		if err != nil {
+			continue
+		}
+		h, err := DHash(rd)
+		_ = rd.Close()
+		if err == nil {
+			r.Set("phash", h)
+			_ = w.app.Save(r)
+		}
+	}
 }
 
 func (w *worker) requeue(status string) {
@@ -317,6 +346,9 @@ func (w *worker) fill(rec, node *core.Record, tmp string) error {
 	}
 	if err != nil {
 		return err
+	}
+	if h, err := dhashFile(thumb); err == nil {
+		rec.Set("phash", h)
 	}
 	for field, path := range map[string]string{"thumb": thumb, "preview": preview} {
 		f, err := filesystem.NewFileFromPath(path)

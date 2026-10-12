@@ -428,6 +428,45 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/photos/duplicates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Groups of identical files and visually similar photos among your own items.
+     * @description Identical = same SHA-256. Similar = images whose perceptual hashes (dHash) differ by at most a few
+     *     bits (resized or recompressed copies, bursts). Items in the trash and groups you dismissed are left
+     *     out. Nothing is deleted by the server: clients move the unwanted files to the trash.
+     */
+    get: operations["listDuplicates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/photos/duplicates/dismiss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark a group as "not duplicates"; it is hidden until another similar photo joins it. */
+    post: operations["dismissDuplicates"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/albums": {
     parameters: {
       query?: never;
@@ -578,6 +617,30 @@ export interface components {
       collectionId: string;
       thumb: string;
       preview: string;
+    };
+    DuplicateGroup: {
+      /** @enum {string} */
+      kind: "identical" | "similar";
+      /** @description Suggested item to keep (highest resolution, then largest file, then oldest upload). */
+      keep: string;
+      items: components["schemas"]["DuplicateItem"][];
+    };
+    DuplicateItem: components["schemas"]["MediaFiles"] & {
+      /** @description Drive node id (to move it to the trash). */
+      node: string;
+      /** @enum {string} */
+      kind: "image" | "video";
+      /** @enum {string} */
+      status: "pending" | "ready" | "failed";
+      taken_at: string;
+      width: number;
+      height: number;
+      duration: number;
+      name: string;
+      size: number;
+      mime: string;
+      /** @description Upload date. */
+      created: string;
     };
     AlbumItem: components["schemas"]["MediaFiles"] & {
       /** @description The album_items record (to remove it). */
@@ -1818,6 +1881,74 @@ export interface operations {
       };
       /** @description Unknown item, in the trash, or not visible to this account. */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listDuplicates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The groups, newest first. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            groups: components["schemas"]["DuplicateGroup"][];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dismissDuplicates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Media ids of the group (all yours). */
+          items: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Dismissed. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Fewer than two items, or items that are not yours. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
         headers: {
           [name: string]: unknown;
         };

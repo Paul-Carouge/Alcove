@@ -620,6 +620,55 @@ paths:
         "206": { description: Partial content (Range request). }
         "401": { description: Missing or invalid file token. }
         "404": { description: "Unknown item, in the trash, or not visible to this account." }
+  /api/v1/photos/duplicates:
+    get:
+      tags: [photos]
+      operationId: listDuplicates
+      summary: Groups of identical files and visually similar photos among your own items.
+      description: |
+        Identical = same SHA-256. Similar = images whose perceptual hashes (dHash) differ by at most a few
+        bits (resized or recompressed copies, bursts). Items in the trash and groups you dismissed are left
+        out. Nothing is deleted by the server: clients move the unwanted files to the trash.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: The groups, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [groups]
+                properties:
+                  groups:
+                    type: array
+                    items: { $ref: "#/components/schemas/DuplicateGroup" }
+        "401": { description: Authentication required. }
+  /api/v1/photos/duplicates/dismiss:
+    post:
+      tags: [photos]
+      operationId: dismissDuplicates
+      summary: Mark a group as "not duplicates"; it is hidden until another similar photo joins it.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 2
+                  maxItems: 1000
+                  items: { type: string, maxLength: 64 }
+                  description: Media ids of the group (all yours).
+      responses:
+        "204": { description: Dismissed. }
+        "400": { description: "Fewer than two items, or items that are not yours." }
+        "401": { description: Authentication required. }
   /api/v1/albums:
     get:
       tags: [photos]
@@ -863,6 +912,33 @@ components:
         collectionId: { type: string }
         thumb: { type: string }
         preview: { type: string }
+    DuplicateGroup:
+      type: object
+      required: [kind, keep, items]
+      properties:
+        kind: { type: string, enum: [identical, similar] }
+        keep: { type: string, description: "Suggested item to keep (highest resolution, then largest file, then oldest upload)." }
+        items:
+          type: array
+          minItems: 2
+          items: { $ref: "#/components/schemas/DuplicateItem" }
+    DuplicateItem:
+      allOf:
+        - $ref: "#/components/schemas/MediaFiles"
+        - type: object
+          required: [node, kind, status, taken_at, width, height, duration, name, size, mime, created]
+          properties:
+            node: { type: string, description: Drive node id (to move it to the trash). }
+            kind: { type: string, enum: [image, video] }
+            status: { type: string, enum: [pending, ready, failed] }
+            taken_at: { type: string }
+            width: { type: integer }
+            height: { type: integer }
+            duration: { type: number }
+            name: { type: string }
+            size: { type: integer }
+            mime: { type: string }
+            created: { type: string, description: Upload date. }
     AlbumItem:
       allOf:
         - $ref: "#/components/schemas/MediaFiles"

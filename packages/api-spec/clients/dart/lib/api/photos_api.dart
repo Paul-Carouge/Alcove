@@ -16,6 +16,50 @@ class PhotosApi {
 
   final ApiClient apiClient;
 
+  /// Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [DismissDuplicatesRequest] dismissDuplicatesRequest (required):
+  Future<Response> dismissDuplicatesWithHttpInfo(DismissDuplicatesRequest dismissDuplicatesRequest,) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/photos/duplicates/dismiss';
+
+    // ignore: prefer_final_locals
+    Object? postBody = dismissDuplicatesRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
+  ///
+  /// Parameters:
+  ///
+  /// * [DismissDuplicatesRequest] dismissDuplicatesRequest (required):
+  Future<void> dismissDuplicates(DismissDuplicatesRequest dismissDuplicatesRequest,) async {
+    final response = await dismissDuplicatesWithHttpInfo(dismissDuplicatesRequest,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+  }
+
   /// The owner and participants of an album.
   ///
   /// Note: This method returns the HTTP [Response].
@@ -295,6 +339,54 @@ class PhotosApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListAlbums200Response',) as ListAlbums200Response;
+    
+    }
+    return null;
+  }
+
+  /// Groups of identical files and visually similar photos among your own items.
+  ///
+  /// Identical = same SHA-256. Similar = images whose perceptual hashes (dHash) differ by at most a few bits (resized or recompressed copies, bursts). Items in the trash and groups you dismissed are left out. Nothing is deleted by the server: clients move the unwanted files to the trash. 
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> listDuplicatesWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/photos/duplicates';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Groups of identical files and visually similar photos among your own items.
+  ///
+  /// Identical = same SHA-256. Similar = images whose perceptual hashes (dHash) differ by at most a few bits (resized or recompressed copies, bursts). Items in the trash and groups you dismissed are left out. Nothing is deleted by the server: clients move the unwanted files to the trash. 
+  Future<ListDuplicates200Response?> listDuplicates() async {
+    final response = await listDuplicatesWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListDuplicates200Response',) as ListDuplicates200Response;
     
     }
     return null;

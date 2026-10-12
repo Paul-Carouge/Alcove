@@ -80,11 +80,13 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
+*PhotosApi* | [**dismissDuplicates**](doc//PhotosApi.md#dismissduplicates) | **POST** /api/v1/photos/duplicates/dismiss | Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
 *PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
 *PhotosApi* | [**getMediaOriginal**](doc//PhotosApi.md#getmediaoriginal) | **GET** /api/v1/media/{mediaId}/original | The original file of a photo or video, for its owner and the people of albums it is in.
 *PhotosApi* | [**leaveAlbum**](doc//PhotosApi.md#leavealbum) | **POST** /api/v1/albums/{albumId}/leave | Stop taking part in an album shared with you (your photos are removed from it).
 *PhotosApi* | [**listAlbumItems**](doc//PhotosApi.md#listalbumitems) | **GET** /api/v1/albums/{albumId}/items | Photos and videos of an album, newest first (items in the trash are left out).
 *PhotosApi* | [**listAlbums**](doc//PhotosApi.md#listalbums) | **GET** /api/v1/albums | Albums the caller owns or takes part in, most recently updated first.
+*PhotosApi* | [**listDuplicates**](doc//PhotosApi.md#listduplicates) | **GET** /api/v1/photos/duplicates | Groups of identical files and visually similar photos among your own items.
 *PhotosApi* | [**setFavorite**](doc//PhotosApi.md#setfavorite) | **PUT** /api/v1/media/{mediaId}/favorite | Mark or unmark a photo or video as favorite.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
 *PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's or album's content).
@@ -112,6 +114,9 @@ Class | Method | HTTP request | Description
  - [CompleteSetupRequestAllOfAdmin](doc//CompleteSetupRequestAllOfAdmin.md)
  - [CreateShare](doc//CreateShare.md)
  - [CreatedShare](doc//CreatedShare.md)
+ - [DismissDuplicatesRequest](doc//DismissDuplicatesRequest.md)
+ - [DuplicateGroup](doc//DuplicateGroup.md)
+ - [DuplicateItem](doc//DuplicateItem.md)
  - [EnableTotpRequest](doc//EnableTotpRequest.md)
  - [Error](doc//Error.md)
  - [GetAlbumPeople200Response](doc//GetAlbumPeople200Response.md)
@@ -119,6 +124,7 @@ Class | Method | HTTP request | Description
  - [Health](doc//Health.md)
  - [ListAlbumItems200Response](doc//ListAlbumItems200Response.md)
  - [ListAlbums200Response](doc//ListAlbums200Response.md)
+ - [ListDuplicates200Response](doc//ListDuplicates200Response.md)
  - [MediaFiles](doc//MediaFiles.md)
  - [Module](doc//Module.md)
  - [Person](doc//Person.md)

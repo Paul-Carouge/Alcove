@@ -34,6 +34,7 @@
 
 <style>
 	.field {
+		min-width: 0;
 		display: grid;
 		gap: var(--space-1);
 	}
@@ -42,6 +43,8 @@
 		font-weight: var(--weight-medium);
 	}
 	input {
+		width: 100%;
+		min-width: 0;
 		font: inherit;
 		min-height: 2.75rem;
 		padding: var(--space-2) var(--space-3);

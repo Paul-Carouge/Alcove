@@ -7,7 +7,7 @@ archive with full-text search (OCR). Notes, calendar and contacts come later. It
 binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
 data on hardware you control.
 
-> **Status: early development (v0.7).** The web app has accounts with two-factor, a drive with
+> **Status: early development (v0.8).** The web app has accounts with two-factor, a drive with
 > resumable uploads, previews, share links and quotas. Expect breaking changes before 1.0 and keep backups.
 
 <!-- Screenshots: coming with phase 1 (drive). -->
@@ -34,8 +34,9 @@ cp ../.env.example .env && nano .env      # set ALCOVE_DOMAIN and ALCOVE_ACME_EM
 docker compose up -d
 ```
 
-Then run `docker compose logs alcove`, open the one-time setup link it prints, and create the
-administrator account. To try it on your machine, set `ALCOVE_DOMAIN=localhost`.
+Then run `docker compose logs alcove` and open the setup link it prints: a short wizard creates the
+administrator account, optionally sets up email, and checks storage. To try it on your machine, set
+`ALCOVE_DOMAIN=localhost`.
 
 Backups, updates, Tailscale and reverse-proxy setups: see [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md).
 
@@ -49,8 +50,8 @@ server's address, and the app checks that it is compatible before going further.
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Foundations: monorepo, `/health`, skeleton clients, deployment, CI | ✅ v0.1.0 |
-| 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | 🚧 v0.2–0.7 done; setup wizard next |
-| 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | |
+| 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | ✅ v0.2–v0.8 |
+| 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | ⏳ next |
 | 3 | Documents (OCR, full-text search) | |
 | 4 | Mobile app and automatic photo backup | |
 | 5 | Notes, calendar (CalDAV), contacts (CardDAV) | |

@@ -9,7 +9,7 @@ Monorepo, `GET /health` with API-range negotiation, PocketBase server with secur
 limits, SvelteKit SPA embedded in the binary, Flutter "connect to server" screen, design tokens → CSS + Dart,
 OpenAPI → TS + Dart clients, Docker + Caddy deployment, CI, docs and ADRs.
 
-## Phase 1: Server, accounts, drive (v0.2 – v0.7 done; setup wizard left)
+## Phase 1: Server, accounts, drive ✅ (v0.2 – v0.8)
 
 - Accounts: sign-in, sign-out, password reset (SMTP), sessions, "log out everywhere", user admin, quotas.
 - 2FA: PocketBase MFA (password + email OTP), then TOTP authenticator apps at the end of the phase ([ADR 0013](adr/0013-2fa-email-otp-then-totp.md)).
@@ -25,7 +25,7 @@ OpenAPI → TS + Dart clients, Docker + Caddy deployment, CI, docs and ADRs.
 - Ops: automatic pre-migration backup, migration up/down CI on a fresh DB, release workflow publishing
   multi-arch images to GHCR, signed with provenance.
 
-## Phase 2: Photos and videos
+## Phase 2: Photos and videos (next)
 
 Timeline by date taken, EXIF (date, camera, GPS, opt-in map), albums, favorites, shared albums,
 thumbnails and previews, video transcoding (ffmpeg, optional container), Live Photos/motion photos,

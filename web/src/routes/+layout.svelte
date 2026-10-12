@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import '@fontsource-variable/inter';
 	import '#lib/styles/tokens.css';
@@ -24,6 +27,20 @@
 	});
 
 	const status = $derived(serverStatus.current);
+
+	// Until an administrator exists, every page leads to the setup wizard.
+	$effect(() => {
+		if (
+			status?.kind === 'connected' &&
+			status.health.setupRequired &&
+			!page.url.pathname.startsWith('/setup')
+		) {
+			const token = page.url.searchParams.get('token');
+			const query = token ? `?token=${encodeURIComponent(token)}` : '';
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- keeps only the ?token= query
+			goto(`${resolve('/(setup)/setup')}${query}`, { replace: true });
+		}
+	});
 </script>
 
 <svelte:head>

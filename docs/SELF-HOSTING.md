@@ -24,8 +24,10 @@ The first start builds the image (a few minutes). Once images are published, it 
 `ghcr.io/paul-carouge/alcove` instead.
 
 **First-run setup:** run `docker compose logs alcove` and open the printed link
-(`https://<domain>/_/#/pbinstall/…`, valid 30 minutes) to create the administrator account.
-Alternative: `docker compose exec alcove /alcove superuser upsert you@example.com 'a-long-password'`.
+(`https://<domain>/setup?token=…`). The wizard creates the administrator (admin console **and** app
+account, same credentials), lets you configure and test email (SMTP), and checks that storage is
+writable. The token works until setup is complete; a restart prints a new one. For automated
+deployments, preset it with `ALCOVE_SETUP_TOKEN` (16+ characters) and open `https://<domain>/setup`.
 
 Check it is up: `curl https://<domain>/health`.
 
@@ -33,8 +35,8 @@ Check it is up: `curl https://<domain>/health`.
 `quota_bytes` to limit a user's storage (trash included), e.g. `53687091200` for 50 GB; `0` means
 unlimited. Users see their usage in the sidebar and cannot change their own quota.
 
-**Recommended next steps** in the admin UI (`https://<domain>/_/`): Settings → Mail (SMTP), Settings →
-Backups (schedule), users collection → enable MFA.
+**Recommended next steps** in the admin UI (`https://<domain>/_/`): Settings → Backups (schedule),
+and turn on two-factor in the app (account menu → Security).
 
 ### Configuration
 
@@ -47,6 +49,7 @@ All settings are environment variables in `deploy/.env` (documented in [`.env.ex
 | `ALCOVE_STORAGE` | `local` | `local` or `s3` |
 | `ALCOVE_S3_*` | | Endpoint, region, bucket, keys, path style (when `s3`) |
 | `ALCOVE_MODULES` | empty | Optional modules (`ocr`, `faces`). Not implemented yet |
+| `ALCOVE_SETUP_TOKEN` | random | Presets the first-run wizard token (16+ chars); the link is printed in the logs otherwise |
 | `ALCOVE_SECRET_KEY` | generated | Encrypts two-factor secrets (32+ chars). If unset, `pb_data/secret.key` is created: keep it in your backups |
 | `ALCOVE_TRUSTED_PROXY_HEADER` | set by compose | Header with the real client IP |
 | `ALCOVE_VERSION` | `latest` | Image tag to run |

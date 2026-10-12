@@ -52,9 +52,9 @@ optional module containers; the client devices.
 - Use the provided `docker compose` stack. Don't publish port 8090 to the internet. Only Caddy should be reachable.
 - Set `ALCOVE_TRUSTED_PROXY_HEADER` **only** when a proxy you control is the only way in. Otherwise
   clients can spoof their IP and bypass rate limits.
-- Complete the first-run setup immediately after the first start: the setup link creates the administrator
-  account and is valid for 30 minutes. If it expires, restart the container to get a new one, or run
-  `docker compose exec alcove /alcove superuser upsert EMAIL PASSWORD`.
+- Complete the first-run setup right after the first start. Until then, anyone holding the setup
+  token (printed in the logs, or `ALCOVE_SETUP_TOKEN`) can create the administrator; the wizard routes
+  are rate limited, the token is compared in constant time and stops working once setup is done.
 - Use a long unique admin password and enable MFA for the admin. Users can turn on authenticator-app
   two-factor themselves (account menu → Security).
 - Set `ALCOVE_SECRET_KEY` (32+ characters) or back up `pb_data/secret.key` with your data: it decrypts

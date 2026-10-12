@@ -167,6 +167,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/setup/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Check the setup token and the storage before creating the administrator. */
+    post: operations["getSetupStatus"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/setup/smtp-test": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send a test email with SMTP settings (not saved). */
+    post: operations["testSetupSmtp"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/setup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create the administrator (admin UI + app account) and save optional settings. */
+    post: operations["completeSetup"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/me/totp": {
     parameters: {
       query?: never;
@@ -311,6 +362,30 @@ export interface components {
       | "notes"
       | "calendar"
       | "contacts";
+    SetupToken: {
+      token: string;
+    };
+    SetupStatus: {
+      storage: {
+        /** @enum {string} */
+        type: "local" | "s3";
+        /** @description A test file could be written, read and deleted. */
+        writable: boolean;
+        /** @description Why the write test failed. */
+        error?: string;
+      };
+    };
+    SmtpSettings: {
+      host: string;
+      port: number;
+      username?: string;
+      password?: string;
+      /** @description Implicit TLS (usually port 465); STARTTLS is used otherwise when offered. */
+      tls?: boolean;
+      /** Format: email */
+      senderAddress: string;
+      senderName?: string;
+    };
     TotpStatus: {
       enabled: boolean;
       recoveryCodesLeft: number;
@@ -833,6 +908,147 @@ export interface operations {
         };
         content?: never;
       };
+    };
+  };
+  getSetupStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetupToken"];
+      };
+    };
+    responses: {
+      /** @description Token accepted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SetupStatus"];
+        };
+      };
+      /** @description Invalid setup token. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Setup is already complete. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  testSetupSmtp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetupToken"] & {
+          smtp: components["schemas"]["SmtpSettings"];
+          /** Format: email */
+          to: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Test email sent. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The SMTP server rejected the settings (message explains why). */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Invalid setup token. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Setup is already complete. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  completeSetup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetupToken"] & {
+          admin: {
+            name?: string;
+            /** Format: email */
+            email: string;
+            password: string;
+          };
+          smtp?: components["schemas"]["SmtpSettings"];
+        };
+      };
+    };
+    responses: {
+      /** @description Setup complete; sign in with the new credentials. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid data. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid setup token. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Setup is already complete. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
     };
   };
   getTotpStatus: {

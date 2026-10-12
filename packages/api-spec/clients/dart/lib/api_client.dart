@@ -184,6 +184,10 @@ class ApiClient {
           return value is DateTime ? value : DateTime.tryParse(value);
         case 'ApiRange':
           return ApiRange.fromJson(value);
+        case 'CompleteSetupRequest':
+          return CompleteSetupRequest.fromJson(value);
+        case 'CompleteSetupRequestAllOfAdmin':
+          return CompleteSetupRequestAllOfAdmin.fromJson(value);
         case 'CreateShare':
           return CreateShare.fromJson(value);
         case 'CreatedShare':
@@ -202,6 +206,16 @@ class ApiClient {
           return PublicShare.fromJson(value);
         case 'RecoveryCodes':
           return RecoveryCodes.fromJson(value);
+        case 'SetupStatus':
+          return SetupStatus.fromJson(value);
+        case 'SetupStatusStorage':
+          return SetupStatusStorage.fromJson(value);
+        case 'SetupToken':
+          return SetupToken.fromJson(value);
+        case 'SmtpSettings':
+          return SmtpSettings.fromJson(value);
+        case 'TestSetupSmtpRequest':
+          return TestSetupSmtpRequest.fromJson(value);
         case 'TotpConfirm':
           return TotpConfirm.fromJson(value);
         case 'TotpSetup':

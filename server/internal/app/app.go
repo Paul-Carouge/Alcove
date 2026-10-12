@@ -15,11 +15,13 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/totp"
 	"github.com/Paul-Carouge/Alcove/server/internal/uploads"
 	"github.com/Paul-Carouge/Alcove/server/internal/webui"
+	"github.com/Paul-Carouge/Alcove/server/internal/wizard"
 )
 
 // Wire registers all hooks and routes.
 func Wire(app core.App, cfg config.Config) {
 	setup.Register(app, cfg)
+	wizard.Register(app, cfg)
 	security.RegisterHeaders(app, webui.ScriptSrc())
 	drive.Register(app)
 	shares.Register(app)

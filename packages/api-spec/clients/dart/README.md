@@ -79,6 +79,9 @@ Class | Method | HTTP request | Description
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
 *PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's content).
 *PublicApi* | [**unlockShare**](doc//PublicApi.md#unlockshare) | **POST** /api/v1/public/shares/{token}/unlock | Exchange the link password for a 1-hour access token.
+*SetupApi* | [**completeSetup**](doc//SetupApi.md#completesetup) | **POST** /api/v1/setup | Create the administrator (admin UI + app account) and save optional settings.
+*SetupApi* | [**getSetupStatus**](doc//SetupApi.md#getsetupstatus) | **POST** /api/v1/setup/status | Check the setup token and the storage before creating the administrator.
+*SetupApi* | [**testSetupSmtp**](doc//SetupApi.md#testsetupsmtp) | **POST** /api/v1/setup/smtp-test | Send a test email with SMTP settings (not saved).
 *SharesApi* | [**createShare**](doc//SharesApi.md#createshare) | **POST** /api/v1/shares | Create a public link to one of your files or folders.
 *SystemApi* | [**getHealth**](doc//SystemApi.md#gethealth) | **GET** /health | Server health, version and compatibility information.
 *UploadsApi* | [**appendUpload**](doc//UploadsApi.md#appendupload) | **PATCH** /api/v1/uploads/{uploadId} | Append a chunk (max 64 MiB per request).
@@ -90,6 +93,8 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [ApiRange](doc//ApiRange.md)
+ - [CompleteSetupRequest](doc//CompleteSetupRequest.md)
+ - [CompleteSetupRequestAllOfAdmin](doc//CompleteSetupRequestAllOfAdmin.md)
  - [CreateShare](doc//CreateShare.md)
  - [CreatedShare](doc//CreatedShare.md)
  - [EnableTotpRequest](doc//EnableTotpRequest.md)
@@ -99,6 +104,11 @@ Class | Method | HTTP request | Description
  - [PublicNode](doc//PublicNode.md)
  - [PublicShare](doc//PublicShare.md)
  - [RecoveryCodes](doc//RecoveryCodes.md)
+ - [SetupStatus](doc//SetupStatus.md)
+ - [SetupStatusStorage](doc//SetupStatusStorage.md)
+ - [SetupToken](doc//SetupToken.md)
+ - [SmtpSettings](doc//SmtpSettings.md)
+ - [TestSetupSmtpRequest](doc//TestSetupSmtpRequest.md)
  - [TotpConfirm](doc//TotpConfirm.md)
  - [TotpSetup](doc//TotpSetup.md)
  - [TotpStatus](doc//TotpStatus.md)

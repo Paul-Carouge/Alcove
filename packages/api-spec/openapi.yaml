@@ -35,6 +35,10 @@ tags:
       with `POST /api/collections/users/auth-with-password` requires an extra body field `totp`
       (6-digit code or recovery code); without it the server answers 401 with
       `data.totpRequired = true`.
+  - name: setup
+    description: |
+      First-run wizard. Available only while no administrator exists, and only with the one-time
+      setup token printed in the server logs (or preset with `ALCOVE_SETUP_TOKEN`).
   - name: uploads
     description: |
       Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
@@ -289,6 +293,84 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Usage" }
         "401": { description: Authentication required. }
+  /api/v1/setup/status:
+    post:
+      tags: [setup]
+      operationId: getSetupStatus
+      summary: Check the setup token and the storage before creating the administrator.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetupToken" }
+      responses:
+        "200":
+          description: Token accepted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SetupStatus" }
+        "403": { description: Invalid setup token. }
+        "409": { description: Setup is already complete. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/setup/smtp-test:
+    post:
+      tags: [setup]
+      operationId: testSetupSmtp
+      summary: Send a test email with SMTP settings (not saved).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/SetupToken" }
+                - type: object
+                  required: [smtp, to]
+                  properties:
+                    smtp: { $ref: "#/components/schemas/SmtpSettings" }
+                    to: { type: string, format: email, maxLength: 254 }
+      responses:
+        "204": { description: Test email sent. }
+        "400":
+          description: The SMTP server rejected the settings (message explains why).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403": { description: Invalid setup token. }
+        "409": { description: Setup is already complete. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/setup:
+    post:
+      tags: [setup]
+      operationId: completeSetup
+      summary: Create the administrator (admin UI + app account) and save optional settings.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/SetupToken" }
+                - type: object
+                  required: [admin]
+                  properties:
+                    admin:
+                      type: object
+                      required: [email, password]
+                      properties:
+                        name: { type: string, maxLength: 100 }
+                        email: { type: string, format: email, maxLength: 254 }
+                        password: { type: string, minLength: 10, maxLength: 256 }
+                    smtp: { $ref: "#/components/schemas/SmtpSettings" }
+      responses:
+        "204": { description: "Setup complete; sign in with the new credentials." }
+        "400": { description: Invalid data. }
+        "403": { description: Invalid setup token. }
+        "409": { description: Setup is already complete. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
   /api/v1/me/totp:
     get:
       tags: [account]
@@ -499,6 +581,33 @@ components:
     Module:
       type: string
       enum: [core, drive, photos, documents, ocr, faces, notes, calendar, contacts]
+    SetupToken:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, minLength: 16, maxLength: 256 }
+    SetupStatus:
+      type: object
+      required: [storage]
+      properties:
+        storage:
+          type: object
+          required: [type, writable]
+          properties:
+            type: { type: string, enum: [local, s3] }
+            writable: { type: boolean, description: "A test file could be written, read and deleted." }
+            error: { type: string, description: "Why the write test failed." }
+    SmtpSettings:
+      type: object
+      required: [host, port, senderAddress]
+      properties:
+        host: { type: string, maxLength: 253 }
+        port: { type: integer, minimum: 1, maximum: 65535 }
+        username: { type: string, maxLength: 256 }
+        password: { type: string, maxLength: 256 }
+        tls: { type: boolean, description: "Implicit TLS (usually port 465); STARTTLS is used otherwise when offered." }
+        senderAddress: { type: string, format: email, maxLength: 254 }
+        senderName: { type: string, maxLength: 100 }
     TotpStatus:
       type: object
       required: [enabled, recoveryCodesLeft]

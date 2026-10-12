@@ -39,6 +39,8 @@ type Config struct {
 	S3        S3
 	// Modules are the optional modules requested by the admin (validated names).
 	Modules []string
+	// SetupToken presets the first-run wizard token (automated deployments).
+	SetupToken string
 	// SecretKey encrypts sensitive fields at rest (TOTP secrets). Empty: a key
 	// is generated in the data directory.
 	SecretKey string
@@ -99,6 +101,14 @@ func FromEnv(lookup func(string) (string, bool)) (Config, error) {
 		}
 		if !slices.Contains(cfg.Modules, m) {
 			cfg.Modules = append(cfg.Modules, m)
+		}
+	}
+
+	if t := get("SETUP_TOKEN"); t != "" {
+		if len(t) < 16 {
+			errs = append(errs, fmt.Errorf("%sSETUP_TOKEN must be at least 16 characters", EnvPrefix))
+		} else {
+			cfg.SetupToken = t
 		}
 	}
 

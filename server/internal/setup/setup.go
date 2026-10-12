@@ -3,10 +3,7 @@
 package setup
 
 import (
-	"cmp"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/pocketbase/pocketbase/core"
 
@@ -14,9 +11,8 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 )
 
-const installerTokenTTL = 30 * time.Minute
-
-// Register wires boot-time settings sync and the installer link.
+// Register syncs environment-driven settings on every boot. (The first-run
+// link is handled by internal/wizard.)
 func Register(app core.App, cfg config.Config) {
 	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
 		if err := e.Next(); err != nil {
@@ -25,28 +21,6 @@ func Register(app core.App, cfg config.Config) {
 		return applySettings(e.App, cfg)
 	})
 
-	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-		if se.InstallerFunc != nil {
-			se.InstallerFunc = func(app core.App, su *core.Record, listenURL string) error {
-				return printInstallerLink(app, su, cmp.Or(cfg.PublicURL, listenURL))
-			}
-		}
-		return se.Next()
-	})
-}
-
-// printInstallerLink logs the one-time admin setup link. Unlike PocketBase's
-// default, it never opens a browser: servers start headless (Docker, tests,
-// CI) and the link must use the public URL, not the listen address.
-func printInstallerLink(app core.App, su *core.Record, baseURL string) error {
-	token, err := su.NewStaticAuthToken(installerTokenTTL)
-	if err != nil {
-		return err
-	}
-	link := strings.TrimRight(baseURL, "/") + "/_/#/pbinstall/" + token
-	app.Logger().Info("first launch: open the setup link to create the administrator account", "url", link)
-	fmt.Printf("\n(!) First launch: create the administrator account (link valid %s):\n%s\n\n", installerTokenTTL, link)
-	return nil
 }
 
 func applySettings(app core.App, cfg config.Config) error {

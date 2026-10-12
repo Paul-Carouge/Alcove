@@ -1,6 +1,15 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { LogOut, Monitor, Moon, Server, Shield, Sun } from '@lucide/svelte';
+	import {
+		LogOut,
+		Monitor,
+		Moon,
+		Server,
+		Shield,
+		Sun,
+		User as UserIcon,
+		Users
+	} from '@lucide/svelte';
 	import { session } from '#lib/auth/session.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { theme, type ThemeMode } from '#lib/theme/theme.svelte.js';
@@ -84,11 +93,19 @@
 				<LanguageSelect />
 			</div>
 
+			<a class="item link" href={resolve('/(app)/account')} onclick={() => close()}>
+				<UserIcon size={16} aria-hidden="true" />
+				{m.account_title()}
+			</a>
 			<a class="item link" href={resolve('/(app)/security')} onclick={() => close()}>
 				<Shield size={16} aria-hidden="true" />
 				{m.nav_security()}
 			</a>
 			{#if session.isAdmin}
+				<a class="item link" href={resolve('/(app)/admin/users')} onclick={() => close()}>
+					<Users size={16} aria-hidden="true" />
+					{m.users_title()}
+				</a>
 				<a class="item link" href={resolve('/(app)/admin/system')} onclick={() => close()}>
 					<Server size={16} aria-hidden="true" />
 					{m.nav_system()}

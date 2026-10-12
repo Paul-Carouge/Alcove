@@ -520,5 +520,78 @@
 	"map_show": "Voir sur la carte",
 	"admin_map_title": "Carte",
 	"admin_map_osm": "Fonds de carte détaillés OpenStreetMap",
-	"admin_map_body": "Désactivé : tout le monde voit une carte du monde simple intégrée à Alcove, sans aucune requête vers l’extérieur. Activé : les navigateurs chargent des fonds détaillés depuis OpenStreetMap, qui voit alors l’adresse IP et la zone consultée."
+	"admin_map_body": "Désactivé : tout le monde voit une carte du monde simple intégrée à Alcove, sans aucune requête vers l’extérieur. Activé : les navigateurs chargent des fonds détaillés depuis OpenStreetMap, qui voit alors l’adresse IP et la zone consultée.",
+	"users_title": "Utilisateurs",
+	"users_new": "Nouveau compte",
+	"users_edit": "Modifier le compte",
+	"users_name": "Nom",
+	"users_quota": "Quota de stockage (Go)",
+	"users_quota_hint": "Laissez vide pour ne pas limiter.",
+	"users_admin_role": "Administrateur (gère le serveur et les comptes)",
+	"users_new_note": "Un mot de passe est généré ; vous le transmettez à la personne, qui pourra le changer dans Compte.",
+	"users_admin": "Admin",
+	"users_you": "Vous",
+	"users_since": "depuis le {date}",
+	"users_two_factor": "Double authentification activée",
+	"users_usage": "{used} utilisés",
+	"users_usage_of": "{used} sur {quota}",
+	"users_actions": "Actions pour {name}",
+	"users_reset_password": "Réinitialiser le mot de passe",
+	"users_delete": "Supprimer le compte",
+	"users_created": "Compte créé pour {email}.",
+	"users_saved": "Modifications enregistrées pour {email}.",
+	"users_deleted": "Compte {email} supprimé.",
+	"users_password_title": "Nouveau mot de passe",
+	"users_password_body": "Transmettez ce mot de passe à {email}. Il n’est affiché qu’une fois ; la personne pourra le changer dans Compte.",
+	"users_delete_title": "Supprimer {email} ?",
+	"users_delete_body": "Le compte et tout ce qu’il possède sont supprimés définitivement : fichiers, photos, albums et liens. C’est irréversible.",
+	"users_delete_confirm": "Saisissez l’adresse e-mail pour confirmer",
+	"account_title": "Compte",
+	"account_profile": "Profil",
+	"account_saved": "Enregistré.",
+	"account_password": "Mot de passe",
+	"account_password_note": "Après le changement, vous êtes déconnecté partout et vous vous reconnectez avec le nouveau mot de passe.",
+	"account_current_password": "Mot de passe actuel",
+	"account_change_password": "Changer le mot de passe",
+	"account_wrong_password": "Le mot de passe actuel est incorrect.",
+	"account_password_changed": "Votre mot de passe a été changé. Connectez-vous avec le nouveau.",
+	"photos_favorite_selected": "Favori",
+	"photos_trash_selected": "Mettre à la corbeille",
+	"photos_trash_one": "Mettre à la corbeille",
+	"photos_trashed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément mis à la corbeille.",
+				"countPlural=other": "{count} éléments mis à la corbeille."
+			}
+		}
+	],
+	"photos_favorited": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément ajouté aux favoris.",
+				"countPlural=other": "{count} éléments ajoutés aux favoris."
+			}
+		}
+	],
+	"search_title": "Recherche",
+	"search_title_query": "Recherche : {q}",
+	"search_placeholder": "Rechercher des fichiers",
+	"search_none": "Aucun résultat pour « {q} ».",
+	"search_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} résultat",
+				"countPlural=other": "{count} résultats"
+			}
+		}
+	],
+	"search_many": "Les {count} premiers résultats sur {total}",
+	"search_in": "dans {folder}"
 }

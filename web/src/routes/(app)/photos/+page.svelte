@@ -10,9 +10,12 @@
 		Copy,
 		Image as ImageIcon,
 		MapPin,
+		Heart,
 		SlidersHorizontal,
+		Trash2,
 		X
 	} from '@lucide/svelte';
+	import { trashNode } from '#lib/drive/api.js';
 	import { onMediaChange } from '#lib/drive/live.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
@@ -185,6 +188,34 @@
 		}
 	}
 
+	/** Moves items to the trash (their drive files); they can be restored from the Trash page. */
+	async function trash(list: Media[]) {
+		const results = await Promise.allSettled(list.map((it) => trashNode(it.node)));
+		const gone = new Set(
+			list.filter((_, i) => results[i]!.status === 'fulfilled').map((it) => it.id)
+		);
+		items = items.filter((it) => !gone.has(it.id));
+		total -= gone.size;
+		status = m.photos_trashed({ count: gone.size });
+	}
+
+	async function trashSelection() {
+		if (!selected?.size) return;
+		const ids = selected;
+		await trash(items.filter((it) => ids.has(it.id)));
+		selected = null;
+	}
+
+	async function favoriteSelection() {
+		if (!selected?.size) return;
+		const ids = selected;
+		const list = items.filter((it) => ids.has(it.id) && !it.favorite);
+		await Promise.allSettled(list.map((it) => setFavorite(it.id, true)));
+		for (const it of list) it.favorite = true;
+		status = m.photos_favorited({ count: list.length });
+		selected = null;
+	}
+
 	function showOnMap(id: string) {
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query
 		goto(`${resolve('/(app)/photos/map')}?focus=${encodeURIComponent(id)}`);
@@ -321,6 +352,14 @@
 			<Button variant="ghost" onclick={endSelection}>
 				<X size={16} aria-hidden="true" />{m.cancel_button()}
 			</Button>
+			{#if !target}
+				<Button variant="ghost" disabled={!selected.size} onclick={favoriteSelection}>
+					<Heart size={16} aria-hidden="true" />{m.photos_favorite_selected()}
+				</Button>
+				<Button variant="ghost" disabled={!selected.size} onclick={trashSelection}>
+					<Trash2 size={16} aria-hidden="true" />{m.photos_trash_selected()}
+				</Button>
+			{/if}
 			<Button disabled={!selected.size} loading={adding} onclick={addSelection}>
 				<BookImage size={16} aria-hidden="true" />{target
 					? m.album_add_to({ name: target.name })
@@ -365,6 +404,15 @@
 	ontogglefavorite={toggleFavorite}
 	actions={(it) => [
 		{ label: m.album_add_button(), icon: BookImage, onselect: () => chooseAlbum([it.id]) },
+		{
+			label: m.photos_trash_one(),
+			icon: Trash2,
+			danger: true,
+			onselect: () => {
+				viewerIndex = -1;
+				trash([it]);
+			}
+		},
 		...(it.has_location
 			? [
 					{

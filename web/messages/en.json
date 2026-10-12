@@ -520,5 +520,78 @@
 	"map_show": "Show on map",
 	"admin_map_title": "Map",
 	"admin_map_osm": "Detailed map tiles from OpenStreetMap",
-	"admin_map_body": "Off: everyone sees a simple world map built into Alcove, with no request leaving your server. On: browsers load street-level tiles from OpenStreetMap, which then sees the IP address and the area viewed."
+	"admin_map_body": "Off: everyone sees a simple world map built into Alcove, with no request leaving your server. On: browsers load street-level tiles from OpenStreetMap, which then sees the IP address and the area viewed.",
+	"users_title": "Users",
+	"users_new": "New account",
+	"users_edit": "Edit account",
+	"users_name": "Name",
+	"users_quota": "Storage quota (GB)",
+	"users_quota_hint": "Leave empty for no limit.",
+	"users_admin_role": "Administrator (manages the server and accounts)",
+	"users_new_note": "A password is generated; you give it to the person, who can change it in Account.",
+	"users_admin": "Admin",
+	"users_you": "You",
+	"users_since": "since {date}",
+	"users_two_factor": "Two-factor on",
+	"users_usage": "{used} used",
+	"users_usage_of": "{used} of {quota}",
+	"users_actions": "Actions for {name}",
+	"users_reset_password": "Reset password",
+	"users_delete": "Delete account",
+	"users_created": "Account created for {email}.",
+	"users_saved": "Changes saved for {email}.",
+	"users_deleted": "Account {email} deleted.",
+	"users_password_title": "New password",
+	"users_password_body": "Give this password to {email}. It is shown only once; they can change it in Account.",
+	"users_delete_title": "Delete {email}?",
+	"users_delete_body": "The account and everything it owns are deleted for good: files, photos, albums and links. This cannot be undone.",
+	"users_delete_confirm": "Type the email address to confirm",
+	"account_title": "Account",
+	"account_profile": "Profile",
+	"account_saved": "Saved.",
+	"account_password": "Password",
+	"account_password_note": "After the change you are signed out everywhere and sign in again with the new password.",
+	"account_current_password": "Current password",
+	"account_change_password": "Change password",
+	"account_wrong_password": "The current password is not right.",
+	"account_password_changed": "Your password was changed. Sign in with the new one.",
+	"photos_favorite_selected": "Favorite",
+	"photos_trash_selected": "Move to trash",
+	"photos_trash_one": "Move to trash",
+	"photos_trashed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item moved to the trash.",
+				"countPlural=other": "{count} items moved to the trash."
+			}
+		}
+	],
+	"photos_favorited": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item added to favorites.",
+				"countPlural=other": "{count} items added to favorites."
+			}
+		}
+	],
+	"search_title": "Search",
+	"search_title_query": "Search: {q}",
+	"search_placeholder": "Search files",
+	"search_none": "Nothing matches “{q}”.",
+	"search_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} result",
+				"countPlural=other": "{count} results"
+			}
+		}
+	],
+	"search_many": "First {count} of {total} results",
+	"search_in": "in {folder}"
 }

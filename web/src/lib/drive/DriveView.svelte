@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
 		ChevronRight,
@@ -9,6 +10,7 @@
 		Link,
 		List,
 		Pencil,
+		Search as SearchIcon,
 		Trash2,
 		Upload as UploadIcon,
 		X
@@ -34,6 +36,13 @@
 	import type { DriveNode } from './types.js';
 	import { uploads } from './uploads.svelte.js';
 
+	function search(event: SubmitEvent) {
+		event.preventDefault();
+		const q = String(new FormData(event.currentTarget as HTMLFormElement).get('q') ?? '').trim();
+		if (!q) return;
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query
+		goto(`${resolve('/(app)/search')}?q=${encodeURIComponent(q)}`);
+	}
 	let { folderId }: { folderId: string } = $props();
 
 	let children = $state<DriveNode[]>([]);
@@ -286,6 +295,16 @@
 			</div>
 		{:else}
 			<div class="actions">
+				<form class="search" role="search" onsubmit={search}>
+					<SearchIcon size={16} aria-hidden="true" />
+					<input
+						type="search"
+						name="q"
+						placeholder={m.search_placeholder()}
+						aria-label={m.search_placeholder()}
+						autocomplete="off"
+					/>
+				</form>
 				<div class="segmented" role="radiogroup" aria-label={m.view_mode()}>
 					<button
 						role="radio"
@@ -509,6 +528,30 @@
 	.crumbs a[aria-current='page'] {
 		color: var(--color-text);
 		font-weight: var(--weight-medium);
+	}
+	.search {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.75rem;
+		padding: 0 var(--space-3);
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-md);
+		background: var(--color-surface);
+		color: var(--color-text-muted);
+	}
+	.search:focus-within {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 1px;
+	}
+	.search input {
+		width: 12rem;
+		border: 0;
+		background: transparent;
+		color: var(--color-text);
+		font: inherit;
+		font-size: var(--text-sm);
+		outline: none;
 	}
 	.head {
 		display: flex;

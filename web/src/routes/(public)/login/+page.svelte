@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { authErrorKind, mfaIdFrom, totpChallenge, type AuthErrorKind } from '#lib/auth/errors.js';
 	import { safeNext } from '#lib/auth/redirect.js';
-	import { isEmail } from '#lib/auth/validation.js';
+	import { isEmail, PASSWORD_CHANGED } from '#lib/auth/validation.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { pb } from '#lib/pb.js';
 	import Alert from '#lib/ui/Alert.svelte';
@@ -12,6 +12,15 @@
 	import Button from '#lib/ui/Button.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 
+	const passwordChanged = (() => {
+		try {
+			const v = sessionStorage.getItem(PASSWORD_CHANGED);
+			sessionStorage.removeItem(PASSWORD_CHANGED);
+			return v === '1';
+		} catch {
+			return false;
+		}
+	})();
 	let email = $state('');
 	let password = $state('');
 	let otp = $state('');
@@ -189,6 +198,9 @@
 	</AuthCard>
 {:else}
 	<AuthCard title={m.sign_in_title()}>
+		{#if passwordChanged}
+			<Alert tone="info">{m.account_password_changed()}</Alert>
+		{/if}
 		<form onsubmit={signIn} novalidate>
 			<TextField
 				label={m.email_label()}

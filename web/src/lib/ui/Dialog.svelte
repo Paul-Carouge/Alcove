@@ -4,8 +4,9 @@
 	let {
 		open = $bindable(false),
 		title,
-		children
-	}: { open?: boolean; title: string; children: Snippet } = $props();
+		children,
+		onclose
+	}: { open?: boolean; title: string; children: Snippet; onclose?: () => void } = $props();
 
 	let dialog: HTMLDialogElement;
 	const uid = $props.id();
@@ -20,8 +21,11 @@
 <dialog
 	bind:this={dialog}
 	aria-labelledby="dialog-title-{uid}"
-	onclose={() => (open = false)}
-	onclick={(e) => e.target === dialog && (open = false)}
+	onclose={() => {
+		open = false;
+		onclose?.();
+	}}
+	onclick={(e) => e.target === dialog && dialog.close()}
 >
 	<div class="box">
 		<h2 id="dialog-title-{uid}">{title}</h2>

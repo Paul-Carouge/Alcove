@@ -7,6 +7,21 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-12
+
+Phase 4 (mobile app) begins.
+
+### Added
+- **Mobile app**: sign-in after the server check, with the same second factors as the web (authenticator
+  app, recovery code or email code); the session is kept in the Keychain / Keystore and refreshed at start.
+- Photos tab: timeline by month with video durations and favorites, pull to refresh, endless scrolling;
+  full-screen viewer with swipe, pinch to zoom, video playback, favorite and details.
+- Files tab: folders and files, opened in the system browser. Account tab with sign-out and the credit.
+- [ADR 0021](docs/adr/0021-mobile-app-stack.md): PocketBase Dart SDK and official Flutter packages only.
+
+### Fixed
+- The mobile connect screen's Continue button did nothing.
+
 ## [0.14.0] - 2026-10-12
 
 ### Added
@@ -251,7 +266,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.1...v0.12.0

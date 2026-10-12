@@ -51,9 +51,12 @@ HEIC/RAW support, duplicate detection. Originals are never modified. Optional fa
 OCR worker container (Tesseract or similar, FR + EN), full-text search (SQLite FTS5) across documents
 and file names, PDF text layer, tags, scan import from the mobile camera.
 
-## Phase 4: Mobile app and automatic backup
+## Phase 4: Mobile app and automatic backup (in progress)
 
-Mobile login, drive browser, viewer, offline favorites, **automatic photo/video backup** (background
+- **v0.15** ✅ sign-in with two-factor, photo timeline and viewer (videos, favorites, details), file browser.
+- **v0.16** automatic photo/video backup. **v0.17** albums and sharing, installable builds.
+
+Full scope: mobile login, drive browser, viewer, offline favorites, **automatic photo/video backup** (background
 tasks, Wi-Fi/charging constraints, resumable, deduplicated), QR-code server pairing, share sheet,
 optional UnifiedPush/ntfy notifications, Play Store release (and F-Droid if feasible).
 

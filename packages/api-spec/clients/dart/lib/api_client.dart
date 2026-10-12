@@ -208,6 +208,8 @@ class ApiClient {
           return PublicShare.fromJson(value);
         case 'RecoveryCodes':
           return RecoveryCodes.fromJson(value);
+        case 'SetFavoriteRequest':
+          return SetFavoriteRequest.fromJson(value);
         case 'SetupStatus':
           return SetupStatus.fromJson(value);
         case 'SetupStatusStorage':

@@ -17,6 +17,8 @@ linters:
     rules:
       - path: _test\.go
         linters: [gosec, bodyclose]
+      - path: internal/media/mediatest/
+        linters: [gosec]
 formatters:
   enable:
     - gofmt

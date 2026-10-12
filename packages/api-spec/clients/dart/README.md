@@ -79,6 +79,7 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
+*PhotosApi* | [**setFavorite**](doc//PhotosApi.md#setfavorite) | **PUT** /api/v1/media/{mediaId}/favorite | Mark or unmark a photo or video as favorite.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
 *PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's content).
 *PublicApi* | [**unlockShare**](doc//PublicApi.md#unlockshare) | **POST** /api/v1/public/shares/{token}/unlock | Exchange the link password for a 1-hour access token.
@@ -108,6 +109,7 @@ Class | Method | HTTP request | Description
  - [PublicNode](doc//PublicNode.md)
  - [PublicShare](doc//PublicShare.md)
  - [RecoveryCodes](doc//RecoveryCodes.md)
+ - [SetFavoriteRequest](doc//SetFavoriteRequest.md)
  - [SetupStatus](doc//SetupStatus.md)
  - [SetupStatusStorage](doc//SetupStatusStorage.md)
  - [SetupToken](doc//SetupToken.md)

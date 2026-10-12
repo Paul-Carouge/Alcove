@@ -39,6 +39,12 @@ tags:
     description: |
       First-run wizard. Available only while no administrator exists, and only with the one-time
       setup token printed in the server logs (or preset with `ALCOVE_SETUP_TOKEN`).
+  - name: photos
+    description: |
+      Photos and videos. Every image or video in the drive gets a record in the PocketBase `media`
+      collection (date taken, dimensions, camera, location, duration, generated thumbnails), filled in
+      by a background worker. Read it with `GET /api/collections/media/records` (owner only); the
+      timeline sorts by `-taken_at`. Only `favorite` can be changed by users, through this API.
   - name: admin
     description: Server administration, for accounts with `role = admin` (ADR 0015).
   - name: uploads
@@ -522,6 +528,31 @@ paths:
               schema: { $ref: "#/components/schemas/RecoveryCodes" }
         "400": { description: "Wrong password or code, or two-factor is not enabled." }
         "401": { description: Authentication required. }
+  /api/v1/media/{mediaId}/favorite:
+    put:
+      tags: [photos]
+      operationId: setFavorite
+      summary: Mark or unmark a photo or video as favorite.
+      security:
+        - userToken: []
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [favorite]
+              properties:
+                favorite: { type: boolean }
+      responses:
+        "204": { description: Saved. }
+        "401": { description: Authentication required. }
+        "404": { description: "Unknown media, or owned by another user." }
   /api/v1/nodes/{nodeId}/download:
     get:
       tags: [drive]

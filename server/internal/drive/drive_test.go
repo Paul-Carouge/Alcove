@@ -387,7 +387,7 @@ func TestThumbnailsConfigured(t *testing.T) {
 	defer f.app.Cleanup()
 	col, _ := f.app.FindCollectionByNameOrId(drive.Collection)
 	thumbs := col.Fields.GetByName("blob").(*core.FileField).Thumbs
-	if strings.Join(thumbs, ",") != "96x96,320x320,1600x0" {
+	if strings.Join(thumbs, ",") != "96x96,320x320,1600x0,0x360" {
 		t.Errorf("thumbs = %v", thumbs)
 	}
 }

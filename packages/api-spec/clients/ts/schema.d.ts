@@ -359,6 +359,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/media/{mediaId}/favorite": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Mark or unmark a photo or video as favorite. */
+    put: operations["setFavorite"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/nodes/{nodeId}/download": {
     parameters: {
       query?: never;
@@ -1424,6 +1441,46 @@ export interface operations {
       };
       /** @description Authentication required. */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setFavorite: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mediaId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          favorite: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Saved. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown media, or owned by another user. */
+      404: {
         headers: {
           [name: string]: unknown;
         };

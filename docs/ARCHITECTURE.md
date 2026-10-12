@@ -51,6 +51,7 @@ server/
   internal/webui           go:embed of web/build, SPA fallback
   internal/drive           nodes invariants, downloads, quotas, trash purge
   internal/media           photo/video metadata (EXIF, ffprobe) and derivatives (ffmpeg), favorites
+  internal/ffbundle        Alcove's own ffmpeg for native Linux installs: verified install, PATH activation
   migrations/              versioned Go migrations (up + down)
 ```
 
@@ -142,7 +143,8 @@ tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-
    metadata: EXIF with `imagemeta` (size from the decoded header when Go can read it, since EXIF sizes go stale
    after edits), `ffprobe` for videos and HEIC (creation dates, rotation, ISO 6709 location).
 3. `ffmpeg` renders the thumbnail and preview (2-minute timeout, 2 threads; files are untrusted). JPEG/PNG/WebP
-   work without ffmpeg; HEIC and videos need it ([ADR 0016](adr/0016-bundled-ffmpeg.md)).
+   work without ffmpeg; HEIC (7.1+) and videos need it ([ADR 0016](adr/0016-bundled-ffmpeg.md),
+   [0017](adr/0017-ffmpeg-bundle-for-native-linux.md)).
 4. The record becomes `ready` (or `failed` with a hidden error). Clients get it through realtime
    subscriptions on `media`. Pending records are resumed at boot and failed ones retried daily.
 

@@ -24,13 +24,17 @@ asks how you will reach Alcove:
 3. **Behind your own reverse proxy**: listens on `127.0.0.1:8090`.
 
 It then creates a dedicated system user (Linux), installs the service (systemd, OpenRC, launchd or a
-Windows startup task), offers to install ffmpeg, starts Alcove and prints the setup link.
+Windows startup task), offers a recent ffmpeg, starts Alcove and prints the setup link.
 
-**ffmpeg** is needed for video and HEIC thumbnails (the Docker image includes it). Without it, JPEG, PNG
-and WebP photos still work; videos and HEIC files show without a thumbnail. If you install ffmpeg later,
-those files are processed again within a day (failed items are retried daily). HEIC photos from phones need
-**ffmpeg 7.1 or newer**: Debian 12 and Ubuntu 24.04 ship older versions (videos work, HEIC files get no
-thumbnail); the Docker image includes ffmpeg 8.1.
+**ffmpeg** is needed for video and HEIC thumbnails (the Docker image includes it). HEIC photos from
+phones need **ffmpeg 7.1 or newer**, and Debian 12 or Ubuntu 24.04 ship older versions, so on Linux the
+installer offers Alcove's own ffmpeg (about 45 MB, kept in `/var/lib/alcove/bin/ffmpeg`, the system is not
+changed; [ADR 0017](adr/0017-ffmpeg-bundle-for-native-linux.md)). Updates keep it current. On macOS and
+Windows it uses Homebrew or winget. Without ffmpeg, JPEG, PNG and WebP photos still work; videos and HEIC
+files show without a thumbnail until it is installed (they are retried daily).
+
+Installed before v0.10.2? Run `sudo alcove update` once: it adds the recent ffmpeg even when Alcove is
+up to date. `alcove status` shows which ffmpeg is used.
 
 Non-interactive (scripts, cloud-init):
 

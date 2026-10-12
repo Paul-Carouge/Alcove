@@ -5,6 +5,7 @@
 	import { ANDROID_APK_URL } from '#lib/brand.js';
 	import { session } from '#lib/auth/session.svelte.js';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_CHANGED } from '#lib/auth/validation.js';
+	import { fileToken } from '#lib/drive/files.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { pb } from '#lib/pb.js';
 	import Alert from '#lib/ui/Alert.svelte';
@@ -21,6 +22,22 @@
 	let confirm = $state('');
 	let pwError = $state<{ current?: string; next?: string; confirm?: string; form?: string }>({});
 	let savingPw = $state(false);
+
+	// Prefer the app served by this server (same version as the server, ADR 0024); fall back to
+	// the latest release on GitHub when the server has none to offer.
+	let serverApk = $state<{ version: string; size?: number } | null>(null);
+	$effect(() => {
+		pb.send<{ version: string; available: boolean; size?: number }>('/api/v1/app/android', {})
+			.then((r) => (serverApk = r.available ? r : null))
+			.catch(() => (serverApk = null));
+	});
+
+	async function downloadFromServer(event: MouseEvent) {
+		event.preventDefault();
+		const url = new URL(pb.buildURL('/api/v1/app/android.apk'), location.href);
+		url.searchParams.set('token', await fileToken());
+		location.assign(url.toString());
+	}
 
 	async function saveName(event: SubmitEvent) {
 		event.preventDefault();
@@ -127,9 +144,19 @@
 	<h2 id="mobile-title"><Smartphone size={20} aria-hidden="true" />{m.account_mobile()}</h2>
 	<p class="muted">{m.account_mobile_body()}</p>
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external download -->
-	<a class="download" href={ANDROID_APK_URL} rel="noopener noreferrer">
-		<Download size={18} aria-hidden="true" />{m.account_mobile_android()}
-	</a>
+	{#if serverApk}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API download -->
+		<a class="download" href={pb.buildURL('/api/v1/app/android.apk')} onclick={downloadFromServer}>
+			<Download size={18} aria-hidden="true" />{m.account_mobile_android()}
+			<span class="version">v{serverApk.version}</span>
+		</a>
+	{:else}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external download -->
+		<a class="download" href={ANDROID_APK_URL} rel="noopener noreferrer">
+			<Download size={18} aria-hidden="true" />{m.account_mobile_android()}
+		</a>
+	{/if}
+	<p class="muted small">{m.account_mobile_update()}</p>
 	<p class="muted small">{m.account_mobile_ios()}</p>
 </section>
 
@@ -196,6 +223,10 @@
 		color: var(--color-accent-contrast);
 		font-weight: var(--weight-medium);
 		text-decoration: none;
+	}
+	.version {
+		font-size: var(--text-xs);
+		opacity: 0.8;
 	}
 	.download:hover {
 		background: var(--color-accent-hover);

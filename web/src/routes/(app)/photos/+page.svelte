@@ -445,6 +445,23 @@
 		flex-wrap: wrap;
 		gap: var(--space-2);
 	}
+	/* Phones: one row that scrolls sideways instead of three wrapped rows. */
+	@media (max-width: 600px) {
+		.head {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.tools {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			scrollbar-width: none;
+			margin-inline: calc(-1 * var(--space-4));
+			padding: 2px var(--space-4);
+		}
+		.tools > :global(*) {
+			flex-shrink: 0;
+		}
+	}
 	.chips {
 		display: inline-flex;
 		gap: var(--space-1);

@@ -597,5 +597,6 @@
 	"account_mobile": "Alcove on your phone",
 	"account_mobile_body": "Browse your photos and files, and back up your phone's photos automatically. After installing, enter this server's address.",
 	"account_mobile_android": "Download for Android",
-	"account_mobile_ios": "The iPhone app comes later. Android may ask you to allow installing apps from your browser."
+	"account_mobile_ios": "The iPhone app comes later. Android may ask you to allow installing apps from your browser.",
+	"account_mobile_update": "The app updates itself from your server: after a server update, open Account in the app."
 }

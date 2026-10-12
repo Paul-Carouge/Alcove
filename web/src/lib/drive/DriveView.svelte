@@ -827,6 +827,18 @@
 		margin-bottom: var(--space-4);
 	}
 	@media (max-width: 600px) {
+		.actions,
+		.selbar {
+			flex-wrap: wrap;
+			width: 100%;
+		}
+		.search {
+			flex: 1 1 100%;
+		}
+		.search input {
+			width: 100%;
+			min-width: 0;
+		}
 		.date {
 			display: none;
 		}

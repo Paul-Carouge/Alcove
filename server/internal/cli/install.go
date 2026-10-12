@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/envfile"
+	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
 )
 
@@ -157,7 +159,7 @@ func install(o installOpts) error {
 
 	// 4. ffmpeg (photos and videos).
 	if !o.noFFmpeg {
-		ensureFFmpeg(u)
+		ensureFFmpeg(u, spec)
 	}
 
 	if o.noStart {
@@ -283,8 +285,24 @@ func ensureLinuxUser(spec service.Spec) error {
 	return os.Chmod(spec.EnvFile, 0o640) // #nosec G302 -- readable by the service group, not others
 }
 
-// ensureFFmpeg offers to install ffmpeg with the system package manager.
-func ensureFFmpeg(u *ui) {
+// ensureFFmpeg makes sure a recent enough ffmpeg is available: Alcove's own on Linux (ADR 0017),
+// the system package manager elsewhere (Homebrew and winget ship current versions).
+func ensureFFmpeg(u *ui, spec service.Spec) {
+	if ffbundle.Supported() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		c, rel, err := releaseForThisVersion(ctx)
+		if err == nil {
+			_, err = syncFFmpeg(ctx, u, spec, c, rel)
+		}
+		if err == nil {
+			return
+		}
+		u.say("  ! could not install ffmpeg (%v)", err)
+		if ffbundle.System().Found {
+			return
+		}
+	}
 	if _, err := exec.LookPath("ffmpeg"); err == nil {
 		u.say("  ✓ ffmpeg found")
 		return

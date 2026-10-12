@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
+	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 )
 
@@ -29,6 +30,13 @@ func statusCmd() *cobra.Command {
 			fmt.Printf("  mode:     %s (%s)\n", os.Getenv("ALCOVE_INSTALL_MODE"), os.Getenv("ALCOVE_SERVE_ARGS"))
 			fmt.Printf("  data:     %s\n", spec.DataDir)
 			fmt.Printf("  config:   %s\n", spec.EnvFile)
+			if ffbundle.Installed(ffbundle.Dir(spec.Binary)) != "" {
+				fmt.Printf("  ffmpeg:   %s's own copy (%s)\n", buildinfo.Name, ffbundle.Dir(spec.Binary))
+			} else if v := ffbundle.System(); !v.Recent() {
+				fmt.Printf("  ffmpeg:   %s; run \"sudo alcove update\" to get a recent one\n", v)
+			} else {
+				fmt.Printf("  ffmpeg:   %s\n", v)
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			if rel, _, err := latestRelease(ctx); err == nil {
@@ -70,6 +78,7 @@ func uninstallCmd() *cobra.Command {
 			}
 			_ = os.Remove(spec.Binary)
 			_ = os.Remove(spec.Binary + ".old")
+			_ = os.RemoveAll(ffbundle.Dir(spec.Binary)) // #nosec G703 -- fixed install path
 			if purge && u.confirm("Delete ALL data in "+spec.DataDir+" and the configuration? This cannot be undone.", false) {
 				_ = os.Remove(spec.EnvFile)
 				return os.RemoveAll(spec.DataDir) // #nosec G703 -- fixed install path, double confirmation

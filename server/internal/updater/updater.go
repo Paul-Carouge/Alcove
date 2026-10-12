@@ -68,7 +68,16 @@ func New(apiBase, repo, base64Key string) (*Client, error) {
 
 // Latest returns the newest published release.
 func (c *Client) Latest(ctx context.Context) (*Release, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.APIBase+"/repos/"+c.Repo+"/releases/latest", nil)
+	return c.lookup(ctx, "latest")
+}
+
+// Release returns the release of a given version ("0.10.1").
+func (c *Client) Release(ctx context.Context, version string) (*Release, error) {
+	return c.lookup(ctx, "tags/v"+strings.TrimPrefix(version, "v"))
+}
+
+func (c *Client) lookup(ctx context.Context, which string) (*Release, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.APIBase+"/repos/"+c.Repo+"/releases/"+which, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -211,17 +220,9 @@ func (c *Client) Download(ctx context.Context, r *Release, dir string) (string, 
 	if err != nil {
 		return "", err
 	}
-	want, ok := sums[name]
-	if !ok {
-		return "", fmt.Errorf("%s is not listed in SHA256SUMS", name)
-	}
-	archive, err := c.fetch(ctx, url, maxArchive)
+	archive, err := c.FetchAsset(ctx, r, name, sums)
 	if err != nil {
 		return "", err
-	}
-	got := sha256.Sum256(archive)
-	if hex.EncodeToString(got[:]) != want {
-		return "", fmt.Errorf("checksum mismatch for %s: refusing to update", name)
 	}
 	exe := "alcove"
 	if goos == "windows" {
@@ -236,6 +237,27 @@ func (c *Client) Download(ctx context.Context, r *Release, dir string) (string, 
 		return "", err
 	}
 	return out, nil
+}
+
+// FetchAsset downloads a release asset and checks it against sums (from VerifiedSums).
+func (c *Client) FetchAsset(ctx context.Context, r *Release, name string, sums map[string]string) ([]byte, error) {
+	url := r.Assets[name]
+	if url == "" {
+		return nil, fmt.Errorf("%s is not part of v%s", name, r.Version)
+	}
+	want, ok := sums[name]
+	if !ok {
+		return nil, fmt.Errorf("%s is not listed in SHA256SUMS", name)
+	}
+	data, err := c.fetch(ctx, url, maxArchive)
+	if err != nil {
+		return nil, err
+	}
+	got := sha256.Sum256(data)
+	if hex.EncodeToString(got[:]) != want {
+		return nil, fmt.Errorf("checksum mismatch for %s: refusing to install", name)
+	}
+	return data, nil
 }
 
 func extract(archive []byte, isZip bool, exe string) ([]byte, error) {

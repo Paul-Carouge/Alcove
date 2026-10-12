@@ -14,6 +14,7 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/backup"
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
+	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
 	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 )
@@ -47,6 +48,17 @@ func update(check, yes bool) error {
 	}
 	if !updater.Newer(buildinfo.Version, rel.Version) {
 		u.say("%s %s is up to date.", buildinfo.Name, buildinfo.Version)
+		// Installs from before ADR 0017 get a recent ffmpeg this way.
+		if !check && err == nil && ffbundle.Wanted(spec.Binary) && (runtime.GOOS != "linux" || isRoot()) {
+			changed, err := syncFFmpeg(ctx, u, spec, client, rel)
+			if err != nil {
+				return fmt.Errorf("ffmpeg: %w", err)
+			}
+			if changed {
+				u.say("Restarting…")
+				return mgr.Restart()
+			}
+		}
 		return nil
 	}
 	u.say("%s %s is available (installed: %s).\n%s", buildinfo.Name, rel.Version, buildinfo.Version, summary(rel.Notes))
@@ -90,6 +102,12 @@ func update(check, yes bool) error {
 	}
 	if runtime.GOOS == "linux" {
 		_, _ = service.Runner("chown", spec.User+":"+spec.User, spec.Binary)
+	}
+	// ffmpeg is independent of the database: a failure here does not stop the update.
+	if ffbundle.Supported() {
+		if _, err := syncFFmpeg(ctx, u, spec, client, rel); err != nil {
+			u.say("  ! ffmpeg was not updated: %v", err)
+		}
 	}
 	u.say("Restarting…")
 	if err := mgr.Restart(); err != nil {

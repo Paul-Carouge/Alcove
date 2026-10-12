@@ -19,6 +19,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/backup"
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
+	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
 	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 )
@@ -131,7 +132,7 @@ func (c *checker) info() map[string]any {
 	if mode == "" {
 		mode = "manual"
 	}
-	_, ffErr := exec.LookPath("ffmpeg")
+	_, ffErr := exec.LookPath("ffprobe")
 	out := map[string]any{
 		"version":       buildinfo.Version,
 		"installMode":   mode,
@@ -219,6 +220,11 @@ func (c *checker) apply(e *core.RequestEvent) error {
 	if err := updater.Replace(self, newExe); err != nil {
 		release()
 		return e.InternalServerError("Could not install the new binary.", err)
+	}
+	if ffbundle.Wanted(self) {
+		if _, err := ffbundle.Install(ctx, c.client, rel, ffbundle.Dir(self)); err != nil {
+			e.App.Logger().Warn("ffmpeg was not updated", "error", err)
+		}
 	}
 	e.App.Logger().Info("update installed, restarting", "from", buildinfo.Version, "to", rel.Version, "by", e.Auth.Email())
 

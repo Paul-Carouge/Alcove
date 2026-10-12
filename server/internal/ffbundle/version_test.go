@@ -1,4 +1,4 @@
-package media
+package ffbundle
 
 import "testing"
 
@@ -15,9 +15,9 @@ func TestParseFFmpegVersion(t *testing.T) {
 		{"", 0, 0, false},
 	}
 	for _, c := range cases {
-		major, minor, ok := parseFFmpegVersion(c.out)
+		major, minor, ok := ParseVersion(c.out)
 		if major != c.major || minor != c.minor || ok != c.ok {
-			t.Errorf("parseFFmpegVersion(%q) = %d.%d %v, want %d.%d %v", c.out, major, minor, ok, c.major, c.minor, c.ok)
+			t.Errorf("ParseVersion(%q) = %d.%d %v, want %d.%d %v", c.out, major, minor, ok, c.major, c.minor, c.ok)
 		}
 	}
 }

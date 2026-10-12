@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
@@ -14,6 +15,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/cli"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 	"github.com/Paul-Carouge/Alcove/server/internal/envfile"
+	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/healthcheck"
 	_ "github.com/Paul-Carouge/Alcove/server/migrations"
 )
@@ -43,6 +45,13 @@ func main() {
 	}
 
 	cfg := config.MustFromOSEnv()
+
+	// Native Linux installs may carry their own ffmpeg next to the binary (ADR 0017).
+	if exe, err := os.Executable(); err == nil {
+		if exe, err = filepath.EvalSymlinks(exe); err == nil {
+			ffbundle.Activate(exe)
+		}
+	}
 
 	app := pocketbase.New()
 	app.RootCmd.Use = "alcove"

@@ -31,8 +31,10 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
       -o /out/alcove . \
  && mkdir -p /out/data
 
-# --- 3. Minimal runtime: no shell, non-root ---
-FROM gcr.io/distroless/static-debian12:nonroot
+# --- 3. Runtime: small Alpine with ffmpeg (ADR 0016), non-root ---
+FROM alpine:3.24
+RUN apk add --no-cache ffmpeg ca-certificates tzdata \
+ && addgroup -S -g 65532 nonroot && adduser -S -D -H -u 65532 -G nonroot nonroot
 COPY --from=server /out/alcove /alcove
 COPY --from=server --chown=nonroot:nonroot /out/data /data
 USER nonroot

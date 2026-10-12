@@ -208,3 +208,29 @@ func TestUsersCannotWriteMediaDirectly(t *testing.T) {
 	}
 	scenario.Test(t)
 }
+
+// testdata/iphone.heic was made with macOS sips from a mediatest JPEG
+// (640×480, taken 2025-06-01 12:00 UTC, Apple iPhone 16, Lyon).
+func TestHEIC(t *testing.T) {
+	if !media.HaveFFmpeg() {
+		t.Skip("ffmpeg not installed")
+	}
+	e := setup(t)
+	content, err := os.ReadFile("testdata/iphone.heic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := e.upload(t, "IMG_0001.HEIC", content)
+	if rec == nil || rec.GetString("status") != "ready" {
+		t.Fatalf("heic media = %v (error %q)", rec, rec.GetString("error"))
+	}
+	if rec.GetString("kind") != "image" || rec.GetString("thumb") == "" || rec.GetString("preview") == "" {
+		t.Errorf("kind %q, thumb %q, preview %q", rec.GetString("kind"), rec.GetString("thumb"), rec.GetString("preview"))
+	}
+	if rec.GetString("camera_model") != "iPhone 16" {
+		t.Errorf("camera = %q (EXIF not read from HEIC)", rec.GetString("camera_model"))
+	}
+	if got := rec.GetDateTime("taken_at").Time().UTC().Format("2006-01-02"); got != "2025-06-01" {
+		t.Errorf("taken_at = %s", got)
+	}
+}

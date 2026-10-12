@@ -391,3 +391,64 @@ func TestThumbnailsConfigured(t *testing.T) {
 		t.Errorf("thumbs = %v", thumbs)
 	}
 }
+
+func TestQuotaAndUsage(t *testing.T) {
+	// Direct (non-tus) uploads are checked by the model hook too.
+	run(t, func(f *fixture) tests.ApiScenario {
+		f.alice.Set("quota_bytes", 3)
+		if err := f.app.Save(f.alice); err != nil {
+			t.Fatal(err)
+		}
+		body, mp, err := tests.MockMultipartData(map[string]string{
+			"owner": f.alice.Id, "name": "four.txt", "kind": drive.KindFile,
+		}, "blob") // MockMultipartData writes 4 bytes ("test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return tests.ApiScenario{
+			Name: "multipart upload over quota is rejected", Method: http.MethodPost, URL: nodesURL,
+			Headers: map[string]string{"Authorization": f.aliceToken, "Content-Type": mp.FormDataContentType()},
+			Body:    bytes.NewReader(body.Bytes()), ExpectedStatus: 400,
+			ExpectedContent: []string{"validation_quota_exceeded"},
+		}
+	})
+
+	run(t, func(f *fixture) tests.ApiScenario {
+		return tests.ApiScenario{
+			Name: "users cannot raise their own quota", Method: http.MethodPatch,
+			URL:     "/api/collections/users/records/" + f.alice.Id,
+			Headers: auth(f.aliceToken), Body: jsonBody(`{"quota_bytes": 999999999}`),
+			ExpectedStatus: 404, ExpectedContent: []string{`"status":404`},
+		}
+	})
+
+	run(t, func(f *fixture) tests.ApiScenario {
+		withSize := func(n *core.Record, content string, trashed bool) {
+			file, _ := filesystem.NewFileFromBytes([]byte(content), "x.txt")
+			n.Set("blob", file)
+			if trashed {
+				n.Set("trashed_at", time.Now())
+			}
+			if err := f.app.Save(n); err != nil {
+				t.Fatal(err)
+			}
+		}
+		withSize(f.file, "12345", false)
+		trashed := testutil.Node(t, f.app, f.alice, "", "old.txt", drive.KindFile)
+		withSize(trashed, "123", true)
+		f.alice.Set("quota_bytes", 100)
+		_ = f.app.Save(f.alice)
+		return tests.ApiScenario{
+			Name: "usage counts the trash and reports the quota", Method: http.MethodGet, URL: "/api/v1/me/usage",
+			Headers: auth(f.aliceToken), ExpectedStatus: 200,
+			ExpectedContent: []string{`"used":8`, `"trash":3`, `"quota":100`},
+		}
+	})
+
+	run(t, func(f *fixture) tests.ApiScenario {
+		return tests.ApiScenario{
+			Name: "usage requires authentication", Method: http.MethodGet, URL: "/api/v1/me/usage",
+			ExpectedStatus: 401, ExpectedContent: []string{`"status":401`},
+		}
+	})
+}

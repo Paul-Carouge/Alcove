@@ -208,7 +208,7 @@ paths:
               schema: { type: string, format: uri }
         "400": { description: "Invalid name, parent, or missing length." }
         "401": { description: Authentication required. }
-        "413": { description: File larger than the server limit. }
+        "413": { description: "File larger than the server limit, or than the space left in the user's quota (body starts with ERR_QUOTA_EXCEEDED)." }
   /api/v1/uploads/{uploadId}:
     parameters:
       - name: uploadId
@@ -257,6 +257,7 @@ paths:
               schema: { type: string }
         "404": { description: "Unknown upload, or owned by another user." }
         "409": { description: "Offset mismatch, or the target folder no longer exists." }
+        "413": { description: "The quota was exceeded meanwhile (ERR_QUOTA_EXCEEDED); the upload is discarded." }
     delete:
       tags: [uploads]
       operationId: cancelUpload
@@ -268,6 +269,20 @@ paths:
       responses:
         "204": { description: Upload cancelled. }
         "404": { description: "Unknown upload, or owned by another user." }
+  /api/v1/me/usage:
+    get:
+      tags: [drive]
+      operationId: getMyUsage
+      summary: Storage used by the signed-in user, and their quota.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Usage in bytes. Trashed files count until they are purged.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usage" }
+        "401": { description: Authentication required. }
   /api/v1/nodes/{nodeId}/download:
     get:
       tags: [drive]
@@ -389,6 +404,13 @@ components:
     Module:
       type: string
       enum: [core, drive, photos, documents, ocr, faces, notes, calendar, contacts]
+    Usage:
+      type: object
+      required: [used, trash, quota]
+      properties:
+        used: { type: integer, description: "Bytes used, trash included." }
+        trash: { type: integer, description: "Bytes in the trash (part of used)." }
+        quota: { type: integer, description: "Quota in bytes; 0 means unlimited." }
     CreateShare:
       type: object
       additionalProperties: false

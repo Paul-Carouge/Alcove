@@ -38,6 +38,9 @@ const (
 	metaFilename = "filename"
 	metaParent   = "parent"
 	metaOwner    = "owner"
+
+	// errQuota prefixes quota rejections so clients can tell them apart.
+	errQuota = "ERR_QUOTA_EXCEEDED"
 )
 
 type ownerKey struct{}
@@ -154,6 +157,12 @@ func (s *service) preCreate(hook tusd.HookEvent) (tusd.HTTPResponse, tusd.FileIn
 	if err := checkParent(s.app, owner, parent); err != nil {
 		return reject("ERR_INVALID_PARENT", err.Error(), http.StatusBadRequest)
 	}
+	if err := drive.CheckQuota(s.app, owner, up.Size, ""); err != nil {
+		if drive.IsQuotaError(err) {
+			return reject(errQuota, "not enough storage space left", http.StatusRequestEntityTooLarge)
+		}
+		return reject("ERR_INTERNAL", "could not check the quota", http.StatusInternalServerError)
+	}
 
 	return tusd.HTTPResponse{}, tusd.FileInfoChanges{MetaData: tusd.MetaData{
 		metaOwner: owner, metaFilename: name, metaParent: parent,
@@ -188,16 +197,25 @@ func (s *service) preFinish(hook tusd.HookEvent) (tusd.HTTPResponse, error) {
 
 	node, err := s.createNode(owner, parent, meta[metaFilename], hook.Upload.Storage[filestore.StorageKeyPath])
 	if err != nil {
+		if drive.IsQuotaError(err) {
+			// Other uploads filled the quota meanwhile: discard this one.
+			s.discard(hook)
+			return tusd.HTTPResponse{}, tusd.NewError(errQuota, "not enough storage space left", http.StatusRequestEntityTooLarge)
+		}
 		s.app.Logger().Error("upload finalization failed", "upload", hook.Upload.ID, "error", err)
 		return tusd.HTTPResponse{}, tusd.NewError("ERR_FINALIZE", "could not store the file", http.StatusInternalServerError)
 	}
+	s.discard(hook)
+	return tusd.HTTPResponse{Header: tusd.HTTPHeader{NodeHeader: node.Id}}, nil
+}
 
+// discard deletes an upload's partial data.
+func (s *service) discard(hook tusd.HookEvent) {
 	if up, err := s.store.GetUpload(hook.Context, hook.Upload.ID); err == nil {
 		if err := s.store.AsTerminatableUpload(up).Terminate(hook.Context); err != nil {
-			s.app.Logger().Warn("could not delete finished upload", "upload", hook.Upload.ID, "error", err)
+			s.app.Logger().Warn("could not delete upload data", "upload", hook.Upload.ID, "error", err)
 		}
 	}
-	return tusd.HTTPResponse{Header: tusd.HTTPHeader{NodeHeader: node.Id}}, nil
 }
 
 func (s *service) createNode(owner, parent, filename, binPath string) (*core.Record, error) {
@@ -227,7 +245,7 @@ func (s *service) createNode(owner, parent, filename, binPath string) (*core.Rec
 		if err == nil {
 			return node, nil
 		}
-		if attempt >= 1 {
+		if attempt >= 1 || drive.IsQuotaError(err) {
 			return nil, fmt.Errorf("save node: %w", err)
 		}
 	}

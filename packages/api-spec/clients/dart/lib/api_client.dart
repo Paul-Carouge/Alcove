@@ -202,6 +202,8 @@ class ApiClient {
           return UnlockShare200Response.fromJson(value);
         case 'UnlockShareRequest':
           return UnlockShareRequest.fromJson(value);
+        case 'Usage':
+          return Usage.fromJson(value);
         default:
           dynamic match;
           if (value is List && (match = _regList.firstMatch(targetType)?.group(1)) != null) {

@@ -69,6 +69,7 @@ All URIs are relative to *http://localhost:8090*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
+*DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
 *PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's content).
 *PublicApi* | [**unlockShare**](doc//PublicApi.md#unlockshare) | **POST** /api/v1/public/shares/{token}/unlock | Exchange the link password for a 1-hour access token.
@@ -92,6 +93,7 @@ Class | Method | HTTP request | Description
  - [PublicShare](doc//PublicShare.md)
  - [UnlockShare200Response](doc//UnlockShare200Response.md)
  - [UnlockShareRequest](doc//UnlockShareRequest.md)
+ - [Usage](doc//Usage.md)
 
 
 ## Documentation For Authorization

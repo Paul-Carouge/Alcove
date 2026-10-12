@@ -44,6 +44,7 @@ part 'model/public_node.dart';
 part 'model/public_share.dart';
 part 'model/unlock_share200_response.dart';
 part 'model/unlock_share_request.dart';
+part 'model/usage.dart';
 
 
 /// An [ApiClient] instance that uses the default values obtained from

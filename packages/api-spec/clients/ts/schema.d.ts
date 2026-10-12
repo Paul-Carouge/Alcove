@@ -150,6 +150,23 @@ export interface paths {
     patch: operations["appendUpload"];
     trace?: never;
   };
+  "/api/v1/me/usage": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Storage used by the signed-in user, and their quota. */
+    get: operations["getMyUsage"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/nodes/{nodeId}/download": {
     parameters: {
       query?: never;
@@ -209,6 +226,14 @@ export interface components {
       | "notes"
       | "calendar"
       | "contacts";
+    Usage: {
+      /** @description Bytes used, trash included. */
+      used: number;
+      /** @description Bytes in the trash (part of used). */
+      trash: number;
+      /** @description Quota in bytes; 0 means unlimited. */
+      quota: number;
+    };
     CreateShare: {
       /** @description Id of a file or folder you own (not trashed). */
       node: string;
@@ -557,7 +582,7 @@ export interface operations {
         };
         content?: never;
       };
-      /** @description File larger than the server limit. */
+      /** @description File larger than the server limit, or than the space left in the user's quota (body starts with ERR_QUOTA_EXCEEDED). */
       413: {
         headers: {
           [name: string]: unknown;
@@ -663,6 +688,40 @@ export interface operations {
       };
       /** @description Offset mismatch, or the target folder no longer exists. */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The quota was exceeded meanwhile (ERR_QUOTA_EXCEEDED); the upload is discarded. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getMyUsage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Usage in bytes. Trashed files count until they are purged. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Usage"];
+        };
+      };
+      /** @description Authentication required. */
+      401: {
         headers: {
           [name: string]: unknown;
         };

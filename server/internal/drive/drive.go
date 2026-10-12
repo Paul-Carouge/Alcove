@@ -91,6 +91,7 @@ func Register(app core.App) {
 		return e.Next()
 	})
 	registerDownload(app)
+	registerUsage(app)
 	app.Cron().MustAdd("alcovePurgeTrash", "30 3 * * *", func() {
 		if n, err := PurgeTrash(app, time.Now().Add(-TrashRetention)); err != nil {
 			app.Logger().Error("trash purge failed", "error", err)
@@ -136,6 +137,13 @@ func beforeSave(app core.App, node *core.Record) error {
 		meta, err := inspect(files[0].Reader)
 		if err != nil {
 			return fmt.Errorf("inspect uploaded file: %w", err)
+		}
+		// The node's previous content (if replaced) no longer counts.
+		if err := CheckQuota(app, node.GetString("owner"), meta.size, node.Id); err != nil {
+			if IsQuotaError(err) {
+				return quotaValidationError()
+			}
+			return err
 		}
 		node.Set("size", meta.size)
 		node.Set("mime", meta.mime)

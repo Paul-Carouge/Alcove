@@ -7,6 +7,21 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-12
+
+### Added
+- **Duplicates** (Photos → Duplicates): identical copies and visually similar photos (resized, recompressed,
+  bursts), with the best copy suggested. Move the others to the trash per group or all at once, or mark a
+  group as "not duplicates". Nothing is deleted automatically.
+- **Filters** in Photos: year, camera and "with a location", built from your own library.
+- API: `GET /api/v1/photos/duplicates`, `POST /api/v1/photos/duplicates/dismiss`, `GET /api/v1/photos/facets`.
+
+### Changed
+- Every photo gets a perceptual fingerprint, computed in the background (existing libraries included).
+
+### Fixed
+- Changing a filter while the timeline was loading could show the previous results.
+
 ## [0.12.0] - 2026-10-12
 
 ### Added
@@ -222,7 +237,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.2...v0.11.0

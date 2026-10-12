@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
-import { ALBUM_USER, FRIEND_USER } from './fixtures';
+import { ALBUM_USER, FRIEND_USER, pick } from './fixtures';
 
 const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
@@ -58,13 +58,13 @@ test('create an album, share it with a contributor, revoke it', async ({ browser
 	await owner.getByRole('button', { name: 'Share', exact: true }).click();
 	const share = owner.getByRole('dialog', { name: 'Share album' });
 	await share.getByLabel('Email').fill('nobody@e2e.test');
-	await share.getByRole('combobox', { name: 'Role' }).selectOption('contributor');
+	await pick(share.getByRole('combobox', { name: 'Role' }), 'Can add photos');
 	await share.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(share.getByText('No account with this email on this server.')).toBeVisible();
 	await share.getByLabel('Email').fill(FRIEND_USER.email);
 	await share.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(share.getByRole('combobox', { name: `Role of ${FRIEND_USER.email}` })).toHaveValue(
-		'contributor'
+	await expect(share.getByRole('combobox', { name: `Role of ${FRIEND_USER.email}` })).toHaveText(
+		'Can add photos'
 	);
 	await share.getByRole('button', { name: 'Save' }).click();
 	await expect(owner.getByText('Shared with 1 person')).toBeVisible();

@@ -1,3 +1,5 @@
+import type { Locator } from '@playwright/test';
+
 /** Accounts created by global-setup.ts in the throwaway e2e instance. */
 export const ADMIN = { email: 'admin@e2e.test', password: 'e2e-admin-password-123' };
 export const USER = { email: 'user@e2e.test', password: 'e2e-user-password-123' };
@@ -18,3 +20,12 @@ export const DUP_USER = { email: 'dups@e2e.test', password: 'e2e-dups-password-1
 /** Photo map. */
 export const MAP_USER = { email: 'map@e2e.test', password: 'e2e-map-password-123' };
 export const FAKE_RELEASES_PORT = 8099;
+
+/** Picks an option in a Select (#lib/ui/Select.svelte) the way a pointer user would. */
+export async function pick(combobox: Locator, option: string | RegExp) {
+	await combobox.click();
+	await combobox
+		.page()
+		.getByRole('option', { name: option, exact: typeof option === 'string' })
+		.click();
+}

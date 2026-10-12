@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { DUP_USER } from './fixtures';
+import { DUP_USER, pick } from './fixtures';
 
 const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
@@ -42,17 +42,17 @@ test('filters narrow the timeline by year, camera and location', async ({ page }
 	await expect(tiles(page)).toHaveCount(5);
 	await page.getByRole('button', { name: 'Filters' }).click();
 	const filters = page.getByRole('group', { name: 'Filters' });
-	await filters.getByLabel('Year').selectOption('2024');
+	await pick(filters.getByLabel('Year'), /^2024/);
 	await expect(tiles(page)).toHaveCount(1);
 	await expect(page.getByRole('button', { name: 'Open winter.jpg' })).toBeVisible();
 
-	await filters.getByLabel('Year').selectOption('');
+	await pick(filters.getByLabel('Year'), 'Any');
 	await filters.getByLabel(/With a location/).check();
 	await expect(tiles(page)).toHaveCount(4);
 	await expect(page.getByRole('button', { name: 'Open winter.jpg' })).toHaveCount(0);
 
 	await filters.getByLabel(/With a location/).uncheck();
-	await filters.getByLabel('Camera').selectOption({ label: 'Fujifilm X100V (1)' });
+	await pick(filters.getByLabel('Camera'), 'Fujifilm X100V (1)');
 	await expect(tiles(page)).toHaveCount(1);
 
 	await filters.getByRole('button', { name: 'Reset filters' }).click();

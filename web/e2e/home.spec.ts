@@ -25,7 +25,13 @@ test('follows the browser language (French)', async ({ browser }) => {
 test('language can be switched and is remembered', async ({ page }) => {
 	await page.goto('/login');
 	// Switching locale reloads the document (Paraglide); assertions retry across it.
-	await page.getByRole('combobox', { name: 'Language' }).selectOption('fr');
+	// Keyboard only, like a native select: open, go to the last language, choose it.
+	const language = page.getByRole('combobox', { name: 'Language' });
+	await language.focus();
+	await page.keyboard.press('ArrowDown');
+	await expect(page.getByRole('listbox', { name: 'Language' })).toBeVisible();
+	await page.keyboard.press('End');
+	await page.keyboard.press('Enter');
 	await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
 	await expect(page.getByRole('heading', { name: 'Connexion' })).toBeVisible();
 	await page.reload();

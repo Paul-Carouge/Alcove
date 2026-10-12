@@ -36,6 +36,7 @@
 	import PhotoViewer from '#lib/photos/PhotoViewer.svelte';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import Select from '#lib/ui/Select.svelte';
 
 	let filter = $state<PhotoFilter>('all');
 	let refine = $state<Refine>({});
@@ -302,35 +303,39 @@
 
 {#if filtersOpen}
 	<div class="filters" id="photo-filters" role="group" aria-label={m.photos_filters()}>
-		<label>
-			<span>{m.photos_filter_year()}</span>
-			<select
-				value={refine.year ?? ''}
-				onchange={(e) => setRefine({ ...refine, year: Number(e.currentTarget.value) || undefined })}
-			>
-				<option value="">{m.photos_filter_any()}</option>
-				{#each facets?.years ?? [] as y (y.year)}
-					<option value={y.year}>{y.year} ({y.count})</option>
-				{/each}
-			</select>
-		</label>
-		<label>
-			<span>{m.photos_filter_camera()}</span>
-			<select
+		<div class="field">
+			<span id="year-label">{m.photos_filter_year()}</span>
+			<Select
+				labelledby="year-label"
+				value={String(refine.year ?? '')}
+				options={[
+					{ value: '', label: m.photos_filter_any() },
+					...(facets?.years ?? []).map((y) => ({
+						value: String(y.year),
+						label: `${y.year} (${y.count})`
+					}))
+				]}
+				onchange={(v) => setRefine({ ...refine, year: Number(v) || undefined })}
+			/>
+		</div>
+		<div class="field">
+			<span id="camera-label">{m.photos_filter_camera()}</span>
+			<Select
+				labelledby="camera-label"
 				value={cameraKey(refine.camera)}
-				onchange={(e) => {
-					const c = facets?.cameras.find((x) => cameraKey(x) === e.currentTarget.value);
+				options={[
+					{ value: '', label: m.photos_filter_any() },
+					...(facets?.cameras ?? []).map((c) => ({
+						value: cameraKey(c),
+						label: `${[c.make, c.model].filter(Boolean).join(' ')} (${c.count})`
+					}))
+				]}
+				onchange={(v) => {
+					const c = facets?.cameras.find((x) => cameraKey(x) === v);
 					setRefine({ ...refine, camera: c ? { make: c.make, model: c.model } : undefined });
 				}}
-			>
-				<option value="">{m.photos_filter_any()}</option>
-				{#each facets?.cameras ?? [] as c (cameraKey(c))}
-					<option value={cameraKey(c)}
-						>{[c.make, c.model].filter(Boolean).join(' ')} ({c.count})</option
-					>
-				{/each}
-			</select>
-		</label>
+			/>
+		</div>
 		<label class="check">
 			<input
 				type="checkbox"
@@ -523,7 +528,7 @@
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
 	}
-	.filters label {
+	.filters .field {
 		display: grid;
 		gap: var(--space-1);
 		font-size: var(--text-sm);
@@ -541,15 +546,8 @@
 		height: 1.25rem;
 		accent-color: var(--color-accent);
 	}
-	.filters select {
+	.filters .field :global(.select) {
 		min-width: 11rem;
-		min-height: 2.75rem;
-		padding: 0 var(--space-3);
-		border: 1px solid var(--color-border-strong);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-		color: var(--color-text);
-		font: inherit;
 	}
 	.status {
 		min-height: var(--space-5);

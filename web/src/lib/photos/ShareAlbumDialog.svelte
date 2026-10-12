@@ -5,6 +5,7 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
+	import Select, { type SelectOption } from '#lib/ui/Select.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 	import {
 		getPeople,
@@ -29,7 +30,10 @@
 	let failed = $state(false);
 	let adding = $state(false);
 	let saving = $state(false);
-	const uid = $props.id();
+	const roles: SelectOption<Role>[] = [
+		{ value: 'viewer', label: m.album_role_viewer() },
+		{ value: 'contributor', label: m.album_role_contributor() }
+	];
 
 	$effect(() => {
 		if (!open) return;
@@ -97,11 +101,7 @@
 			autocomplete="off"
 			error={emailError}
 		/>
-		<label class="sr-only" for="role-{uid}">{m.album_role_label()}</label>
-		<select id="role-{uid}" bind:value={role}>
-			<option value="viewer">{m.album_role_viewer()}</option>
-			<option value="contributor">{m.album_role_contributor()}</option>
-		</select>
+		<Select bind:value={role} options={roles} label={m.album_role_label()} />
 		<Button type="submit" variant="secondary" loading={adding}>{m.album_share_add()}</Button>
 	</form>
 
@@ -125,13 +125,14 @@
 				<span class="who"
 					><span class="name">{p.name || p.email}</span><span class="muted">{p.email}</span></span
 				>
-				<select
-					aria-label={m.album_role_for({ name: p.name || p.email })}
-					bind:value={people[i]!.role}
-				>
-					<option value="viewer">{m.album_role_viewer()}</option>
-					<option value="contributor">{m.album_role_contributor()}</option>
-				</select>
+				<span class="role">
+					<Select
+						bind:value={people[i]!.role}
+						options={roles}
+						label={m.album_role_for({ name: p.name || p.email })}
+						size="sm"
+					/>
+				</span>
 				<button
 					class="icon-btn"
 					aria-label={m.album_share_remove({ name: p.name || p.email })}
@@ -164,16 +165,6 @@
 	.add :global(.field) {
 		grid-column: 1 / -1;
 	}
-	select {
-		min-height: 2.75rem;
-		padding: 0 var(--space-3);
-		border: 1px solid var(--color-border-strong);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-		color: var(--color-text);
-		font: inherit;
-		font-size: var(--text-sm);
-	}
 	.people {
 		display: grid;
 		gap: var(--space-2);
@@ -188,7 +179,7 @@
 		gap: var(--space-1) var(--space-3);
 	}
 	/* Role under the name, so names are not cut short. */
-	.people li select {
+	.people li .role {
 		grid-column: 2;
 		grid-row: 2;
 		justify-self: start;
@@ -234,13 +225,5 @@
 		justify-content: flex-end;
 		gap: var(--space-2);
 		margin-top: var(--space-5);
-	}
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 </style>

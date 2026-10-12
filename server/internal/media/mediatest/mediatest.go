@@ -18,6 +18,9 @@ type Photo struct {
 	Make, Model   string
 	Lat, Lon      float64 // both zero: no GPS
 	Orientation   uint16  // 0: omitted
+	// ExifWidth and ExifHeight override the EXIF pixel dimensions (0: Width and Height), to mimic
+	// pictures edited by tools that leave EXIF stale.
+	ExifWidth, ExifHeight int
 }
 
 type entry struct {
@@ -83,7 +86,11 @@ func tiff(p Photo) []byte {
 	if !p.Taken.IsZero() {
 		exif = append(exif, with(0x9003, ascii(p.Taken.Format("2006:01:02 15:04:05"))))
 	}
-	exif = append(exif, with(0xA002, long(uint32(p.Width))), with(0xA003, long(uint32(p.Height))))
+	w, h := p.Width, p.Height
+	if p.ExifWidth != 0 {
+		w, h = p.ExifWidth, p.ExifHeight
+	}
+	exif = append(exif, with(0xA002, long(uint32(w))), with(0xA003, long(uint32(h)))) // #nosec G115 -- test sizes
 	var gps []entry
 	if p.Lat != 0 || p.Lon != 0 {
 		latRef, lonRef := "N", "E"

@@ -48,7 +48,8 @@ func HaveFFmpeg() bool {
 	return e1 == nil && e2 == nil
 }
 
-// ImageInfo reads EXIF metadata, falling back to the image header for size.
+// ImageInfo reads EXIF metadata. The size comes from the image header when Go can decode it (EXIF
+// dimensions go stale when a picture is edited), from EXIF otherwise (HEIC).
 func ImageInfo(path string) (Info, error) {
 	f, err := os.Open(path) // #nosec G304 -- temp copy made by the worker
 	if err != nil {
@@ -57,6 +58,8 @@ func ImageInfo(path string) (Info, error) {
 	defer func() { _ = f.Close() }()
 
 	var info Info
+	var exifW, exifH int
+	rotated := false
 	if e, err := imagemeta.Decode(f); err == nil {
 		info.Taken = e.OriginalDate()
 		if info.Taken.IsZero() {
@@ -65,26 +68,29 @@ func ImageInfo(path string) (Info, error) {
 		info.Make = strings.TrimSpace(e.IFD0.Make)
 		info.Model = strings.TrimSpace(e.IFD0.Model)
 		info.Lens = strings.TrimSpace(e.ExifIFD.LensModel)
-		info.Width, info.Height = int(e.ExifIFD.PixelXDimension), int(e.ExifIFD.PixelYDimension)
-		if info.Width == 0 {
-			info.Width, info.Height = int(e.IFD0.ImageWidth), int(e.IFD0.ImageHeight)
+		exifW, exifH = int(e.ExifIFD.PixelXDimension), int(e.ExifIFD.PixelYDimension)
+		if exifW == 0 {
+			exifW, exifH = int(e.IFD0.ImageWidth), int(e.IFD0.ImageHeight)
 		}
-		// Orientations 5–8 rotate by 90°: store the displayed size.
-		if o := e.IFD0.Orientation; o >= meta.OrientationMirrorHorizontalRotate270 && o <= meta.OrientationRotate270 {
-			info.Width, info.Height = info.Height, info.Width
-		}
+		o := e.IFD0.Orientation
+		rotated = o >= meta.OrientationMirrorHorizontalRotate270 && o <= meta.OrientationRotate270
 		lat, lon := e.GPS.Latitude(), e.GPS.Longitude()
 		if (lat != 0 || lon != 0) && math.Abs(lat) <= 90 && math.Abs(lon) <= 180 {
 			info.HasLocation, info.Lat, info.Lon = true, lat, lon
 		}
 		info.Exposure = exposure(e.ExifIFD.ExposureTime.String(), e.ExifIFD.FNumber.String(), e.ExifIFD.ISOSpeedRatings, e.ExifIFD.FocalLength.String())
 	}
-	if info.Width == 0 {
-		if _, err := f.Seek(0, io.SeekStart); err == nil {
-			if cfg, _, err := image.DecodeConfig(f); err == nil {
-				info.Width, info.Height = cfg.Width, cfg.Height
-			}
+	if _, err := f.Seek(0, io.SeekStart); err == nil {
+		if cfg, _, err := image.DecodeConfig(f); err == nil {
+			info.Width, info.Height = cfg.Width, cfg.Height
 		}
+	}
+	if info.Width == 0 {
+		info.Width, info.Height = exifW, exifH
+	}
+	// Orientations 5–8 rotate by 90°: store the displayed size.
+	if rotated {
+		info.Width, info.Height = info.Height, info.Width
 	}
 	return info, nil
 }

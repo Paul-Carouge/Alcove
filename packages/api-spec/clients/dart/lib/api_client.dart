@@ -188,6 +188,8 @@ class ApiClient {
           return CreateShare.fromJson(value);
         case 'CreatedShare':
           return CreatedShare.fromJson(value);
+        case 'EnableTotpRequest':
+          return EnableTotpRequest.fromJson(value);
         case 'Error':
           return Error.fromJson(value);
         case 'Health':
@@ -198,6 +200,14 @@ class ApiClient {
           return PublicNode.fromJson(value);
         case 'PublicShare':
           return PublicShare.fromJson(value);
+        case 'RecoveryCodes':
+          return RecoveryCodes.fromJson(value);
+        case 'TotpConfirm':
+          return TotpConfirm.fromJson(value);
+        case 'TotpSetup':
+          return TotpSetup.fromJson(value);
+        case 'TotpStatus':
+          return TotpStatus.fromJson(value);
         case 'UnlockShare200Response':
           return UnlockShare200Response.fromJson(value);
         case 'UnlockShareRequest':

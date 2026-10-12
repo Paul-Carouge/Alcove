@@ -47,17 +47,18 @@ Please follow the [installation procedure](#installation--usage) and then run th
 ```dart
 import 'package:alcove_api/api.dart';
 
+// TODO Configure API key authorization: userToken
+//defaultApiClient.getAuthentication<ApiKeyAuth>('userToken').apiKey = 'YOUR_API_KEY';
+// uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+//defaultApiClient.getAuthentication<ApiKeyAuth>('userToken').apiKeyPrefix = 'Bearer';
 
-final api_instance = DriveApi();
-final nodeId = nodeId_example; // String | 
-final token = token_example; // String | File token of the node's owner (expires after a few minutes).
-final inline = inline_example; // String | `1` to display instead of download. Only honored for passive types (JPEG, PNG, GIF, WebP, AVIF, PDF, plain text, MP4/WebM video, common audio); everything else, notably HTML and SVG, is always an attachment. Inline responses carry a restrictive CSP. 
+final api_instance = AccountApi();
+final totpConfirm = TotpConfirm(); // TotpConfirm | 
 
 try {
-    final result = api_instance.downloadNode(nodeId, token, inline);
-    print(result);
+    api_instance.disableTotp(totpConfirm);
 } catch (e) {
-    print('Exception when calling DriveApi->downloadNode: $e\n');
+    print('Exception when calling AccountApi->disableTotp: $e\n');
 }
 
 ```
@@ -68,6 +69,11 @@ All URIs are relative to *http://localhost:8090*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*AccountApi* | [**disableTotp**](doc//AccountApi.md#disabletotp) | **POST** /api/v1/me/totp/disable | Turn two-factor off (password and a code required).
+*AccountApi* | [**enableTotp**](doc//AccountApi.md#enabletotp) | **POST** /api/v1/me/totp/enable | Confirm enrolment with a first code; returns recovery codes once.
+*AccountApi* | [**getTotpStatus**](doc//AccountApi.md#gettotpstatus) | **GET** /api/v1/me/totp | Two-factor status of the signed-in user.
+*AccountApi* | [**regenerateRecoveryCodes**](doc//AccountApi.md#regeneraterecoverycodes) | **POST** /api/v1/me/totp/recovery-codes | Replace all recovery codes (password and a code required).
+*AccountApi* | [**setupTotp**](doc//AccountApi.md#setuptotp) | **POST** /api/v1/me/totp/setup | Start enrolment (new secret, not active until confirmed).
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
@@ -86,11 +92,16 @@ Class | Method | HTTP request | Description
  - [ApiRange](doc//ApiRange.md)
  - [CreateShare](doc//CreateShare.md)
  - [CreatedShare](doc//CreatedShare.md)
+ - [EnableTotpRequest](doc//EnableTotpRequest.md)
  - [Error](doc//Error.md)
  - [Health](doc//Health.md)
  - [Module](doc//Module.md)
  - [PublicNode](doc//PublicNode.md)
  - [PublicShare](doc//PublicShare.md)
+ - [RecoveryCodes](doc//RecoveryCodes.md)
+ - [TotpConfirm](doc//TotpConfirm.md)
+ - [TotpSetup](doc//TotpSetup.md)
+ - [TotpStatus](doc//TotpStatus.md)
  - [UnlockShare200Response](doc//UnlockShare200Response.md)
  - [UnlockShareRequest](doc//UnlockShareRequest.md)
  - [Usage](doc//Usage.md)

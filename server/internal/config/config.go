@@ -39,6 +39,9 @@ type Config struct {
 	S3        S3
 	// Modules are the optional modules requested by the admin (validated names).
 	Modules []string
+	// SecretKey encrypts sensitive fields at rest (TOTP secrets). Empty: a key
+	// is generated in the data directory.
+	SecretKey string
 	// TrustedProxyHeaders are client-IP headers set by the reverse proxy
 	// (e.g. X-Forwarded-For). Only set when the server is not reachable directly.
 	TrustedProxyHeaders []string
@@ -96,6 +99,14 @@ func FromEnv(lookup func(string) (string, bool)) (Config, error) {
 		}
 		if !slices.Contains(cfg.Modules, m) {
 			cfg.Modules = append(cfg.Modules, m)
+		}
+	}
+
+	if k := get("SECRET_KEY"); k != "" {
+		if len(k) < 32 {
+			errs = append(errs, fmt.Errorf("%sSECRET_KEY must be at least 32 characters", EnvPrefix))
+		} else {
+			cfg.SecretKey = k
 		}
 	}
 

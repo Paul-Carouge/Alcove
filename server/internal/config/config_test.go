@@ -50,6 +50,7 @@ func TestInvalid(t *testing.T) {
 		"unknown storage":    {"ALCOVE_STORAGE": "ftp"},
 		"s3 incomplete":      {"ALCOVE_STORAGE": "s3", "ALCOVE_S3_ENDPOINT": "nope"},
 		"unknown module":     {"ALCOVE_MODULES": "blockchain"},
+		"short secret key":   {"ALCOVE_SECRET_KEY": "too-short"},
 	}
 	for name, vars := range cases {
 		t.Run(name, func(t *testing.T) {

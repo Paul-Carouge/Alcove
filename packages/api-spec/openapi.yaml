@@ -29,6 +29,12 @@ tags:
       `shares` collection (`GET /api/collections/shares/records`, `DELETE …/{id}`).
   - name: public
     description: Unauthenticated access through a share link (rate limited).
+  - name: account
+    description: |
+      Two-factor authentication with an authenticator app (TOTP, RFC 6238). Once enabled, signing in
+      with `POST /api/collections/users/auth-with-password` requires an extra body field `totp`
+      (6-digit code or recovery code); without it the server answers 401 with
+      `data.totpRequired = true`.
   - name: uploads
     description: |
       Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
@@ -283,6 +289,95 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Usage" }
         "401": { description: Authentication required. }
+  /api/v1/me/totp:
+    get:
+      tags: [account]
+      operationId: getTotpStatus
+      summary: Two-factor status of the signed-in user.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Status.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TotpStatus" }
+        "401": { description: Authentication required. }
+  /api/v1/me/totp/setup:
+    post:
+      tags: [account]
+      operationId: setupTotp
+      summary: Start enrolment (new secret, not active until confirmed).
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Secret to add to an authenticator app.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TotpSetup" }
+        "401": { description: Authentication required. }
+        "409": { description: Two-factor is already enabled. }
+  /api/v1/me/totp/enable:
+    post:
+      tags: [account]
+      operationId: enableTotp
+      summary: Confirm enrolment with a first code; returns recovery codes once.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: "^[0-9]{6}$" }
+      responses:
+        "200":
+          description: Enabled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecoveryCodes" }
+        "400": { description: "Invalid code, or no pending enrolment." }
+        "401": { description: Authentication required. }
+  /api/v1/me/totp/disable:
+    post:
+      tags: [account]
+      operationId: disableTotp
+      summary: Turn two-factor off (password and a code required).
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TotpConfirm" }
+      responses:
+        "204": { description: Disabled. }
+        "400": { description: Wrong password or code. }
+        "401": { description: Authentication required. }
+  /api/v1/me/totp/recovery-codes:
+    post:
+      tags: [account]
+      operationId: regenerateRecoveryCodes
+      summary: Replace all recovery codes (password and a code required).
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TotpConfirm" }
+      responses:
+        "200":
+          description: New codes, shown once.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecoveryCodes" }
+        "400": { description: "Wrong password or code, or two-factor is not enabled." }
+        "401": { description: Authentication required. }
   /api/v1/nodes/{nodeId}/download:
     get:
       tags: [drive]
@@ -404,6 +499,33 @@ components:
     Module:
       type: string
       enum: [core, drive, photos, documents, ocr, faces, notes, calendar, contacts]
+    TotpStatus:
+      type: object
+      required: [enabled, recoveryCodesLeft]
+      properties:
+        enabled: { type: boolean }
+        recoveryCodesLeft: { type: integer }
+    TotpSetup:
+      type: object
+      required: [secret, otpauthUrl, qrCode]
+      properties:
+        secret: { type: string, description: "Base32 secret for manual entry." }
+        otpauthUrl: { type: string, description: "otpauth:// URI (what the QR code encodes)." }
+        qrCode: { type: string, description: "PNG data URL of the QR code." }
+    TotpConfirm:
+      type: object
+      required: [password, code]
+      properties:
+        password: { type: string, minLength: 1, maxLength: 256 }
+        code: { type: string, description: "6-digit code or a recovery code.", maxLength: 32 }
+    RecoveryCodes:
+      type: object
+      required: [recoveryCodes]
+      properties:
+        recoveryCodes:
+          type: array
+          description: Single-use codes, shown only in this response.
+          items: { type: string }
     Usage:
       type: object
       required: [used, trash, quota]

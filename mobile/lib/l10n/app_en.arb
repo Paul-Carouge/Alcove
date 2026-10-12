@@ -56,5 +56,81 @@
         "type": "String"
       }
     }
+  },
+  "signInTitle": "Sign in",
+  "signInSubtitle": "to {server}",
+  "@signInSubtitle": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "signInButton": "Sign in",
+  "changeServer": "Change server",
+  "totpTitle": "Two-factor code",
+  "totpBody": "Enter the 6-digit code from your authenticator app.",
+  "totpRecoveryBody": "Enter one of your recovery codes.",
+  "codeLabel": "Code",
+  "useRecoveryCode": "Use a recovery code",
+  "useAuthenticator": "Use the authenticator app",
+  "verifyButton": "Verify",
+  "emailCodeTitle": "Check your email",
+  "emailCodeBody": "We sent a code to {email}.",
+  "@emailCodeBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorBadCredentials": "Wrong email or password.",
+  "errorBadCode": "This code is not valid.",
+  "errorTooMany": "Too many attempts. Wait a minute and try again.",
+  "errorNetwork": "The server could not be reached.",
+  "errorUnexpected": "Something went wrong. Try again.",
+  "errorRequired": "This field is required.",
+  "tabPhotos": "Photos",
+  "tabFiles": "Files",
+  "tabAccount": "Account",
+  "photosEmpty": "No photos yet. Add some from the web app; automatic backup from this phone is coming.",
+  "loadFailed": "Could not load. Pull to retry.",
+  "retry": "Retry",
+  "favoriteAdd": "Add to favorites",
+  "favoriteRemove": "Remove from favorites",
+  "details": "Details",
+  "detailTaken": "Taken",
+  "detailFile": "File",
+  "detailDimensions": "Dimensions",
+  "detailCamera": "Camera",
+  "detailLens": "Lens",
+  "detailSettings": "Settings",
+  "detailLocation": "Location",
+  "detailDuration": "Duration",
+  "processing": "Processing…",
+  "openPhoto": "Open {name}",
+  "@openPhoto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "myFiles": "My files",
+  "folderEmpty": "This folder is empty.",
+  "openInBrowser": "Open",
+  "fileCannotOpen": "This file could not be opened.",
+  "signedInAs": "Signed in as",
+  "serverLabel": "Server",
+  "signOut": "Sign out",
+  "versionLabel": "Version {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   }
 }

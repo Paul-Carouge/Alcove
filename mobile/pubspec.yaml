@@ -41,6 +41,9 @@ dependencies:
   http: ^1.6.0
   flutter_secure_storage: ^11.2.0
   intl: ^0.20.2
+  pocketbase: ^0.25.2
+  video_player: ^2.14.1
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

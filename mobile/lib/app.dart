@@ -4,15 +4,69 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/brand.dart';
 import 'core/secure_store.dart';
 import 'core/server_checker.dart';
+import 'core/session.dart';
+import 'core/version.dart';
 import 'features/connect/connect_screen.dart';
+import 'features/home/home_screen.dart';
+import 'features/login/login_screen.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'theme/theme.dart';
 
-class AlcoveApp extends StatelessWidget {
-  const AlcoveApp({super.key, required this.checker, required this.store});
+class AlcoveApp extends StatefulWidget {
+  const AlcoveApp({super.key, required this.checker, required this.store, this.session});
 
   final ServerChecker checker;
   final SecureStore store;
+
+  /// Injected in tests.
+  final Session? session;
+
+  @override
+  State<AlcoveApp> createState() => _AlcoveAppState();
+}
+
+class _AlcoveAppState extends State<AlcoveApp> {
+  late final Session _session = widget.session ?? Session(store: widget.store);
+  bool _restored = false;
+  bool _changingServer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _session.addListener(_changed);
+    _session.restore().whenComplete(() {
+      if (mounted) setState(() => _restored = true);
+    });
+  }
+
+  void _changed() => setState(() {});
+
+  @override
+  void dispose() {
+    _session.removeListener(_changed);
+    super.dispose();
+  }
+
+  Widget _home() {
+    if (!_restored) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (!_session.hasServer || _changingServer) {
+      return ConnectScreen(
+        checker: widget.checker,
+        store: widget.store,
+        onConnected: (url) async {
+          await _session.useServer(url);
+          if (mounted) setState(() => _changingServer = false);
+        },
+      );
+    }
+    if (!_session.isSignedIn) {
+      return LoginScreen(
+        session: _session,
+        onChangeServer: () => setState(() => _changingServer = true),
+      );
+    }
+    return HomeScreen(session: _session, version: kAppVersion);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +82,7 @@ class AlcoveApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: ConnectScreen(checker: checker, store: store),
+      home: _home(),
     );
   }
 }

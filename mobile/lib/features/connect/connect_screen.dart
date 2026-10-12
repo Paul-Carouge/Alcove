@@ -21,11 +21,15 @@ class ConnectScreen extends StatefulWidget {
     super.key,
     required this.checker,
     required this.store,
+    this.onConnected,
     this.allowInsecure = kDebugMode,
   });
 
   final ServerChecker checker;
   final SecureStore store;
+
+  /// Called with the checked server when the user continues.
+  final void Function(Uri server)? onConnected;
 
   /// Accept http:// URLs. Debug builds only, for a local dev server.
   final bool allowInsecure;
@@ -38,6 +42,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   final _controller = TextEditingController();
   ServerUrlError? _urlError;
   ServerCheckResult? _result;
+  Uri? _checked;
   bool _checking = false;
 
   @override
@@ -77,6 +82,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     setState(() {
       _checking = false;
       _result = result;
+      _checked = uri;
     });
     // Screen readers: announce the outcome, which appears below the fold.
     unawaited(
@@ -178,7 +184,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   ),
                   if (result != null) ...[
                     const SizedBox(height: AlcoveSpace.s5),
-                    _ResultCard(text: _statusText(l, result), result: result),
+                    _ResultCard(
+                      text: _statusText(l, result),
+                      result: result,
+                      onContinue: widget.onConnected == null || _checked == null
+                          ? null
+                          : () => widget.onConnected!(_checked!),
+                    ),
                   ],
                   const SizedBox(height: AlcoveSpace.s6),
                   Text(
@@ -197,10 +209,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
 }
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.text, required this.result});
+  const _ResultCard({required this.text, required this.result, this.onContinue});
 
   final String text;
   final ServerCheckResult result;
+  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
@@ -241,8 +254,11 @@ class _ResultCard extends StatelessWidget {
           ],
           if (ok && !setupRequired) ...[
             const SizedBox(height: AlcoveSpace.s4),
-            // Next step (login) arrives with the auth work in phase 1.
-            FilledButton(onPressed: null, child: Text(l.continueButton)),
+            FilledButton(
+              key: const Key('continueButton'),
+              onPressed: onContinue,
+              child: Text(l.continueButton),
+            ),
           ],
         ],
       ),

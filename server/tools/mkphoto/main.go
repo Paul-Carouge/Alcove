@@ -21,9 +21,10 @@ func main() {
 	model := flag.String("model", "", "camera model")
 	lat := flag.Float64("lat", 0, "latitude")
 	lon := flag.Float64("lon", 0, "longitude")
+	seed := flag.Uint64("seed", 0, "paint a textured scene (perceptual hashing tests)")
 	flag.Parse()
 
-	p := mediatest.Photo{Width: *w, Height: *h, Make: *mk, Model: *model, Lat: *lat, Lon: *lon}
+	p := mediatest.Photo{Width: *w, Height: *h, Make: *mk, Model: *model, Lat: *lat, Lon: *lon, Seed: *seed}
 	if *taken != "" {
 		t, err := time.Parse(time.RFC3339, *taken)
 		if err != nil {

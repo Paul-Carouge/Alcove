@@ -6,15 +6,15 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
-// Duplicate detection (v0.13): a perceptual hash per photo (dHash of the thumbnail, 16 hex digits) and the
-// groups a user marked as "not duplicates".
+// Duplicate detection (v0.13): a perceptual hash per photo (dHash of the thumbnail, 16 hex digits, then its
+// average colour, 6 hex digits) and the groups a user marked as "not duplicates".
 func init() {
 	m.Register(func(app core.App) error {
 		media, err := app.FindCollectionByNameOrId("media")
 		if err != nil {
 			return err
 		}
-		media.Fields.Add(&core.TextField{Name: "phash", Max: 16, Pattern: `^([0-9a-f]{16})?$`})
+		media.Fields.Add(&core.TextField{Name: "phash", Max: 22, Pattern: `^([0-9a-f]{22})?$`})
 		if err := app.Save(media); err != nil {
 			return err
 		}

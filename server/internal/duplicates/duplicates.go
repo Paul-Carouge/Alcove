@@ -70,6 +70,9 @@ func list(e *core.RequestEvent) error {
 	items := make([]Item, len(rows))
 	for i, r := range rows {
 		items[i] = Item{ID: r.ID, SHA256: r.SHA256, PHash: r.PHash, Image: r.Kind == "image"}
+		if r.Height > 0 {
+			items[i].Ratio = float64(r.Width) / float64(r.Height)
+		}
 	}
 
 	dismissed, err := e.App.FindAllRecords(Dismissals, dbx.HashExp{"owner": e.Auth.Id})

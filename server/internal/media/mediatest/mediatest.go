@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"image/jpeg"
 	"math"
+	"math/rand/v2"
 	"time"
 )
 
@@ -21,6 +22,9 @@ type Photo struct {
 	// ExifWidth and ExifHeight override the EXIF pixel dimensions (0: Width and Height), to mimic
 	// pictures edited by tools that leave EXIF stale.
 	ExifWidth, ExifHeight int
+	// Seed, when set, paints a reproducible blocky scene instead of the plain gradient, so that
+	// pictures look different to perceptual hashing.
+	Seed uint64
 }
 
 type entry struct {
@@ -154,8 +158,21 @@ func tiff(p Photo) []byte {
 // JPEG returns a gradient image with the EXIF metadata of p.
 func JPEG(p Photo) []byte {
 	img := image.NewRGBA(image.Rect(0, 0, p.Width, p.Height))
+	var blocks [8][8]color.RGBA
+	if p.Seed != 0 {
+		r := rand.New(rand.NewPCG(p.Seed, p.Seed)) // #nosec G404 -- test pictures
+		for y := range blocks {
+			for x := range blocks[y] {
+				blocks[y][x] = color.RGBA{uint8(r.IntN(256)), uint8(r.IntN(256)), uint8(r.IntN(256)), 255}
+			}
+		}
+	}
 	for y := range p.Height {
 		for x := range p.Width {
+			if p.Seed != 0 {
+				img.Set(x, y, blocks[y*8/max(1, p.Height)][x*8/max(1, p.Width)])
+				continue
+			}
 			img.Set(x, y, color.RGBA{uint8(x * 255 / max(1, p.Width)), uint8(y * 255 / max(1, p.Height)), 160, 255})
 		}
 	}

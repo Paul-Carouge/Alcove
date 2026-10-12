@@ -260,7 +260,7 @@ func TestFilesFromBeforeThePhotosModuleAreTracked(t *testing.T) {
 func TestPerceptualHashIsBackfilled(t *testing.T) {
 	e := setup(t)
 	rec := e.upload(t, "p.jpg", mediatest.JPEG(mediatest.Photo{Width: 80, Height: 60}))
-	if len(rec.GetString("phash")) != 16 {
+	if len(rec.GetString("phash")) != 22 {
 		t.Fatalf("phash = %q", rec.GetString("phash"))
 	}
 	// As if processed before v0.13.
@@ -270,7 +270,7 @@ func TestPerceptualHashIsBackfilled(t *testing.T) {
 	}
 	media.Backfill(e.app)
 	got, _ := e.app.FindRecordById(media.Collection, rec.Id)
-	if len(got.GetString("phash")) != 16 {
+	if len(got.GetString("phash")) != 22 {
 		t.Errorf("phash not backfilled: %q", got.GetString("phash"))
 	}
 }

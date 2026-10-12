@@ -2,6 +2,7 @@
 package duplicates
 
 import (
+	"math"
 	"math/bits"
 	"slices"
 	"strconv"
@@ -32,8 +33,44 @@ var chunks = func() [][2]uint {
 type Item struct {
 	ID     string
 	SHA256 string
-	PHash  string // 16 hex digits, or empty
-	Image  bool   // similar-photo matching only applies to images
+	PHash  string  // 16 hex digits of dHash + 6 of average colour, or empty
+	Image  bool    // similar-photo matching only applies to images
+	Ratio  float64 // width / height; 0 when unknown
+}
+
+// informative rejects hashes of nearly flat or smoothly graded pictures (skies, gradients, blank pages):
+// most of their bits agree by construction, so they would match each other without looking alike.
+func informative(h uint64) bool {
+	n := bits.OnesCount64(h)
+	return n >= 8 && n <= 56
+}
+
+// MaxColorDistance is the largest distance between average colours (RGB, 0-441) of similar photos:
+// the brightness hash alone cannot tell a green picture from a pink one with the same layout.
+const MaxColorDistance = 48
+
+func sameColor(a, b [3]float64) bool {
+	d := 0.0
+	for i := range a {
+		d += (a[i] - b[i]) * (a[i] - b[i])
+	}
+	return math.Sqrt(d) <= MaxColorDistance
+}
+
+func parseColor(s string) ([3]float64, bool) {
+	v, err := strconv.ParseUint(s, 16, 32)
+	if err != nil || len(s) != 6 {
+		return [3]float64{}, false
+	}
+	return [3]float64{float64(v >> 16 & 0xff), float64(v >> 8 & 0xff), float64(v & 0xff)}, true
+}
+
+// sameShape keeps resized copies and bursts (same proportions) and rejects crops and rotations.
+func sameShape(a, b float64) bool {
+	if a == 0 || b == 0 {
+		return true
+	}
+	return math.Abs(a/b-1) < 0.03
 }
 
 // Group returns the indexes of items that are duplicates of each other: same SHA-256, or images whose
@@ -58,6 +95,7 @@ func Group(items []Item) [][]int {
 
 	bySHA := map[string]int{}
 	hashes := make([]uint64, len(items))
+	colors := make([][3]float64, len(items))
 	hasHash := make([]bool, len(items))
 	for i, it := range items {
 		if it.SHA256 != "" {
@@ -67,8 +105,13 @@ func Group(items []Item) [][]int {
 			}
 			bySHA[it.SHA256] = i
 		}
-		if h, err := strconv.ParseUint(it.PHash, 16, 64); err == nil && it.Image && len(it.PHash) == 16 {
-			hashes[i], hasHash[i] = h, true
+		if len(it.PHash) != 22 || !it.Image {
+			continue
+		}
+		h, err := strconv.ParseUint(it.PHash[:16], 16, 64)
+		c, ok := parseColor(it.PHash[16:])
+		if err == nil && ok && informative(h) {
+			hashes[i], colors[i], hasHash[i] = h, c, true
 		}
 	}
 
@@ -81,7 +124,8 @@ func Group(items []Item) [][]int {
 			part := (hashes[i] >> (64 - ch[0] - ch[1])) & (1<<ch[1] - 1)
 			key := [2]uint64{uint64(c), part}
 			for _, j := range buckets[key] {
-				if bits.OnesCount64(hashes[i]^hashes[j]) <= Threshold {
+				if bits.OnesCount64(hashes[i]^hashes[j]) <= Threshold && sameShape(items[i].Ratio, items[j].Ratio) &&
+					sameColor(colors[i], colors[j]) {
 					union(i, j)
 				}
 			}

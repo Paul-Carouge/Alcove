@@ -7,6 +7,23 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-12
+
+Phase 1 (server, accounts, drive) is complete.
+
+### Added
+- First-run setup wizard at `/setup`: create the administrator (admin console and app account),
+  optionally configure and test email (SMTP), check that storage is writable, then sign straight in.
+- Every page leads to the wizard until an administrator exists.
+- `ALCOVE_SETUP_TOKEN` to preset the setup token for automated deployments.
+
+### Changed
+- The first-launch log line links to the wizard instead of PocketBase's installer.
+
+### Security
+- The wizard requires the one-time token, compares it in constant time, is rate limited and
+  stops working once setup is complete; concurrent completions cannot create two administrators.
+
 ## [0.7.0] - 2026-10-12
 
 ### Added
@@ -104,7 +121,8 @@ The story behind each release is in the [devlog](docs/devlog/).
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.4.0...v0.5.0

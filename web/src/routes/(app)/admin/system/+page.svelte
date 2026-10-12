@@ -1,0 +1,285 @@
+<script lang="ts">
+	import { Check, Copy, RefreshCw, Server } from '@lucide/svelte';
+	import { AdminError, applyUpdate, checkUpdates, waitForVersion } from '#lib/admin/api.js';
+	import { renderNotes } from '#lib/admin/markdown.js';
+	import { system } from '#lib/admin/system.svelte.js';
+	import { session } from '#lib/auth/session.svelte.js';
+	import { formatDateTime } from '#lib/drive/format.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { serverStatus } from '#lib/server-status/store.svelte.js';
+	import Alert from '#lib/ui/Alert.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Dialog from '#lib/ui/Dialog.svelte';
+
+	const locale = getLocale();
+	const info = $derived(system.current);
+	const update = $derived(info?.update);
+	const name = $derived(
+		serverStatus.current?.kind === 'connected' ? serverStatus.current.health.name : ''
+	);
+
+	let checking = $state(false);
+	let confirmOpen = $state(false);
+	let phase = $state<'idle' | 'installing' | 'restarting' | 'done' | 'failed' | 'timeout'>('idle');
+	let error = $state('');
+	let copied = $state(false);
+
+	$effect(() => {
+		if (session.isAdmin) system.load();
+	});
+
+	async function check() {
+		checking = true;
+		try {
+			system.set(await checkUpdates());
+		} finally {
+			checking = false;
+		}
+	}
+
+	async function install() {
+		confirmOpen = false;
+		phase = 'installing';
+		try {
+			const version = await applyUpdate();
+			phase = 'restarting';
+			phase = (await waitForVersion(version)) ? 'done' : 'timeout';
+		} catch (err) {
+			error = err instanceof AdminError && err.message ? err.message : String(err);
+			phase = 'failed';
+		}
+	}
+
+	async function copyCommand() {
+		if (!info?.updateCommand) return;
+		await navigator.clipboard.writeText(info.updateCommand.split('   ')[0]!);
+		copied = true;
+	}
+
+	const modeLabel = (mode: string) =>
+		mode === 'native'
+			? m.install_native()
+			: mode === 'docker'
+				? m.install_docker()
+				: m.install_manual();
+</script>
+
+<svelte:head>
+	<title>{m.system_title()}</title>
+</svelte:head>
+
+<h1>{m.system_title()}</h1>
+
+{#if !session.isAdmin}
+	<Alert tone="info">{m.admin_only()}</Alert>
+{:else if !info}
+	<p class="muted">{m.loading()}</p>
+{:else}
+	<section class="card" aria-labelledby="about-title">
+		<div class="icon" aria-hidden="true"><Server size={22} /></div>
+		<div class="body">
+			<h2 id="about-title" class="visually-hidden">{m.system_title()}</h2>
+			<dl>
+				<dt>{m.system_version()}</dt>
+				<dd>{name} {info.version}</dd>
+				<dt>{m.system_install()}</dt>
+				<dd>{modeLabel(info.installMode)}</dd>
+				<dt>{m.system_ffmpeg()}</dt>
+				<dd class:warn={!info.ffmpeg}>{info.ffmpeg ? m.system_available() : m.system_missing()}</dd>
+			</dl>
+		</div>
+	</section>
+
+	<section class="card" aria-labelledby="updates-title">
+		<div class="icon" class:accent={update?.available} aria-hidden="true">
+			<RefreshCw size={22} />
+		</div>
+		<div class="body">
+			<h2 id="updates-title">{m.system_updates()}</h2>
+
+			{#if phase === 'installing'}
+				<p role="status">{m.update_installing({ version: update?.latest ?? '' })}</p>
+			{:else if phase === 'restarting'}
+				<p role="status">{m.update_restarting()}</p>
+			{:else if phase === 'done'}
+				<Alert tone="success">{m.update_done({ name, version: update?.latest ?? '' })}</Alert>
+				<div><Button onclick={() => location.reload()}>{m.update_reload()}</Button></div>
+			{:else if phase === 'failed'}
+				<Alert>{m.update_failed({ error })}</Alert>
+			{:else if phase === 'timeout'}
+				<Alert>{m.update_timeout()}</Alert>
+			{/if}
+
+			{#if phase === 'idle' || phase === 'failed'}
+				{#if update?.available}
+					<p class="lead">{m.system_update_available({ version: update.latest ?? '' })}</p>
+					{#if update.notes}
+						<!-- renderNotes escapes all HTML before formatting. -->
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						<div class="notes">{@html renderNotes(update.notes)}</div>
+					{/if}
+					{#if info.canSelfUpdate}
+						<div>
+							<Button onclick={() => (confirmOpen = true)}
+								>{m.system_update_now({ version: update.latest ?? '' })}</Button
+							>
+						</div>
+					{:else if info.updateCommand}
+						<p class="muted small">{m.system_update_command()}</p>
+						<div class="command">
+							<code>{info.updateCommand}</code>
+							<Button variant="secondary" onclick={copyCommand}>
+								{#if copied}<Check size={16} aria-hidden="true" />{:else}<Copy
+										size={16}
+										aria-hidden="true"
+									/>{/if}
+								{m.system_copy()}
+							</Button>
+						</div>
+					{/if}
+				{:else}
+					<p>{m.system_up_to_date()}</p>
+				{/if}
+
+				{#if !update?.enabled}
+					<p class="muted small">{m.system_check_disabled()}</p>
+				{:else if update.error}
+					<p class="muted small">{m.system_check_error({ error: update.error })}</p>
+				{/if}
+				<div class="row">
+					<span class="muted small">
+						{update?.checkedAt && !update.checkedAt.startsWith('0001')
+							? m.system_checked({ date: formatDateTime(update.checkedAt, locale) })
+							: m.system_never_checked()}
+					</span>
+					<Button variant="ghost" onclick={check} loading={checking}>{m.system_check_now()}</Button>
+				</div>
+			{/if}
+		</div>
+	</section>
+{/if}
+
+<Dialog bind:open={confirmOpen} title={m.update_confirm_title({ version: update?.latest ?? '' })}>
+	<p class="muted">{m.update_confirm_body()}</p>
+	<div class="actions">
+		<Button variant="ghost" onclick={() => (confirmOpen = false)}>{m.cancel_button()}</Button>
+		<Button onclick={install}>{m.system_update_now({ version: update?.latest ?? '' })}</Button>
+	</div>
+</Dialog>
+
+<style>
+	h1 {
+		font-size: var(--text-2xl);
+		letter-spacing: -0.02em;
+		margin: var(--space-2) 0 var(--space-5);
+	}
+	.card {
+		display: flex;
+		gap: var(--space-4);
+		max-width: 48rem;
+		margin-bottom: var(--space-4);
+		padding: var(--space-5);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+	.icon {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: var(--radius-md);
+		background: var(--color-surface-sunken);
+		color: var(--color-text-muted);
+	}
+	.icon.accent {
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
+	}
+	.body {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		gap: var(--space-3);
+	}
+	h2 {
+		font-size: var(--text-lg);
+	}
+	p {
+		margin: 0;
+	}
+	.lead {
+		font-weight: var(--weight-medium);
+	}
+	.muted {
+		color: var(--color-text-muted);
+	}
+	.small {
+		font-size: var(--text-sm);
+	}
+	dl {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-2) var(--space-5);
+		margin: 0;
+	}
+	dt {
+		color: var(--color-text-muted);
+	}
+	dd {
+		margin: 0;
+	}
+	dd.warn {
+		color: var(--color-warning);
+	}
+	.notes {
+		max-height: 18rem;
+		overflow: auto;
+		padding: var(--space-3) var(--space-4);
+		border-radius: var(--radius-md);
+		background: var(--color-surface-sunken);
+		font-size: var(--text-sm);
+	}
+	.notes :global(h4) {
+		margin: var(--space-3) 0 var(--space-1);
+		font-size: var(--text-sm);
+	}
+	.notes :global(h4:first-child) {
+		margin-top: 0;
+	}
+	.notes :global(ul) {
+		margin: 0;
+		padding-left: var(--space-5);
+	}
+	.notes :global(code) {
+		font-family: var(--font-mono);
+	}
+	.command {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.command code {
+		flex: 1;
+		min-width: 0;
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-sunken);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		overflow-wrap: anywhere;
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+	.actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+</style>

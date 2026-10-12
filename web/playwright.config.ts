@@ -36,8 +36,14 @@ export default defineConfig({
 	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 	webServer: [
 		{
+			command: 'node e2e/fake-releases.mjs',
+			url: 'http://127.0.0.1:8099/repos/Paul-Carouge/Alcove/releases/latest',
+			reuseExistingServer: false
+		},
+		{
 			command: `../server/bin/alcove serve --http=127.0.0.1:${port} --dir=${dataDir}`,
 			url: `http://127.0.0.1:${port}/health`,
+			env: { ALCOVE_UPDATE_URL: 'http://127.0.0.1:8099' },
 			reuseExistingServer: false,
 			stdout: 'ignore'
 		},

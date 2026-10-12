@@ -9,6 +9,8 @@
 	import StorageMeter from '#lib/drive/StorageMeter.svelte';
 	import UploadPanel from '#lib/drive/UploadPanel.svelte';
 	import { usage } from '#lib/drive/usage.svelte.js';
+	import UpdateBanner from '#lib/admin/UpdateBanner.svelte';
+	import { system } from '#lib/admin/system.svelte.js';
 	import Logo from '#lib/ui/Logo.svelte';
 	import Credit from '#lib/ui/Credit.svelte';
 	import UserMenu from '#lib/ui/UserMenu.svelte';
@@ -38,6 +40,10 @@
 	$effect(() => {
 		usage.start();
 		return () => usage.stop();
+	});
+
+	$effect(() => {
+		if (session.isAdmin) system.load();
 	});
 
 	// Close the mobile drawer after navigating.
@@ -118,6 +124,7 @@
 				/>
 			{/if}
 		</header>
+		{#if session.isAdmin}<UpdateBanner />{/if}
 		<main id="main" tabindex="-1">
 			{@render children()}
 		</main>

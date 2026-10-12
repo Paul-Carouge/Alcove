@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { LogOut, Monitor, Moon, Shield, Sun } from '@lucide/svelte';
+	import { LogOut, Monitor, Moon, Server, Shield, Sun } from '@lucide/svelte';
+	import { session } from '#lib/auth/session.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { theme, type ThemeMode } from '#lib/theme/theme.svelte.js';
 	import Avatar from './Avatar.svelte';
@@ -87,6 +88,12 @@
 				<Shield size={16} aria-hidden="true" />
 				{m.nav_security()}
 			</a>
+			{#if session.isAdmin}
+				<a class="item link" href={resolve('/(app)/admin/system')} onclick={() => close()}>
+					<Server size={16} aria-hidden="true" />
+					{m.nav_system()}
+				</a>
+			{/if}
 			<button class="item danger" onclick={onsignout}>
 				<LogOut size={16} aria-hidden="true" />
 				{m.sign_out_button()}

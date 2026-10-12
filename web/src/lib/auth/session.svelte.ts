@@ -12,6 +12,10 @@ class Session {
 		});
 	}
 
+	get isAdmin() {
+		return this.user?.role === 'admin';
+	}
+
 	get isSignedIn() {
 		return this.user !== null && pb.authStore.isValid;
 	}

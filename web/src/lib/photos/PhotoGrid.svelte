@@ -11,6 +11,7 @@
 		grouped = true,
 		selected = null,
 		canFavorite = () => true,
+		thumbOf,
 		onopen,
 		ontogglefavorite,
 		ontoggleselect
@@ -22,6 +23,8 @@
 		/** Selection mode when set: tiles toggle instead of opening. */
 		selected?: ReadonlySet<string> | null;
 		canFavorite?: (item: Media) => boolean;
+		/** Thumbnail URL override (public album links). */
+		thumbOf?: (item: Media) => string | null;
 		onopen: (item: Media) => void;
 		ontogglefavorite?: (item: Media) => void;
 		ontoggleselect?: (item: Media) => void;
@@ -55,7 +58,7 @@
 				<div class="row" style:height="{row.height}px">
 					{#each row.items as it (it.id)}
 						{@const name = nameOf(it)}
-						{@const src = token ? thumbUrl(it, token) : null}
+						{@const src = thumbOf ? thumbOf(it) : token ? thumbUrl(it, token) : null}
 						{@const isSelected = selected?.has(it.id) ?? false}
 						<div
 							class="tile"

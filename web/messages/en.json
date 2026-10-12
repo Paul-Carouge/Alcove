@@ -429,5 +429,7 @@
 		}
 	],
 	"photo_select": "Select {name}",
-	"photo_more": "More actions for {name}"
+	"photo_more": "More actions for {name}",
+	"album_public_link": "Public link",
+	"share_album_note": "Anyone with the link sees the album as it is now, without signing in. Photos are shown as previews, without their location or camera details; videos play from the original file, which may contain its own metadata."
 }

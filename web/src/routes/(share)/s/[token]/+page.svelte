@@ -9,11 +9,16 @@
 	import { compareNodes } from '#lib/drive/names.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
+	import type { Media } from '#lib/photos/api.js';
+	import PhotoGrid from '#lib/photos/PhotoGrid.svelte';
+	import PhotoViewer from '#lib/photos/PhotoViewer.svelte';
 	import {
 		getPublicShare,
 		publicFileUrl,
+		publicMediaUrl,
 		ShareError,
 		unlockShare,
+		type PublicMedia,
 		type PublicNode,
 		type PublicShare
 	} from '#lib/shares/api.js';
@@ -97,11 +102,31 @@
 		[...(share?.children ?? [])].sort((a, b) => compareNodes(a, b, locale))
 	);
 	const fileUrl = (n: PublicNode, inline = false) => publicFileUrl(token, n.id, access, inline);
+
+	// Album links: items in the shape the photo grid and viewer use.
+	let viewerIndex = $state(-1);
+	const photos = $derived(
+		(share?.media ?? []).map(
+			(p: PublicMedia) =>
+				({
+					...p,
+					status: p.ready ? 'ready' : 'pending',
+					thumb: p.ready ? 'thumb' : '',
+					preview: p.ready ? 'preview' : '',
+					favorite: false,
+					expand: { node: { name: p.name, size: 0, mime: '' } }
+				}) as unknown as Media
+		)
+	);
+	const mediaUrl = (it: Media, variant: 'thumb' | 'preview' | 'video') =>
+		it.status === 'ready' || variant === 'video'
+			? publicMediaUrl(token, it.id, variant, access)
+			: null;
 	const openFolder = (id: string) => goto(`?folder=${encodeURIComponent(id)}`);
 </script>
 
 <svelte:head>
-	<title>{share?.item.name ?? m.public_shared_with_you()}</title>
+	<title>{share?.album?.name ?? share?.item?.name ?? m.public_shared_with_you()}</title>
 	<meta name="robots" content="noindex, nofollow" />
 	<meta name="referrer" content="no-referrer" />
 </svelte:head>
@@ -132,7 +157,38 @@
 	</div>
 {:else if share}
 	<p class="eyebrow">{m.public_shared_with_you()}</p>
-	{#if share.item.kind === 'file'}
+	{#if share.album}
+		<section class="album-view" aria-labelledby="album-title">
+			<h1 id="album-title">{share.album.name}</h1>
+			<p class="muted">
+				{m.album_count({ count: photos.length })}
+				{#if share.album.owner}· {m.album_shared_by({ name: share.album.owner })}{/if}
+				{#if share.expiresAt}· {m.public_expires({
+						date: formatDate(share.expiresAt, locale)
+					})}{/if}
+			</p>
+			{#if photos.length}
+				<PhotoGrid
+					items={photos}
+					token=""
+					grouped={false}
+					thumbOf={(it) => mediaUrl(it, 'thumb')}
+					onopen={(it) => (viewerIndex = photos.indexOf(it))}
+				/>
+			{:else}
+				<p class="muted">{m.album_empty_viewer()}</p>
+			{/if}
+		</section>
+		<PhotoViewer
+			items={photos}
+			bind:index={viewerIndex}
+			downloadable={false}
+			previewOf={(it) => mediaUrl(it, 'preview')}
+			videoOf={(it) => mediaUrl(it, 'video')}
+		/>
+	{:else if !share.item}
+		<Alert>{m.error_unexpected()}</Alert>
+	{:else if share.item.kind === 'file'}
 		<section class="file-card" aria-labelledby="item-title">
 			{#if previewKind(share.item) === 'image'}
 				<img class="hero" src={fileUrl(share.item, true)} alt={share.item.name} />
@@ -197,6 +253,15 @@
 {/if}
 
 <style>
+	:global(main:has(.album-view)) {
+		max-width: 80rem;
+	}
+	.album-view h1 {
+		margin-bottom: var(--space-1);
+	}
+	.album-view > .muted {
+		margin: 0 0 var(--space-5);
+	}
 	.center {
 		display: grid;
 		place-items: center;

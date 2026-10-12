@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Link as LinkIcon, Lock, Trash2 } from '@lucide/svelte';
+	import { BookImage, Link as LinkIcon, Lock, Trash2 } from '@lucide/svelte';
 	import FileIcon from '#lib/drive/FileIcon.svelte';
 	import { formatDate, formatDateTime } from '#lib/drive/format.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -67,12 +67,16 @@
 		<tbody>
 			{#each items as share (share.id)}
 				{@const node = share.expand?.node}
+				{@const album = share.expand?.album}
 				<tr class:expired={expired(share)}>
 					<td>
 						<div class="name-cell">
-							{#if node}<FileIcon kind={node.kind} mime={node.mime} />{/if}
+							{#if album}<span class="album-icon"><BookImage size={20} aria-hidden="true" /></span
+								>{:else if node}<FileIcon kind={node.kind} mime={node.mime} />{/if}
 							<div class="ids">
-								{#if node?.kind === 'folder'}
+								{#if album}
+									<a href={resolve('/(app)/albums/[id]', { id: album.id })}>{album.name}</a>
+								{:else if node?.kind === 'folder'}
 									<a href={resolve('/(app)/folders/[id]', { id: node.id })}>{node.name}</a>
 								{:else}
 									<span>{node?.name ?? '—'}</span>
@@ -109,6 +113,11 @@
 {/if}
 
 <style>
+	.album-icon {
+		display: grid;
+		place-items: center;
+		color: var(--color-accent);
+	}
 	h1 {
 		font-size: var(--text-2xl);
 		letter-spacing: -0.02em;

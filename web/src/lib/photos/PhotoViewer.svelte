@@ -18,7 +18,10 @@
 		index = $bindable(-1),
 		ontogglefavorite,
 		canFavorite = () => true,
-		actions = () => []
+		actions = () => [],
+		previewOf,
+		videoOf,
+		downloadable = true
 	}: {
 		items: Media[];
 		index?: number;
@@ -26,6 +29,10 @@
 		canFavorite?: (m: Media) => boolean;
 		/** Extra actions for the current item (add to album, set as cover…). */
 		actions?: (m: Media) => MenuAction[];
+		/** URL overrides for public album links (no account, no file token). */
+		previewOf?: (m: Media) => string | null;
+		videoOf?: (m: Media) => string | null;
+		downloadable?: boolean;
 	} = $props();
 
 	let dialog: HTMLDialogElement;
@@ -42,8 +49,11 @@
 		if (!item && dialog.open) dialog.close();
 	});
 	$effect(() => {
-		if (item) fileToken().then((t) => (token = t));
+		if (item && !previewOf) fileToken().then((t) => (token = t));
 	});
+	const preview = (it: Media) => (previewOf ? previewOf(it) : token ? previewUrl(it, token) : null);
+	const video = (it: Media) => (videoOf ? videoOf(it) : token ? videoUrl(it, token) : null);
+	const ready = $derived(!!previewOf || !!token);
 
 	function go(step: number) {
 		if (items.length > 1) index = (index + step + items.length) % items.length;
@@ -96,14 +106,16 @@
 				>
 					<Info size={20} aria-hidden="true" />
 				</button>
-				<button
-					class="icon-btn"
-					aria-label={m.action_download()}
-					title={m.action_download()}
-					onclick={() => downloadMedia(item)}
-				>
-					<Download size={20} aria-hidden="true" />
-				</button>
+				{#if downloadable}
+					<button
+						class="icon-btn"
+						aria-label={m.action_download()}
+						title={m.action_download()}
+						onclick={() => downloadMedia(item)}
+					>
+						<Download size={20} aria-hidden="true" />
+					</button>
+				{/if}
 				{#if actions(item).length}
 					<ActionsMenu label={m.photo_more({ name: node.name })} actions={actions(item)} />
 				{/if}
@@ -125,21 +137,21 @@
 						><ChevronLeft size={24} aria-hidden="true" /></button
 					>
 				{/if}
-				{#if !token}
+				{#if !ready}
 					<span class="muted">{m.loading()}</span>
-				{:else if item.kind === 'video' && videoUrl(item, token)}
+				{:else if item.kind === 'video' && video(item)}
 					{#key item.id}
 						<!-- svelte-ignore a11y_media_has_caption -->
 						<video
-							src={videoUrl(item, token)}
-							poster={previewUrl(item, token) ?? undefined}
+							src={video(item)}
+							poster={preview(item) ?? undefined}
 							controls
 							autoplay
 							playsinline
 						></video>
 					{/key}
-				{:else if previewUrl(item, token)}
-					{#key item.id}<img src={previewUrl(item, token)} alt={node.name} />{/key}
+				{:else if preview(item)}
+					{#key item.id}<img src={preview(item)} alt={node.name} />{/key}
 				{:else}
 					<p class="muted">{m.photo_no_preview()}</p>
 				{/if}
@@ -157,7 +169,11 @@
 						<dt>{m.photo_taken()}</dt>
 						<dd>{takenLabel(item.taken_at)}</dd>
 						<dt>{m.photo_file()}</dt>
-						<dd>{node.name}<br /><span class="muted">{formatSize(node.size, locale)}</span></dd>
+						<dd>
+							{node.name}{#if node.size}<br /><span class="muted"
+									>{formatSize(node.size, locale)}</span
+								>{/if}
+						</dd>
 						{#if item.width}
 							<dt>{m.photo_dimensions()}</dt>
 							<dd>{item.width} × {item.height}</dd>

@@ -429,5 +429,7 @@
 		}
 	],
 	"photo_select": "Sélectionner {name}",
-	"photo_more": "Plus d’actions pour {name}"
+	"photo_more": "Plus d’actions pour {name}",
+	"album_public_link": "Lien public",
+	"share_album_note": "Toute personne ayant le lien voit l’album tel qu’il est, sans se connecter. Les photos sont affichées en aperçu, sans leur lieu ni les détails de l’appareil ; les vidéos sont lues depuis le fichier d’origine, qui peut contenir ses propres métadonnées."
 }

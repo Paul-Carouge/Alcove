@@ -7,6 +7,7 @@
 		ArrowLeft,
 		CircleCheck,
 		ImagePlus,
+		Link as LinkIcon,
 		LogOut,
 		Pencil,
 		Share2,
@@ -36,6 +37,8 @@
 	import PhotoGrid from '#lib/photos/PhotoGrid.svelte';
 	import PhotoViewer from '#lib/photos/PhotoViewer.svelte';
 	import ShareAlbumDialog from '#lib/photos/ShareAlbumDialog.svelte';
+	import ShareDialog from '#lib/shares/ShareDialog.svelte';
+	import type { ShareTarget } from '#lib/shares/api.js';
 	import ActionsMenu, { type MenuAction } from '#lib/ui/ActionsMenu.svelte';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
@@ -60,6 +63,7 @@
 	let renaming = $state(false);
 	let sharing = $state(false);
 	let confirmDelete = $state(false);
+	let linkTarget = $state<ShareTarget | null>(null);
 	let status = $state('');
 
 	const role = $derived(
@@ -162,6 +166,11 @@
 	const menu = $derived.by((): MenuAction[] =>
 		role === 'owner'
 			? [
+					{
+						label: m.album_public_link(),
+						icon: LinkIcon,
+						onselect: () => (linkTarget = { id, name, album: true })
+					},
 					{ label: m.action_rename(), icon: Pencil, onselect: () => (renaming = true) },
 					{
 						label: m.album_delete(),
@@ -316,6 +325,7 @@
 	}}
 />
 <ShareAlbumDialog bind:open={sharing} albumId={id} onsaved={load} />
+<ShareDialog bind:target={linkTarget} />
 <Dialog bind:open={confirmDelete} title={m.album_delete_title({ name })}>
 	<p class="confirm">{m.album_delete_body()}</p>
 	<div class="actions">

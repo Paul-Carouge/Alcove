@@ -462,7 +462,7 @@
 
 <NewFolderDialog bind:open={newFolderOpen} parent={folderId} />
 <RenameDialog bind:node={renaming} />
-<ShareDialog bind:node={sharing} />
+<ShareDialog bind:target={sharing} />
 <MoveDialog
 	bind:open={moveOpen}
 	items={moveItems}

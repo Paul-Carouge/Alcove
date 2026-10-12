@@ -21,6 +21,9 @@ async function upload(page: Page, files: string[]) {
 	);
 }
 
+// The second test reuses the album made by the first.
+test.describe.configure({ mode: 'serial' });
+
 const nav = (page: Page, name: string) =>
 	page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
 
@@ -97,4 +100,36 @@ test('create an album, share it with a contributor, revoke it', async ({ browser
 
 	await friend.reload();
 	await expect(friend.getByRole('heading', { name: 'This album is not available' })).toBeVisible();
+});
+
+test('a public link shows the album to visitors without an account', async ({ browser }) => {
+	const owner = await signIn(browser, ALBUM_USER);
+	await nav(owner, 'Albums');
+	await owner.getByRole('link', { name: /Lyon trip/ }).click();
+	await owner.getByRole('button', { name: 'Actions for Lyon trip' }).click();
+	await owner.getByRole('menuitem', { name: 'Public link' }).click();
+	const dialog = owner.getByRole('dialog', { name: /Lyon trip/ });
+	await expect(dialog.getByText(/without their location/)).toBeVisible();
+	await dialog.getByLabel('Protect with a password').check();
+	await dialog.getByLabel('Password', { exact: true }).fill('summer');
+	await dialog.getByRole('button', { name: 'Create link' }).click();
+	const url = await dialog.getByLabel('Public link', { exact: true }).inputValue();
+
+	const visitor = await (await browser.newContext()).newPage();
+	await visitor.goto(url);
+	await visitor.getByLabel('Password').fill('summer');
+	await visitor.getByRole('button', { name: 'Open' }).click();
+	await expect(visitor.getByRole('heading', { name: 'Lyon trip', level: 1 })).toBeVisible();
+	await expect(visitor.getByRole('button', { name: /^Open / })).toHaveCount(2);
+	await visitor.getByRole('button', { name: 'Open lyon.jpg' }).click();
+	const viewer = visitor.getByRole('dialog', { name: 'lyon.jpg' });
+	await expect
+		.poll(() =>
+			viewer
+				.getByRole('img', { name: 'lyon.jpg' })
+				.evaluate((i: HTMLImageElement) => i.naturalWidth)
+		)
+		.toBeGreaterThan(0);
+	await expect(viewer.getByRole('button', { name: 'Download' })).toHaveCount(0);
+	await expect(viewer).not.toContainText('OpenStreetMap');
 });

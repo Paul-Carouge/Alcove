@@ -3,7 +3,6 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { formatDate, formatDateTime } from '#lib/drive/format.js';
-	import type { DriveNode } from '#lib/drive/types.js';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
@@ -14,10 +13,11 @@
 		revokeShare,
 		shareUrl,
 		sharesFor,
-		type ShareRecord
+		type ShareRecord,
+		type ShareTarget
 	} from './api.js';
 
-	let { node = $bindable(null) }: { node: DriveNode | null } = $props();
+	let { target = $bindable(null) }: { target: ShareTarget | null } = $props();
 
 	type Preset = 'never' | '1d' | '7d' | '30d';
 	let open = $state(false);
@@ -40,7 +40,7 @@
 	];
 
 	$effect(() => {
-		if (!node) return;
+		if (!target) return;
 		open = true;
 		created = null;
 		error = null;
@@ -48,28 +48,28 @@
 		password = '';
 		passwordError = null;
 		copied = false;
-		sharesFor(node.id)
+		sharesFor(target)
 			.then((list) => (existing = list))
 			.catch(() => (existing = []));
 	});
 	$effect(() => {
-		if (!open) node = null;
+		if (!open) target = null;
 	});
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
-		if (!node) return;
+		if (!target) return;
 		passwordError = protect && password.length < 4 ? m.share_password_hint() : null;
 		if (passwordError) return;
 		busy = true;
 		error = null;
 		try {
-			const res = await createShare(node.id, {
+			const res = await createShare(target, {
 				expiresAt: expiryFromPreset(preset),
 				password: protect ? password : undefined
 			});
 			created = shareUrl(res.token);
-			existing = await sharesFor(node.id);
+			existing = await sharesFor(target);
 		} catch {
 			error = m.error_unexpected();
 		} finally {
@@ -89,7 +89,7 @@
 	}
 </script>
 
-<Dialog bind:open title={m.share_title({ name: node?.name ?? '' })}>
+<Dialog bind:open title={m.share_title({ name: target?.name ?? '' })}>
 	{#if created}
 		<div class="created">
 			<label class="label" for="share-link">{m.share_link_label()}</label>
@@ -110,6 +110,7 @@
 		</div>
 	{:else}
 		<form onsubmit={submit} novalidate>
+			{#if target?.album}<p class="note">{m.share_album_note()}</p>{/if}
 			<fieldset>
 				<legend class="label">{m.share_expiry_label()}</legend>
 				<div class="chips">

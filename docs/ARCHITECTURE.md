@@ -91,7 +91,11 @@ their albums through the `media` view rule (`album_items_via_media` back-relatio
 Drive `nodes` stay owner-only: originals of shared items are served by `GET /api/v1/media/{id}/original`, which
 checks the `media` view rule.
 
-**Planned (phase 2+):** public album links, `video_720p` transcodes,
+**Public album links (v0.12, [ADR 0019](adr/0019-public-album-links.md)):** a `shares` record points to a node or
+an album. Visitors get previews and thumbnails (re-encoded, no metadata) and video streams, never original photos,
+and no location or camera data.
+
+**Planned (phase 2+):** `video_720p` transcodes (also stripping video metadata),
 `documents` (node, ocr_text, language, FTS5 index), `people`/`faces` (phase 2b, optional module).
 Originals are never rewritten. Derivatives live in separate records and can be regenerated.
 

@@ -12,6 +12,9 @@ async function signIn(page: Page, user: { email: string; password: string }) {
 	await expect(page.getByRole('heading', { name: 'My files', level: 1 })).toBeVisible();
 }
 
+// The tiles switch is server-wide: the admin test must not run while the basemap test does.
+test.describe.configure({ mode: 'serial' });
+
 test('the map shows located photos with the built-in basemap only', async ({ page, baseURL }) => {
 	const origin = new URL(baseURL!).origin;
 	const outside: string[] = [];
@@ -40,7 +43,11 @@ test('the map shows located photos with the built-in basemap only', async ({ pag
 	await page.getByRole('link', { name: 'Map' }).click();
 
 	await expect(page.getByRole('heading', { name: 'Map', level: 1 })).toBeVisible();
-	await expect(page.getByText('1 photo with a location')).toBeVisible();
+	// The location is read when the photo is processed, which may finish after its thumbnail shows.
+	await expect(async () => {
+		await page.reload();
+		await expect(page.getByText('1 photo with a location')).toBeVisible({ timeout: 1000 });
+	}).toPass({ timeout: 20_000 });
 	const map = page.getByRole('region', { name: 'Map' });
 	await expect(map.locator('path.leaflet-interactive, svg path').first()).toBeAttached();
 	await expect(map.getByText('Natural Earth')).toBeVisible();

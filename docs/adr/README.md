@@ -24,5 +24,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0017](0017-ffmpeg-bundle-for-native-linux.md) | Native Linux installs get Alcove's own ffmpeg | Accepted |
 | [0018](0018-albums-and-sharing-between-accounts.md) | Albums, and sharing them between accounts | Accepted |
 | [0019](0019-public-album-links.md) | Public album links | Accepted |
+| [0020](0020-photo-map.md) | Photo map: offline basemap, optional OpenStreetMap tiles | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

@@ -1,6 +1,9 @@
 package media_test
 
 import (
+	"context"
+	"image"
+	_ "image/jpeg"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,5 +37,35 @@ func TestImageInfoSize(t *testing.T) {
 				t.Fatalf("size = %dx%d, want %dx%d", info.Width, info.Height, c.w, c.h)
 			}
 		})
+	}
+}
+
+func TestDerivativesFollowExifOrientation(t *testing.T) {
+	if !media.HaveFFmpeg() {
+		t.Skip("ffmpeg not installed")
+	}
+	dir := t.TempDir()
+	src := filepath.Join(dir, "p.jpg")
+	// Stored landscape, displayed portrait (rotate 90° clockwise).
+	if err := os.WriteFile(src, mediatest.JPEG(mediatest.Photo{Width: 640, Height: 320, Orientation: 6}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	thumb, preview := filepath.Join(dir, "t.jpg"), filepath.Join(dir, "p2.jpg")
+	if err := media.Derivatives(context.Background(), src, thumb, preview, false, 0); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{thumb, preview} {
+		f, err := os.Open(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfg, _, err := image.DecodeConfig(f)
+		_ = f.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Width >= cfg.Height {
+			t.Errorf("%s is %dx%d, want portrait", filepath.Base(p), cfg.Width, cfg.Height)
+		}
 	}
 }

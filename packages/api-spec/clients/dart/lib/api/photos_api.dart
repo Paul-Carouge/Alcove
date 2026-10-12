@@ -16,6 +16,290 @@ class PhotosApi {
 
   final ApiClient apiClient;
 
+  /// The owner and participants of an album.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] albumId (required):
+  Future<Response> getAlbumPeopleWithHttpInfo(String albumId,) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/albums/{albumId}/people'
+      .replaceAll('{albumId}', albumId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// The owner and participants of an album.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] albumId (required):
+  Future<GetAlbumPeople200Response?> getAlbumPeople(String albumId,) async {
+    final response = await getAlbumPeopleWithHttpInfo(albumId,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetAlbumPeople200Response',) as GetAlbumPeople200Response;
+    
+    }
+    return null;
+  }
+
+  /// The original file of a photo or video, for its owner and the people of albums it is in.
+  ///
+  /// Authenticated with a short-lived **file token** in the query string, like `/api/v1/nodes/{nodeId}/download`. Access follows the `media` view rule (ADR 0018), so album participants can play or download a shared item without access to the owner's drive. Attachment unless `inline=1` for a passive type; supports Range requests. 
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mediaId (required):
+  ///
+  /// * [String] token (required):
+  ///
+  /// * [String] inline:
+  Future<Response> getMediaOriginalWithHttpInfo(String mediaId, String token, { String? inline, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/media/{mediaId}/original'
+      .replaceAll('{mediaId}', mediaId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+      queryParams.addAll(_queryParams('', 'token', token));
+    if (inline != null) {
+      queryParams.addAll(_queryParams('', 'inline', inline));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// The original file of a photo or video, for its owner and the people of albums it is in.
+  ///
+  /// Authenticated with a short-lived **file token** in the query string, like `/api/v1/nodes/{nodeId}/download`. Access follows the `media` view rule (ADR 0018), so album participants can play or download a shared item without access to the owner's drive. Attachment unless `inline=1` for a passive type; supports Range requests. 
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mediaId (required):
+  ///
+  /// * [String] token (required):
+  ///
+  /// * [String] inline:
+  Future<MultipartFile?> getMediaOriginal(String mediaId, String token, { String? inline, }) async {
+    final response = await getMediaOriginalWithHttpInfo(mediaId, token,  inline: inline, );
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'MultipartFile',) as MultipartFile;
+    
+    }
+    return null;
+  }
+
+  /// Stop taking part in an album shared with you (your photos are removed from it).
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] albumId (required):
+  Future<Response> leaveAlbumWithHttpInfo(String albumId,) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/albums/{albumId}/leave'
+      .replaceAll('{albumId}', albumId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Stop taking part in an album shared with you (your photos are removed from it).
+  ///
+  /// Parameters:
+  ///
+  /// * [String] albumId (required):
+  Future<void> leaveAlbum(String albumId,) async {
+    final response = await leaveAlbumWithHttpInfo(albumId,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+  }
+
+  /// Photos and videos of an album, newest first (items in the trash are left out).
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] albumId (required):
+  ///
+  /// * [int] page:
+  ///
+  /// * [int] perPage:
+  Future<Response> listAlbumItemsWithHttpInfo(String albumId, { int? page, int? perPage, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/albums/{albumId}/items'
+      .replaceAll('{albumId}', albumId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (page != null) {
+      queryParams.addAll(_queryParams('', 'page', page));
+    }
+    if (perPage != null) {
+      queryParams.addAll(_queryParams('', 'perPage', perPage));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Photos and videos of an album, newest first (items in the trash are left out).
+  ///
+  /// Parameters:
+  ///
+  /// * [String] albumId (required):
+  ///
+  /// * [int] page:
+  ///
+  /// * [int] perPage:
+  Future<ListAlbumItems200Response?> listAlbumItems(String albumId, { int? page, int? perPage, }) async {
+    final response = await listAlbumItemsWithHttpInfo(albumId,  page: page, perPage: perPage, );
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListAlbumItems200Response',) as ListAlbumItems200Response;
+    
+    }
+    return null;
+  }
+
+  /// Albums the caller owns or takes part in, most recently updated first.
+  ///
+  /// Albums are created, renamed, shared and deleted through the `albums` collection (`/api/collections/albums/records`); items are added and removed through `album_items`. This read adds what collection rules cannot: item counts, covers and the owner's name. 
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> listAlbumsWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/albums';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Albums the caller owns or takes part in, most recently updated first.
+  ///
+  /// Albums are created, renamed, shared and deleted through the `albums` collection (`/api/collections/albums/records`); items are added and removed through `album_items`. This read adds what collection rules cannot: item counts, covers and the owner's name. 
+  Future<ListAlbums200Response?> listAlbums() async {
+    final response = await listAlbumsWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListAlbums200Response',) as ListAlbums200Response;
+    
+    }
+    return null;
+  }
+
   /// Mark or unmark a photo or video as favorite.
   ///
   /// Note: This method returns the HTTP [Response].

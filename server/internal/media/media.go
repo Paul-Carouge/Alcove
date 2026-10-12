@@ -31,7 +31,7 @@ const (
 	queueSize = 4096
 )
 
-// nativeThumbs are image types PocketBase thumbnails itself (no ffmpeg needed).
+// nativeThumbs are image types Go can thumbnail itself (no ffmpeg needed).
 var nativeThumbs = map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
 
 // KindOf returns "image", "video" or "" for a MIME type.
@@ -50,14 +50,16 @@ func KindOf(mime string) string {
 
 type worker struct {
 	app   core.App
-	queue chan string // media record ids
+	queue chan string   // media record ids
+	done  chan struct{} // closed on shutdown
 	wg    sync.WaitGroup
+	scan  sync.WaitGroup // startup scans
 	once  sync.Once
 }
 
 // Register binds hooks, the favorite route and the background workers.
 func Register(app core.App) {
-	w := &worker{app: app, queue: make(chan string, queueSize)}
+	w := &worker{app: app, queue: make(chan string, queueSize), done: make(chan struct{})}
 
 	track := func(e *core.RecordEvent) error {
 		if err := e.Next(); err != nil {
@@ -71,6 +73,7 @@ func Register(app core.App) {
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.PUT("/api/v1/media/{id}/favorite", setFavorite).Bind(apis.RequireAuth("users"))
+		se.Router.GET("/api/v1/media/{id}/original", original)
 		w.start()
 		return se.Next()
 	})
@@ -117,7 +120,19 @@ func (w *worker) track(node *core.Record) {
 	w.enqueue(rec.Id)
 }
 
+func (w *worker) stopping() bool {
+	select {
+	case <-w.done:
+		return true
+	default:
+		return false
+	}
+}
+
 func (w *worker) enqueue(id string) {
+	if w.done == nil || w.stopping() {
+		return
+	}
 	select {
 	case w.queue <- id:
 	default:
@@ -132,13 +147,39 @@ func (w *worker) start() {
 			w.wg.Add(1)
 			go w.loop()
 		}
-		go w.requeue("pending") // work interrupted by a restart
+		w.scan.Add(1)
+		go func() {
+			defer w.scan.Done()
+			w.backfill()
+			w.requeue("pending") // work interrupted by a restart
+		}()
 	})
 }
 
 func (w *worker) stop() {
+	if w.stopping() {
+		return
+	}
+	close(w.done)
+	w.scan.Wait()
+	w.once.Do(func() {}) // never start after stopping
 	close(w.queue)
 	w.wg.Wait()
+}
+
+// backfill reprocesses items made before every item had its own thumbnail (v0.11).
+func (w *worker) backfill() {
+	recs, err := w.app.FindAllRecords(Collection, dbx.HashExp{"status": "ready", "thumb": ""})
+	if err != nil {
+		return
+	}
+	for _, r := range recs {
+		if w.stopping() {
+			return
+		}
+		r.Set("status", "pending")
+		_ = w.app.Save(r)
+	}
 }
 
 func (w *worker) requeue(status string) {
@@ -147,6 +188,9 @@ func (w *worker) requeue(status string) {
 		return
 	}
 	for _, r := range recs {
+		if w.stopping() {
+			return
+		}
 		if status == "failed" {
 			r.Set("status", "pending")
 			_ = w.app.Save(r)
@@ -240,17 +284,19 @@ func (w *worker) fill(rec, node *core.Record, tmp string) error {
 	rec.Set("lat", info.Lat)
 	rec.Set("lon", info.Lon)
 
-	if !video && nativeThumbs[mime] {
-		return nil // PocketBase thumbnails the original directly
-	}
-	if !HaveFFmpeg() {
-		return errors.New("ffmpeg is not installed (needed for " + mime + " thumbnails)")
-	}
-	if strings.HasPrefix(mime, "image/hei") && !HEICSupported() {
-		return errors.New("HEIC thumbnails need ffmpeg 7.1 or newer")
-	}
+	// Every item gets its own derivatives: album members may see them, never the drive file itself.
 	thumb, preview := filepath.Join(tmp, "thumb.jpg"), filepath.Join(tmp, "preview.jpg")
-	if err := Derivatives(ctx, src, thumb, preview, video, info.Duration); err != nil {
+	switch {
+	case HaveFFmpeg() && (!strings.HasPrefix(mime, "image/hei") || HEICSupported()):
+		err = Derivatives(ctx, src, thumb, preview, video, info.Duration)
+	case !video && nativeThumbs[mime]:
+		err = GoDerivatives(src, thumb, preview, info.Orientation)
+	case strings.HasPrefix(mime, "image/hei") && HaveFFmpeg():
+		err = errors.New("HEIC thumbnails need ffmpeg 7.1 or newer")
+	default:
+		err = errors.New("ffmpeg is not installed (needed for " + mime + " thumbnails)")
+	}
+	if err != nil {
 		return err
 	}
 	for field, path := range map[string]string{"thumb": thumb, "preview": preview} {
@@ -302,4 +348,26 @@ func setFavorite(e *core.RequestEvent) error {
 		return err
 	}
 	return e.NoContent(http.StatusNoContent)
+}
+
+// original serves the file of a photo or video to anyone the media view rule allows: its owner and
+// the people of albums it is in (ADR 0018). The drive itself stays owner-only.
+func original(e *core.RequestEvent) error {
+	user, err := e.App.FindAuthRecordByToken(e.Request.URL.Query().Get("token"), core.TokenTypeFile)
+	if err != nil || user.Collection().Name != "users" {
+		return e.UnauthorizedError("A valid file token is required.", nil)
+	}
+	rec, err := e.App.FindRecordById(Collection, e.Request.PathValue("id"))
+	if err != nil {
+		return e.NotFoundError("", nil)
+	}
+	ok, err := e.App.CanAccessRecord(rec, &core.RequestInfo{Auth: user, Method: http.MethodGet}, rec.Collection().ViewRule)
+	if err != nil || !ok {
+		return e.NotFoundError("", nil)
+	}
+	node, err := e.App.FindRecordById(drive.Collection, rec.GetString("node"))
+	if err != nil || node.GetString("blob") == "" || !node.GetDateTime("trashed_at").IsZero() {
+		return e.NotFoundError("", nil)
+	}
+	return drive.Serve(e, node, e.Request.URL.Query().Get("inline") == "1")
 }

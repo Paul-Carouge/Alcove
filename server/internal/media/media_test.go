@@ -86,8 +86,8 @@ func TestPhotoWithExif(t *testing.T) {
 	if !rec.GetBool("has_location") || math.Abs(rec.GetFloat("lat")-43.2965) > 1e-3 {
 		t.Errorf("location = %v %v", rec.GetBool("has_location"), rec.GetFloat("lat"))
 	}
-	if rec.GetString("thumb") != "" {
-		t.Error("JPEG thumbnails are made by PocketBase, no derivative expected")
+	if rec.GetString("thumb") == "" || rec.GetString("preview") == "" {
+		t.Error("every photo gets its own thumbnail and preview")
 	}
 }
 

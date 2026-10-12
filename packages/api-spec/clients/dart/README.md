@@ -72,6 +72,7 @@ Class | Method | HTTP request | Description
 *AccountApi* | [**disableTotp**](doc//AccountApi.md#disabletotp) | **POST** /api/v1/me/totp/disable | Turn two-factor off (password and a code required).
 *AccountApi* | [**enableTotp**](doc//AccountApi.md#enabletotp) | **POST** /api/v1/me/totp/enable | Confirm enrolment with a first code; returns recovery codes once.
 *AccountApi* | [**getTotpStatus**](doc//AccountApi.md#gettotpstatus) | **GET** /api/v1/me/totp | Two-factor status of the signed-in user.
+*AccountApi* | [**lookupUser**](doc//AccountApi.md#lookupuser) | **GET** /api/v1/users/lookup | Find an account of this server by exact email, to share an album with it.
 *AccountApi* | [**regenerateRecoveryCodes**](doc//AccountApi.md#regeneraterecoverycodes) | **POST** /api/v1/me/totp/recovery-codes | Replace all recovery codes (password and a code required).
 *AccountApi* | [**setupTotp**](doc//AccountApi.md#setuptotp) | **POST** /api/v1/me/totp/setup | Start enrolment (new secret, not active until confirmed).
 *AdminApi* | [**applyUpdate**](doc//AdminApi.md#applyupdate) | **POST** /api/v1/admin/updates/apply | Install the latest release and restart (native installs only).
@@ -79,6 +80,11 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
+*PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
+*PhotosApi* | [**getMediaOriginal**](doc//PhotosApi.md#getmediaoriginal) | **GET** /api/v1/media/{mediaId}/original | The original file of a photo or video, for its owner and the people of albums it is in.
+*PhotosApi* | [**leaveAlbum**](doc//PhotosApi.md#leavealbum) | **POST** /api/v1/albums/{albumId}/leave | Stop taking part in an album shared with you (your photos are removed from it).
+*PhotosApi* | [**listAlbumItems**](doc//PhotosApi.md#listalbumitems) | **GET** /api/v1/albums/{albumId}/items | Photos and videos of an album, newest first (items in the trash are left out).
+*PhotosApi* | [**listAlbums**](doc//PhotosApi.md#listalbums) | **GET** /api/v1/albums | Albums the caller owns or takes part in, most recently updated first.
 *PhotosApi* | [**setFavorite**](doc//PhotosApi.md#setfavorite) | **PUT** /api/v1/media/{mediaId}/favorite | Mark or unmark a photo or video as favorite.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
 *PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's content).
@@ -96,6 +102,9 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AlbumItem](doc//AlbumItem.md)
+ - [AlbumSummary](doc//AlbumSummary.md)
+ - [AlbumSummaryOwner](doc//AlbumSummaryOwner.md)
  - [ApiRange](doc//ApiRange.md)
  - [ApplyUpdate202Response](doc//ApplyUpdate202Response.md)
  - [CompleteSetupRequest](doc//CompleteSetupRequest.md)
@@ -104,8 +113,14 @@ Class | Method | HTTP request | Description
  - [CreatedShare](doc//CreatedShare.md)
  - [EnableTotpRequest](doc//EnableTotpRequest.md)
  - [Error](doc//Error.md)
+ - [GetAlbumPeople200Response](doc//GetAlbumPeople200Response.md)
+ - [GetAlbumPeople200ResponsePeopleInner](doc//GetAlbumPeople200ResponsePeopleInner.md)
  - [Health](doc//Health.md)
+ - [ListAlbumItems200Response](doc//ListAlbumItems200Response.md)
+ - [ListAlbums200Response](doc//ListAlbums200Response.md)
+ - [MediaFiles](doc//MediaFiles.md)
  - [Module](doc//Module.md)
+ - [Person](doc//Person.md)
  - [PublicNode](doc//PublicNode.md)
  - [PublicShare](doc//PublicShare.md)
  - [RecoveryCodes](doc//RecoveryCodes.md)

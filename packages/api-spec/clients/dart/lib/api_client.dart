@@ -182,6 +182,12 @@ class ApiClient {
           return valueString == 'true' || valueString == '1';
         case 'DateTime':
           return value is DateTime ? value : DateTime.tryParse(value);
+        case 'AlbumItem':
+          return AlbumItem.fromJson(value);
+        case 'AlbumSummary':
+          return AlbumSummary.fromJson(value);
+        case 'AlbumSummaryOwner':
+          return AlbumSummaryOwner.fromJson(value);
         case 'ApiRange':
           return ApiRange.fromJson(value);
         case 'ApplyUpdate202Response':
@@ -198,10 +204,22 @@ class ApiClient {
           return EnableTotpRequest.fromJson(value);
         case 'Error':
           return Error.fromJson(value);
+        case 'GetAlbumPeople200Response':
+          return GetAlbumPeople200Response.fromJson(value);
+        case 'GetAlbumPeople200ResponsePeopleInner':
+          return GetAlbumPeople200ResponsePeopleInner.fromJson(value);
         case 'Health':
           return Health.fromJson(value);
+        case 'ListAlbumItems200Response':
+          return ListAlbumItems200Response.fromJson(value);
+        case 'ListAlbums200Response':
+          return ListAlbums200Response.fromJson(value);
+        case 'MediaFiles':
+          return MediaFiles.fromJson(value);
         case 'Module':
           return ModuleTypeTransformer().decode(value);
+        case 'Person':
+          return Person.fromJson(value);
         case 'PublicNode':
           return PublicNode.fromJson(value);
         case 'PublicShare':

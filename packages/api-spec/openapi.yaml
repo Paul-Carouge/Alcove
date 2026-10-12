@@ -45,6 +45,8 @@ tags:
       collection (date taken, dimensions, camera, location, duration, generated thumbnails), filled in
       by a background worker. Read it with `GET /api/collections/media/records` (owner only); the
       timeline sorts by `-taken_at`. Only `favorite` can be changed by users, through this API.
+      Albums (`albums`, `album_items` collections) can be shared with other accounts as viewers or
+      contributors (ADR 0018); participants read shared items through the `media` view rule.
   - name: admin
     description: Server administration, for accounts with `role = admin` (ADR 0015).
   - name: uploads
@@ -553,6 +555,162 @@ paths:
         "204": { description: Saved. }
         "401": { description: Authentication required. }
         "404": { description: "Unknown media, or owned by another user." }
+  /api/v1/media/{mediaId}/original:
+    get:
+      tags: [photos]
+      operationId: getMediaOriginal
+      summary: The original file of a photo or video, for its owner and the people of albums it is in.
+      description: |
+        Authenticated with a short-lived **file token** in the query string, like
+        `/api/v1/nodes/{nodeId}/download`. Access follows the `media` view rule (ADR 0018), so album
+        participants can play or download a shared item without access to the owner's drive.
+        Attachment unless `inline=1` for a passive type; supports Range requests.
+      security: []
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 64 }
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+        - name: inline
+          in: query
+          required: false
+          schema: { type: string, enum: ["1"] }
+      responses:
+        "200":
+          description: The file.
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "206": { description: Partial content (Range request). }
+        "401": { description: Missing or invalid file token. }
+        "404": { description: "Unknown item, in the trash, or not visible to this account." }
+  /api/v1/albums:
+    get:
+      tags: [photos]
+      operationId: listAlbums
+      summary: Albums the caller owns or takes part in, most recently updated first.
+      description: |
+        Albums are created, renamed, shared and deleted through the `albums` collection
+        (`/api/collections/albums/records`); items are added and removed through `album_items`.
+        This read adds what collection rules cannot: item counts, covers and the owner's name.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: The albums.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/AlbumSummary" }
+        "401": { description: Authentication required. }
+  /api/v1/albums/{albumId}/items:
+    get:
+      tags: [photos]
+      operationId: listAlbumItems
+      summary: Photos and videos of an album, newest first (items in the trash are left out).
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/AlbumId"
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: perPage
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500, default: 200 }
+      responses:
+        "200":
+          description: A page of items.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [page, perPage, totalItems, items]
+                properties:
+                  page: { type: integer }
+                  perPage: { type: integer }
+                  totalItems: { type: integer }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/AlbumItem" }
+        "401": { description: Authentication required. }
+        "404": { description: "Unknown album, or not shared with this account." }
+  /api/v1/albums/{albumId}/people:
+    get:
+      tags: [photos]
+      operationId: getAlbumPeople
+      summary: The owner and participants of an album.
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/AlbumId"
+      responses:
+        "200":
+          description: The people.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [owner, people]
+                properties:
+                  owner: { $ref: "#/components/schemas/Person" }
+                  people:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/Person"
+                        - type: object
+                          required: [role]
+                          properties:
+                            role: { type: string, enum: [viewer, contributor] }
+        "401": { description: Authentication required. }
+        "404": { description: "Unknown album, or not shared with this account." }
+  /api/v1/albums/{albumId}/leave:
+    post:
+      tags: [photos]
+      operationId: leaveAlbum
+      summary: Stop taking part in an album shared with you (your photos are removed from it).
+      security:
+        - userToken: []
+      parameters:
+        - $ref: "#/components/parameters/AlbumId"
+      responses:
+        "204": { description: Left. }
+        "400": { description: The owner cannot leave their own album. }
+        "401": { description: Authentication required. }
+        "404": { description: "Unknown album, or not shared with this account." }
+  /api/v1/users/lookup:
+    get:
+      tags: [account]
+      operationId: lookupUser
+      summary: Find an account of this server by exact email, to share an album with it.
+      security:
+        - userToken: []
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email, maxLength: 254 }
+      responses:
+        "200":
+          description: The account.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Person" }
+        "400": { description: Invalid email. }
+        "401": { description: Authentication required. }
+        "404": { description: No account with this email (or it is your own). }
   /api/v1/nodes/{nodeId}/download:
     get:
       tags: [drive]
@@ -601,6 +759,11 @@ components:
       name: Authorization
       description: PocketBase auth token of a `users` record (raw token, no "Bearer" prefix).
   parameters:
+    AlbumId:
+      name: albumId
+      in: path
+      required: true
+      schema: { type: string, maxLength: 64 }
     ShareToken:
       name: token
       in: path
@@ -631,6 +794,68 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
+    Person:
+      type: object
+      required: [id, name, email]
+      properties:
+        id: { type: string }
+        name: { type: string, description: May be empty. }
+        email: { type: string }
+    AlbumSummary:
+      type: object
+      required: [id, name, role, owner, count, shared, cover, updated]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [owner, contributor, viewer], description: The caller's role. }
+        owner:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+        count: { type: integer, description: Items not in the trash. }
+        shared: { type: boolean, description: The album has participants. }
+        cover:
+          description: The chosen cover, or the newest item; null for an empty album.
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/MediaFiles"
+        updated: { type: string, format: date-time }
+    MediaFiles:
+      type: object
+      description: Enough to build PocketBase file URLs (`/api/files/{collectionId}/{id}/{file}?token=`).
+      required: [id, collectionId, thumb, preview]
+      properties:
+        id: { type: string }
+        collectionId: { type: string }
+        thumb: { type: string }
+        preview: { type: string }
+    AlbumItem:
+      allOf:
+        - $ref: "#/components/schemas/MediaFiles"
+        - type: object
+          required: [itemId, addedBy, kind, status, taken_at, width, height, duration, favorite, name, size, mime]
+          properties:
+            itemId: { type: string, description: The album_items record (to remove it). }
+            addedBy: { type: string, description: User id. }
+            kind: { type: string, enum: [image, video] }
+            status: { type: string, enum: [pending, ready, failed] }
+            taken_at: { type: string }
+            width: { type: integer }
+            height: { type: integer }
+            duration: { type: number }
+            favorite: { type: boolean, description: The owner's favorite flag (false for others' photos). }
+            camera_make: { type: string }
+            camera_model: { type: string }
+            lens: { type: string }
+            exposure: { type: string }
+            has_location: { type: boolean }
+            lat: { type: number }
+            lon: { type: number }
+            name: { type: string, description: File name. }
+            size: { type: integer }
+            mime: { type: string }
     Health:
       type: object
       additionalProperties: false

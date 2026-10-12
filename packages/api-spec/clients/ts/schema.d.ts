@@ -376,6 +376,119 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/media/{mediaId}/original": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The original file of a photo or video, for its owner and the people of albums it is in.
+     * @description Authenticated with a short-lived **file token** in the query string, like
+     *     `/api/v1/nodes/{nodeId}/download`. Access follows the `media` view rule (ADR 0018), so album
+     *     participants can play or download a shared item without access to the owner's drive.
+     *     Attachment unless `inline=1` for a passive type; supports Range requests.
+     */
+    get: operations["getMediaOriginal"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/albums": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Albums the caller owns or takes part in, most recently updated first.
+     * @description Albums are created, renamed, shared and deleted through the `albums` collection
+     *     (`/api/collections/albums/records`); items are added and removed through `album_items`.
+     *     This read adds what collection rules cannot: item counts, covers and the owner's name.
+     */
+    get: operations["listAlbums"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/albums/{albumId}/items": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Photos and videos of an album, newest first (items in the trash are left out). */
+    get: operations["listAlbumItems"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/albums/{albumId}/people": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The owner and participants of an album. */
+    get: operations["getAlbumPeople"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/albums/{albumId}/leave": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Stop taking part in an album shared with you (your photos are removed from it). */
+    post: operations["leaveAlbum"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/users/lookup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Find an account of this server by exact email, to share an album with it. */
+    get: operations["lookupUser"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/nodes/{nodeId}/download": {
     parameters: {
       query?: never;
@@ -402,6 +515,67 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    Person: {
+      id: string;
+      /** @description May be empty. */
+      name: string;
+      email: string;
+    };
+    AlbumSummary: {
+      id: string;
+      name: string;
+      /**
+       * @description The caller's role.
+       * @enum {string}
+       */
+      role: "owner" | "contributor" | "viewer";
+      owner: {
+        id: string;
+        name: string;
+      };
+      /** @description Items not in the trash. */
+      count: number;
+      /** @description The album has participants. */
+      shared: boolean;
+      /** @description The chosen cover, or the newest item; null for an empty album. */
+      cover: null | components["schemas"]["MediaFiles"];
+      /** Format: date-time */
+      updated: string;
+    };
+    /** @description Enough to build PocketBase file URLs (`/api/files/{collectionId}/{id}/{file}?token=`). */
+    MediaFiles: {
+      id: string;
+      collectionId: string;
+      thumb: string;
+      preview: string;
+    };
+    AlbumItem: components["schemas"]["MediaFiles"] & {
+      /** @description The album_items record (to remove it). */
+      itemId: string;
+      /** @description User id. */
+      addedBy: string;
+      /** @enum {string} */
+      kind: "image" | "video";
+      /** @enum {string} */
+      status: "pending" | "ready" | "failed";
+      taken_at: string;
+      width: number;
+      height: number;
+      duration: number;
+      /** @description The owner's favorite flag (false for others' photos). */
+      favorite: boolean;
+      camera_make?: string;
+      camera_model?: string;
+      lens?: string;
+      exposure?: string;
+      has_location?: boolean;
+      lat?: number;
+      lon?: number;
+      /** @description File name. */
+      name: string;
+      size: number;
+      mime: string;
+    };
     Health: {
       /** @enum {string} */
       status: "ok";
@@ -575,6 +749,7 @@ export interface components {
     };
   };
   parameters: {
+    AlbumId: string;
     /** @description The link token (43 URL-safe characters). */
     ShareToken: string;
     /** @description Access token from `unlock` (password-protected links only). */
@@ -1480,6 +1655,251 @@ export interface operations {
         content?: never;
       };
       /** @description Unknown media, or owned by another user. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getMediaOriginal: {
+    parameters: {
+      query: {
+        token: string;
+        inline?: "1";
+      };
+      header?: never;
+      path: {
+        mediaId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Partial content (Range request). */
+      206: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Missing or invalid file token. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown item, in the trash, or not visible to this account. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listAlbums: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The albums. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items: components["schemas"]["AlbumSummary"][];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listAlbumItems: {
+    parameters: {
+      query?: {
+        page?: number;
+        perPage?: number;
+      };
+      header?: never;
+      path: {
+        albumId: components["parameters"]["AlbumId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A page of items. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            page: number;
+            perPage: number;
+            totalItems: number;
+            items: components["schemas"]["AlbumItem"][];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown album, or not shared with this account. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getAlbumPeople: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        albumId: components["parameters"]["AlbumId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The people. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            owner: components["schemas"]["Person"];
+            people: (components["schemas"]["Person"] & {
+              /** @enum {string} */
+              role: "viewer" | "contributor";
+            })[];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown album, or not shared with this account. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  leaveAlbum: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        albumId: components["parameters"]["AlbumId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Left. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The owner cannot leave their own album. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown album, or not shared with this account. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  lookupUser: {
+    parameters: {
+      query: {
+        email: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The account. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Person"];
+        };
+      };
+      /** @description Invalid email. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No account with this email (or it is your own). */
       404: {
         headers: {
           [name: string]: unknown;

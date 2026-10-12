@@ -38,6 +38,7 @@ type Info struct {
 	Exposure    string
 	HasLocation bool
 	Lat, Lon    float64
+	Orientation int // EXIF orientation (1–8, 0 when unknown), for the Go thumbnailer
 }
 
 // ffmpegTimeout bounds every external call (files are untrusted).
@@ -80,6 +81,7 @@ func ImageInfo(path string) (Info, error) {
 		}
 		o := e.IFD0.Orientation
 		rotated = o >= meta.OrientationMirrorHorizontalRotate270 && o <= meta.OrientationRotate270
+		info.Orientation = int(o)
 		lat, lon := e.GPS.Latitude(), e.GPS.Longitude()
 		if (lat != 0 || lon != 0) && math.Abs(lat) <= 90 && math.Abs(lon) <= 180 {
 			info.HasLocation, info.Lat, info.Lon = true, lat, lon

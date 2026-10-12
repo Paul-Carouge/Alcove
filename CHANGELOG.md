@@ -7,6 +7,19 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-12
+
+### Added
+- **Android app in every release**: `alcove-android.apk`, signed with the Alcove release key, attached to each
+  GitHub release; the web app links to it (Account → Alcove on your phone) ([ADR 0023](docs/adr/0023-android-distribution.md)).
+- Mobile: albums (yours and shared with you) and album view; move your own photos to the trash from the viewer.
+
+### Changed
+- The mobile app accepts plain `http://` addresses on private networks (home network, `.local`, Tailscale),
+  with an "unencrypted connection" warning, so servers installed in "local network" mode work with the
+  release app. Other addresses still require HTTPS.
+- Favorites can only be toggled on your own photos in the mobile viewer.
+
 ## [0.17.0] - 2026-10-12
 
 ### Added
@@ -291,7 +304,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.14.0...v0.15.0

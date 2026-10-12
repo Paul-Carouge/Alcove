@@ -734,6 +734,103 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MapConfig" }
         "401": { description: Authentication required. }
+  /api/v1/admin/users:
+    get:
+      tags: [admin]
+      operationId: listUsers
+      summary: Every account of this server, with its storage use.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: The accounts, by email.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminUser" }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+    post:
+      tags: [admin]
+      operationId: createUser
+      summary: Create an account (verified, ready to sign in).
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, maxLength: 254 }
+                name: { type: string, maxLength: 100 }
+                password: { type: string, minLength: 10, maxLength: 256 }
+                quotaBytes: { type: integer, minimum: 0, description: "0 = unlimited." }
+                admin: { type: boolean }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUser" }
+        "400": { description: "Invalid values, or the email is already used." }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+  /api/v1/admin/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string, maxLength: 64 }
+    patch:
+      tags: [admin]
+      operationId: updateUser
+      summary: Change an account's name, quota, role or password.
+      description: |
+        Setting `password` signs the account out everywhere. Administrators cannot remove their own
+        admin role, and the last administrator cannot be demoted.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 100 }
+                quotaBytes: { type: integer, minimum: 0 }
+                admin: { type: boolean }
+                password: { type: string, minLength: 10, maxLength: 256 }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUser" }
+        "400": { description: "Invalid values, or the change would leave no administrator." }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+        "404": { description: Unknown account. }
+    delete:
+      tags: [admin]
+      operationId: deleteUser
+      summary: Delete an account and everything it owns (files, photos, albums, links).
+      security:
+        - userToken: []
+      responses:
+        "204": { description: Deleted. }
+        "400": { description: "You cannot delete your own account here, nor the last administrator." }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+        "404": { description: Unknown account. }
   /api/v1/admin/map:
     put:
       tags: [admin]
@@ -1050,6 +1147,18 @@ components:
         collectionId: { type: string }
         thumb: { type: string }
         preview: { type: string }
+    AdminUser:
+      type: object
+      required: [id, email, name, admin, quotaBytes, usedBytes, twoFactor, created]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string }
+        admin: { type: boolean }
+        quotaBytes: { type: integer, description: "0 = unlimited." }
+        usedBytes: { type: integer, description: "Files, trash included." }
+        twoFactor: { type: boolean, description: Uses an authenticator app. }
+        created: { type: string }
     MapConfig:
       type: object
       required: [tiles]

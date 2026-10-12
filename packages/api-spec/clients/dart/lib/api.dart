@@ -38,6 +38,7 @@ part 'api/shares_api.dart';
 part 'api/system_api.dart';
 part 'api/uploads_api.dart';
 
+part 'model/admin_user.dart';
 part 'model/album_item.dart';
 part 'model/album_summary.dart';
 part 'model/album_summary_owner.dart';
@@ -46,6 +47,7 @@ part 'model/apply_update202_response.dart';
 part 'model/complete_setup_request.dart';
 part 'model/complete_setup_request_all_of_admin.dart';
 part 'model/create_share.dart';
+part 'model/create_user_request.dart';
 part 'model/created_share.dart';
 part 'model/dismiss_duplicates_request.dart';
 part 'model/duplicate_group.dart';
@@ -65,6 +67,7 @@ part 'model/list_albums200_response.dart';
 part 'model/list_duplicates200_response.dart';
 part 'model/list_photo_locations200_response.dart';
 part 'model/list_photo_locations200_response_items_inner.dart';
+part 'model/list_users200_response.dart';
 part 'model/map_config.dart';
 part 'model/map_config_tiles.dart';
 part 'model/media_files.dart';
@@ -89,6 +92,7 @@ part 'model/totp_setup.dart';
 part 'model/totp_status.dart';
 part 'model/unlock_share200_response.dart';
 part 'model/unlock_share_request.dart';
+part 'model/update_user_request.dart';
 part 'model/usage.dart';
 
 

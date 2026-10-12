@@ -77,8 +77,12 @@ Class | Method | HTTP request | Description
 *AccountApi* | [**setupTotp**](doc//AccountApi.md#setuptotp) | **POST** /api/v1/me/totp/setup | Start enrolment (new secret, not active until confirmed).
 *AdminApi* | [**applyUpdate**](doc//AdminApi.md#applyupdate) | **POST** /api/v1/admin/updates/apply | Install the latest release and restart (native installs only).
 *AdminApi* | [**checkUpdates**](doc//AdminApi.md#checkupdates) | **POST** /api/v1/admin/updates/check | Check for a new release now.
+*AdminApi* | [**createUser**](doc//AdminApi.md#createuser) | **POST** /api/v1/admin/users | Create an account (verified, ready to sign in).
+*AdminApi* | [**deleteUser**](doc//AdminApi.md#deleteuser) | **DELETE** /api/v1/admin/users/{userId} | Delete an account and everything it owns (files, photos, albums, links).
 *AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
+*AdminApi* | [**listUsers**](doc//AdminApi.md#listusers) | **GET** /api/v1/admin/users | Every account of this server, with its storage use.
 *AdminApi* | [**setMapTiles**](doc//AdminApi.md#setmaptiles) | **PUT** /api/v1/admin/map | Enable or disable OpenStreetMap tiles for every user's map.
+*AdminApi* | [**updateUser**](doc//AdminApi.md#updateuser) | **PATCH** /api/v1/admin/users/{userId} | Change an account's name, quota, role or password.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *DriveApi* | [**knownHashes**](doc//DriveApi.md#knownhashes) | **POST** /api/v1/backup/known | Which of these file fingerprints you already have (phone backup deduplication).
@@ -110,6 +114,7 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AdminUser](doc//AdminUser.md)
  - [AlbumItem](doc//AlbumItem.md)
  - [AlbumSummary](doc//AlbumSummary.md)
  - [AlbumSummaryOwner](doc//AlbumSummaryOwner.md)
@@ -118,6 +123,7 @@ Class | Method | HTTP request | Description
  - [CompleteSetupRequest](doc//CompleteSetupRequest.md)
  - [CompleteSetupRequestAllOfAdmin](doc//CompleteSetupRequestAllOfAdmin.md)
  - [CreateShare](doc//CreateShare.md)
+ - [CreateUserRequest](doc//CreateUserRequest.md)
  - [CreatedShare](doc//CreatedShare.md)
  - [DismissDuplicatesRequest](doc//DismissDuplicatesRequest.md)
  - [DuplicateGroup](doc//DuplicateGroup.md)
@@ -137,6 +143,7 @@ Class | Method | HTTP request | Description
  - [ListDuplicates200Response](doc//ListDuplicates200Response.md)
  - [ListPhotoLocations200Response](doc//ListPhotoLocations200Response.md)
  - [ListPhotoLocations200ResponseItemsInner](doc//ListPhotoLocations200ResponseItemsInner.md)
+ - [ListUsers200Response](doc//ListUsers200Response.md)
  - [MapConfig](doc//MapConfig.md)
  - [MapConfigTiles](doc//MapConfigTiles.md)
  - [MediaFiles](doc//MediaFiles.md)
@@ -161,6 +168,7 @@ Class | Method | HTTP request | Description
  - [TotpStatus](doc//TotpStatus.md)
  - [UnlockShare200Response](doc//UnlockShare200Response.md)
  - [UnlockShareRequest](doc//UnlockShareRequest.md)
+ - [UpdateUserRequest](doc//UpdateUserRequest.md)
  - [Usage](doc//Usage.md)
 
 

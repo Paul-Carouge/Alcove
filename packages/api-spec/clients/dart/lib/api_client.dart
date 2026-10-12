@@ -182,6 +182,8 @@ class ApiClient {
           return valueString == 'true' || valueString == '1';
         case 'DateTime':
           return value is DateTime ? value : DateTime.tryParse(value);
+        case 'AdminUser':
+          return AdminUser.fromJson(value);
         case 'AlbumItem':
           return AlbumItem.fromJson(value);
         case 'AlbumSummary':
@@ -198,6 +200,8 @@ class ApiClient {
           return CompleteSetupRequestAllOfAdmin.fromJson(value);
         case 'CreateShare':
           return CreateShare.fromJson(value);
+        case 'CreateUserRequest':
+          return CreateUserRequest.fromJson(value);
         case 'CreatedShare':
           return CreatedShare.fromJson(value);
         case 'DismissDuplicatesRequest':
@@ -236,6 +240,8 @@ class ApiClient {
           return ListPhotoLocations200Response.fromJson(value);
         case 'ListPhotoLocations200ResponseItemsInner':
           return ListPhotoLocations200ResponseItemsInner.fromJson(value);
+        case 'ListUsers200Response':
+          return ListUsers200Response.fromJson(value);
         case 'MapConfig':
           return MapConfig.fromJson(value);
         case 'MapConfigTiles':
@@ -284,6 +290,8 @@ class ApiClient {
           return UnlockShare200Response.fromJson(value);
         case 'UnlockShareRequest':
           return UnlockShareRequest.fromJson(value);
+        case 'UpdateUserRequest':
+          return UpdateUserRequest.fromJson(value);
         case 'Usage':
           return Usage.fromJson(value);
         default:

@@ -500,6 +500,48 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Every account of this server, with its storage use. */
+    get: operations["listUsers"];
+    put?: never;
+    /** Create an account (verified, ready to sign in). */
+    post: operations["createUser"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/users/{userId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an account and everything it owns (files, photos, albums, links). */
+    delete: operations["deleteUser"];
+    options?: never;
+    head?: never;
+    /**
+     * Change an account's name, quota, role or password.
+     * @description Setting `password` signs the account out everywhere. Administrators cannot remove their own
+     *     admin role, and the last administrator cannot be demoted.
+     */
+    patch: operations["updateUser"];
+    trace?: never;
+  };
   "/api/v1/admin/map": {
     parameters: {
       query?: never;
@@ -706,6 +748,19 @@ export interface components {
       collectionId: string;
       thumb: string;
       preview: string;
+    };
+    AdminUser: {
+      id: string;
+      email: string;
+      name: string;
+      admin: boolean;
+      /** @description 0 = unlimited. */
+      quotaBytes: number;
+      /** @description Files, trash included. */
+      usedBytes: number;
+      /** @description Uses an authenticator app. */
+      twoFactor: boolean;
+      created: string;
     };
     MapConfig: {
       tiles: null | {
@@ -2122,6 +2177,202 @@ export interface operations {
       };
       /** @description Authentication required. */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listUsers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The accounts, by email. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items: components["schemas"]["AdminUser"][];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string;
+          name?: string;
+          password: string;
+          /** @description 0 = unlimited. */
+          quotaBytes?: number;
+          admin?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Created. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUser"];
+        };
+      };
+      /** @description Invalid values, or the email is already used. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description You cannot delete your own account here, nor the last administrator. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown account. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          name?: string;
+          quotaBytes?: number;
+          admin?: boolean;
+          password?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUser"];
+        };
+      };
+      /** @description Invalid values, or the change would leave no administrator. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown account. */
+      404: {
         headers: {
           [name: string]: unknown;
         };

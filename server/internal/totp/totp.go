@@ -71,6 +71,12 @@ func enrolment(app core.App, userID string) (*core.Record, error) {
 	return app.FindFirstRecordByData(Collection, "user", userID)
 }
 
+// Enabled reports whether the account uses an authenticator app.
+func Enabled(app core.App, userID string) bool {
+	_, on := enabledFor(app, userID)
+	return on
+}
+
 func enabledFor(app core.App, userID string) (*core.Record, bool) {
 	rec, err := enrolment(app, userID)
 	return rec, err == nil && rec.GetBool("enabled")

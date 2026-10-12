@@ -5,6 +5,7 @@ package app
 import (
 	"github.com/pocketbase/pocketbase/core"
 
+	"github.com/Paul-Carouge/Alcove/server/internal/accounts"
 	"github.com/Paul-Carouge/Alcove/server/internal/albums"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
@@ -33,6 +34,7 @@ func Wire(app core.App, cfg config.Config) {
 	media.Register(app)
 	albums.Register(app)
 	duplicates.Register(app)
+	accounts.Register(app)
 	shares.Register(app)
 	totp.Register(app, secrets.New(app, cfg.SecretKey))
 	updates.Register(app, updates.FromConfig(cfg))

@@ -7,6 +7,20 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-12
+
+### Added
+- Two-factor authentication with an authenticator app (TOTP): QR code or manual key, confirmation
+  with a first code, 10 single-use recovery codes (copy or download), regeneration and turning off.
+- Sign-in asks for the 6-digit code (or a recovery code) when two-factor is on.
+- Security page, reachable from the account menu.
+- `ALCOVE_SECRET_KEY` to encrypt sensitive data at rest (a key file is generated otherwise).
+
+### Security
+- The code is requested only after the password is verified, so two-factor status never leaks.
+- Codes cannot be reused (per-step replay protection); email one-time codes cannot bypass TOTP.
+- Secrets are encrypted (AES-GCM), recovery codes stored as hashes; routes are rate limited.
+
 ## [0.6.0] - 2026-10-12
 
 ### Added
@@ -90,7 +104,8 @@ The story behind each release is in the [devlog](docs/devlog/).
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.3.0...v0.4.0

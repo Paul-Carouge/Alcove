@@ -186,5 +186,12 @@
 	"public_expired": "Ce lien a expiré.",
 	"public_expires": "Disponible jusqu’au {date}",
 	"public_open": "Ouvrir {name}",
-	"made_by": "Créé par"
+	"made_by": "Créé par",
+	"storage_label": "Stockage",
+	"storage_used": "{used} utilisés sur {quota}",
+	"storage_used_unlimited": "{used} utilisés",
+	"storage_trash": "dont {trash} dans la corbeille",
+	"storage_almost_full": "Presque plein. Videz la corbeille ou supprimez des fichiers pour libérer de l’espace.",
+	"storage_full": "Espace plein",
+	"upload_status_quota": "Espace insuffisant"
 }

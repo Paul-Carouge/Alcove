@@ -1,7 +1,7 @@
 import { Upload, type DetailedError, type UploadOptions } from 'tus-js-client';
 import { pb } from '#lib/pb.js';
 
-export type UploadStatus = 'queued' | 'uploading' | 'done' | 'error' | 'canceled';
+export type UploadStatus = 'queued' | 'uploading' | 'done' | 'error' | 'quota' | 'canceled';
 
 export interface UploadItem {
 	id: number;
@@ -16,6 +16,10 @@ export interface UploadItem {
 const ENDPOINT = '/api/v1/uploads/';
 const CHUNK_SIZE = 8 * 1024 * 1024; // below the server's 64 MiB per-request limit
 const CONCURRENCY = 3;
+
+const isQuota = (err: DetailedError) =>
+	err.originalResponse?.getStatus() === 413 &&
+	(err.originalResponse.getBody() ?? '').startsWith('ERR_QUOTA_EXCEEDED');
 
 /** Retry network errors, timeouts, conflicts and rate limits; not other client errors. */
 function shouldRetry(err: DetailedError): boolean {
@@ -57,7 +61,7 @@ class UploadQueue {
 
 	retry(id: number) {
 		const item = this.#item(id);
-		if (!item || (item.status !== 'error' && item.status !== 'canceled')) return;
+		if (!item || !['error', 'quota', 'canceled'].includes(item.status)) return;
 		item.status = 'queued';
 		this.#pump();
 	}
@@ -100,8 +104,9 @@ class UploadQueue {
 				item.nodeId = lastResponse.getHeader('Alcove-Node-Id') ?? undefined;
 				this.#finish(item.id);
 			},
-			onError: () => {
-				if (item.status !== 'canceled') item.status = 'error';
+			onError: (err) => {
+				if (item.status !== 'canceled')
+					item.status = isQuota(err as DetailedError) ? 'quota' : 'error';
 				this.#finish(item.id);
 			}
 		};

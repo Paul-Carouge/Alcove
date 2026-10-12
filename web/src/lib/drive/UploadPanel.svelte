@@ -18,6 +18,7 @@
 			uploading: `${formatSize(i.sent, getLocale())} / ${formatSize(i.size, getLocale())}`,
 			done: m.upload_status_done(),
 			error: m.upload_status_error(),
+			quota: m.upload_status_quota(),
 			canceled: m.upload_status_canceled()
 		})[i.status];
 </script>
@@ -49,14 +50,16 @@
 						<FileIcon kind="file" size={18} />
 						<div class="info">
 							<span class="name" title={item.name}>{item.name}</span>
-							<span class="status" class:error={item.status === 'error'}>{statusText(item)}</span>
+							<span class="status" class:error={item.status === 'error' || item.status === 'quota'}
+								>{statusText(item)}</span
+							>
 							{#if item.status === 'uploading' || item.status === 'queued'}
 								<progress max={item.size || 1} value={item.sent} aria-label={item.name}></progress>
 							{/if}
 						</div>
 						{#if item.status === 'done'}
 							<Check size={18} class="ok" aria-hidden="true" />
-						{:else if item.status === 'error' || item.status === 'canceled'}
+						{:else if item.status === 'error' || item.status === 'quota' || item.status === 'canceled'}
 							<button
 								class="icon-btn"
 								aria-label={m.upload_retry({ name: item.name })}

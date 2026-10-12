@@ -186,5 +186,12 @@
 	"public_expired": "This link has expired.",
 	"public_expires": "Available until {date}",
 	"public_open": "Open {name}",
-	"made_by": "Made by"
+	"made_by": "Made by",
+	"storage_label": "Storage",
+	"storage_used": "{used} of {quota} used",
+	"storage_used_unlimited": "{used} used",
+	"storage_trash": "{trash} in the trash",
+	"storage_almost_full": "Almost full. Empty the trash or delete files to free space.",
+	"storage_full": "Storage full",
+	"upload_status_quota": "Not enough space"
 }

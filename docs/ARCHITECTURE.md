@@ -70,7 +70,7 @@ per folder among non-trashed nodes, cycle-free moves, cascading deletes. Still p
 
 | Collection | Key fields | Notes |
 |---|---|---|
-| `users` (auth) | email, name, avatar, locale, quota_bytes | PocketBase auth collection |
+| `users` (auth) | email, name, avatar, quota_bytes | PocketBase auth collection. `quota_bytes` (0 = unlimited) is admin-only (update rule forbids it) |
 | `nodes` | owner→users, parent→nodes (null = root), name, kind (`file`\|`folder`), size, mime, sha256, blob (file field), trashed_at | Unique (owner, parent, name) among non-trashed. Tree with adjacency list; path computed |
 | `shares` | node→nodes, created_by→users, token_hash, access_secret, password_hash, has_password, expires_at | **Implemented** (read-only links). Token shown once, SHA-256 stored; secrets hidden; public routes under `/api/v1/public/` |
 | `devices` | user→users, name, platform, push_endpoint, last_seen | For sync state and UnifiedPush |
@@ -130,6 +130,9 @@ tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-
 
 - Default: local disk under `pb_data/storage` (Docker volume `alcove_data`).
 - Optional: S3-compatible storage (`ALCOVE_STORAGE=s3`, applied to PocketBase's S3 settings at boot).
+- **Quotas:** usage = sum of the user's file sizes, trash included (`GET /api/v1/me/usage`). Checked when a
+  tus upload starts (early 413 `ERR_QUOTA_EXCEEDED`) and again in the `nodes` create/update hook, which
+  covers every write path. Concurrent uploads can each pass the first check; the second check decides.
 - *Planned:* content hashing (sha256) at upload for dedup and integrity checks, resumable uploads
   with tus at `/api/v1/uploads/` ([ADR 0011](adr/0011-resumable-uploads-tus.md)), per-user quotas.
 - **Thumbnails (now):** PocketBase's built-in thumbnails for JPEG/PNG/GIF/WebP in `nodes.blob`

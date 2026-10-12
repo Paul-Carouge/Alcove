@@ -29,6 +29,10 @@ Alternative: `docker compose exec alcove /alcove superuser upsert you@example.co
 
 Check it is up: `curl https://<domain>/health`.
 
+**Users and quotas:** create accounts in the admin UI (`users` collection → New record). Set
+`quota_bytes` to limit a user's storage (trash included), e.g. `53687091200` for 50 GB; `0` means
+unlimited. Users see their usage in the sidebar and cannot change their own quota.
+
 **Recommended next steps** in the admin UI (`https://<domain>/_/`): Settings → Mail (SMTP), Settings →
 Backups (schedule), users collection → enable MFA.
 

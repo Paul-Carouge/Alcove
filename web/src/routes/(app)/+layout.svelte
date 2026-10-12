@@ -6,7 +6,9 @@
 	import { session } from '#lib/auth/session.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
+	import StorageMeter from '#lib/drive/StorageMeter.svelte';
 	import UploadPanel from '#lib/drive/UploadPanel.svelte';
+	import { usage } from '#lib/drive/usage.svelte.js';
 	import Logo from '#lib/ui/Logo.svelte';
 	import Credit from '#lib/ui/Credit.svelte';
 	import UserMenu from '#lib/ui/UserMenu.svelte';
@@ -31,6 +33,11 @@
 	// Token revoked or expired elsewhere: back to the login page.
 	$effect(() => {
 		if (!session.isSignedIn) goto(resolve('/(public)/login'), { replace: true });
+	});
+
+	$effect(() => {
+		usage.start();
+		return () => usage.stop();
 	});
 
 	// Close the mobile drawer after navigating.
@@ -79,10 +86,14 @@
 				{/each}
 			</ul>
 		</nav>
-		<footer class="version">
-			{#if health}<span>{m.server_info({ name: health.name, version: health.version })}</span>{/if}
-			<Credit />
-		</footer>
+		<div class="bottom">
+			<StorageMeter />
+			<footer class="version">
+				{#if health}<span>{m.server_info({ name: health.name, version: health.version })}</span
+					>{/if}
+				<Credit />
+			</footer>
+		</div>
 	</aside>
 
 	{#if drawerOpen}
@@ -184,10 +195,14 @@
 		background: var(--color-surface-sunken);
 		color: var(--color-text-muted);
 	}
+	.bottom {
+		margin-top: auto;
+		display: grid;
+		gap: var(--space-3);
+	}
 	.version {
 		display: grid;
 		gap: 2px;
-		margin: auto 0 0;
 		padding: 0 var(--space-3);
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);

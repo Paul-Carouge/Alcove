@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 
 import '../../core/brand.dart';
 import '../../core/session.dart';
+import '../backup/backup_controller.dart';
+import '../backup/backup_screen.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 
 class AccountScreen extends StatelessWidget {
-  const AccountScreen({super.key, required this.session, required this.version});
+  const AccountScreen({
+    super.key,
+    required this.session,
+    required this.version,
+    this.backup,
+    this.onOpenBackup,
+  });
 
   final Session session;
   final String version;
+  final BackupController? backup;
+  final VoidCallback? onOpenBackup;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +55,17 @@ class AccountScreen extends StatelessWidget {
             title: Text(l.serverLabel),
             subtitle: Text(session.server?.toString() ?? ''),
           ),
+          if (backup case final c?)
+            ListenableBuilder(
+              listenable: c,
+              builder: (context, _) => ListTile(
+                leading: Icon(c.running ? Icons.cloud_sync_outlined : Icons.cloud_upload_outlined),
+                title: Text(l.backupTitle),
+                subtitle: Text(BackupScreen.status(context, c)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: onOpenBackup,
+              ),
+            ),
           const SizedBox(height: AlcoveSpace.s4),
           OutlinedButton.icon(
             onPressed: session.signOut,

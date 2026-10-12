@@ -7,19 +7,27 @@ import 'core/server_checker.dart';
 import 'core/session.dart';
 import 'core/version.dart';
 import 'features/connect/connect_screen.dart';
+import 'features/backup/backup_controller.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'theme/theme.dart';
 
 class AlcoveApp extends StatefulWidget {
-  const AlcoveApp({super.key, required this.checker, required this.store, this.session});
+  const AlcoveApp({
+    super.key,
+    required this.checker,
+    required this.store,
+    this.session,
+    this.backupFactory = BackupController.create,
+  });
 
   final ServerChecker checker;
   final SecureStore store;
 
   /// Injected in tests.
   final Session? session;
+  final BackupFactory backupFactory;
 
   @override
   State<AlcoveApp> createState() => _AlcoveAppState();
@@ -65,7 +73,7 @@ class _AlcoveAppState extends State<AlcoveApp> {
         onChangeServer: () => setState(() => _changingServer = true),
       );
     }
-    return HomeScreen(session: _session, version: kAppVersion);
+    return HomeScreen(session: _session, version: kAppVersion, backupFactory: widget.backupFactory);
   }
 
   @override

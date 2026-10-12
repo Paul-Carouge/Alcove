@@ -5,14 +5,17 @@ import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../backup/backup_controller.dart';
 import 'media.dart';
 import 'photo_viewer.dart';
 
 /// The timeline: photos and videos grouped by month, newest first.
 class PhotosScreen extends StatefulWidget {
-  const PhotosScreen({super.key, required this.session});
+  const PhotosScreen({super.key, required this.session, this.backup, this.onOpenBackup});
 
   final Session session;
+  final BackupController? backup;
+  final VoidCallback? onOpenBackup;
 
   @override
   State<PhotosScreen> createState() => _PhotosScreenState();
@@ -98,7 +101,26 @@ class _PhotosScreenState extends State<PhotosScreen> {
     final columns = width >= 900 ? 6 : (width >= 600 ? 5 : 3);
 
     final slivers = <Widget>[
-      SliverAppBar.large(title: Text(l.tabPhotos)),
+      SliverAppBar.large(
+        title: Text(l.tabPhotos),
+        actions: [
+          if (widget.backup case final c?)
+            ListenableBuilder(
+              listenable: c,
+              builder: (context, _) => IconButton(
+                tooltip: l.backupTitle,
+                onPressed: widget.onOpenBackup,
+                icon: Icon(
+                  !c.state.enabled
+                      ? Icons.cloud_off_outlined
+                      : c.running
+                      ? Icons.cloud_sync_outlined
+                      : Icons.cloud_done_outlined,
+                ),
+              ),
+            ),
+        ],
+      ),
       if (_failed && _items.isEmpty)
         SliverFillRemaining(
           hasScrollBody: false,

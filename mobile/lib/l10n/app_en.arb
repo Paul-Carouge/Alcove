@@ -132,5 +132,73 @@
         "type": "String"
       }
     }
-  }
+  },
+  "backupTitle": "Photo backup",
+  "backupIntro": "Copies the photos and videos of this phone to your server, in their original quality. Nothing is deleted from the phone.",
+  "backupEnable": "Back up this phone's photos",
+  "backupVideos": "Include videos",
+  "backupWifiOnly": "Only on Wi-Fi",
+  "backupFolder": "Saved in “{folder}”",
+  "@backupFolder": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "backupFolderDefault": "Phone backup",
+  "backupNow": "Back up now",
+  "backupStop": "Stop",
+  "backupRunning": "Backing up {name} ({done} of {total})",
+  "@backupRunning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "backupPreparing": "Looking for new photos…",
+  "backupUpToDate": "Up to date · {count} items backed up",
+  "@backupUpToDate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupLastRun": "Last backup: {date}",
+  "@backupLastRun": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "backupNoAccess": "Allow access to your photos in the system settings to back them up.",
+  "backupNotOnWifi": "Waiting for Wi-Fi.",
+  "backupOffline": "The server could not be reached; it will retry later.",
+  "backupRefused": "The server refused: {reason}",
+  "@backupRefused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "backupSomeFailed": "{count} items could not be read and will be retried.",
+  "@backupSomeFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupBackground": "On Android, backups also run in the background about every hour. On iPhone, open the app to back up.",
+  "backupOff": "Off"
 }

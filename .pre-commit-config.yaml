@@ -13,6 +13,8 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1024]
+        # Generated offline basemap (ADR 0020), rebuilt by web/scripts/basemap.mjs.
+        exclude: ^web/static/basemap/world\.json$
       - id: detect-private-key
 
   - repo: local

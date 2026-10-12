@@ -28,7 +28,9 @@ Windows startup task), offers to install ffmpeg, starts Alcove and prints the se
 
 **ffmpeg** is needed for video and HEIC thumbnails (the Docker image includes it). Without it, JPEG, PNG
 and WebP photos still work; videos and HEIC files show without a thumbnail. If you install ffmpeg later,
-those files are processed again within a day (failed items are retried daily).
+those files are processed again within a day (failed items are retried daily). HEIC photos from phones need
+**ffmpeg 7.1 or newer**: Debian 12 and Ubuntu 24.04 ship older versions (videos work, HEIC files get no
+thumbnail); the Docker image includes ffmpeg 8.1.
 
 Non-interactive (scripts, cloud-init):
 

@@ -184,6 +184,8 @@ class ApiClient {
           return value is DateTime ? value : DateTime.tryParse(value);
         case 'ApiRange':
           return ApiRange.fromJson(value);
+        case 'ApplyUpdate202Response':
+          return ApplyUpdate202Response.fromJson(value);
         case 'CompleteSetupRequest':
           return CompleteSetupRequest.fromJson(value);
         case 'CompleteSetupRequestAllOfAdmin':
@@ -214,6 +216,10 @@ class ApiClient {
           return SetupToken.fromJson(value);
         case 'SmtpSettings':
           return SmtpSettings.fromJson(value);
+        case 'SystemInfo':
+          return SystemInfo.fromJson(value);
+        case 'SystemInfoUpdate':
+          return SystemInfoUpdate.fromJson(value);
         case 'TestSetupSmtpRequest':
           return TestSetupSmtpRequest.fromJson(value);
         case 'TotpConfirm':

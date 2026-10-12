@@ -218,6 +218,62 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/system": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Version, installation and update status. */
+    get: operations["getSystem"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/updates/check": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Check for a new release now. */
+    post: operations["checkUpdates"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/updates/apply": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Install the latest release and restart (native installs only).
+     * @description Downloads the release, verifies its signature and checksum, backs up the database, swaps the
+     *     binary and exits so the service manager restarts the new version. Answers 202 once the new
+     *     binary is in place; clients then poll `/health` until `version` changes.
+     */
+    post: operations["applyUpdate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/me/totp": {
     parameters: {
       query?: never;
@@ -362,6 +418,33 @@ export interface components {
       | "notes"
       | "calendar"
       | "contacts";
+    SystemInfo: {
+      version: string;
+      /**
+       * @description native = installed by `alcove install`; manual = started by hand.
+       * @enum {string}
+       */
+      installMode: "native" | "docker" | "manual";
+      /** @description The "Update now" button can be used. */
+      canSelfUpdate: boolean;
+      /** @description Command to run on the host when self-update is not possible. */
+      updateCommand?: string;
+      /** @description ffmpeg is available (video and HEIC thumbnails). */
+      ffmpeg: boolean;
+      update: {
+        /** @description Daily checks are on (ALCOVE_UPDATE_CHECK). */
+        enabled: boolean;
+        available: boolean;
+        latest?: string;
+        /** @description Release notes (Markdown). */
+        notes?: string;
+        url?: string;
+        /** Format: date-time */
+        checkedAt?: string;
+        /** @description Last check error, if any. */
+        error?: string;
+      };
+    };
     SetupToken: {
       token: string;
     };
@@ -1049,6 +1132,128 @@ export interface operations {
         content?: never;
       };
       429: components["responses"]["TooManyRequests"];
+    };
+  };
+  getSystem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description System information. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SystemInfo"];
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  checkUpdates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Updated status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SystemInfo"];
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  applyUpdate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Installed; the server restarts now. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description Version being started. */
+            version: string;
+          };
+        };
+      };
+      /** @description No update available, or this installation cannot update itself (Docker, manual). */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The release could not be downloaded or verified (nothing was changed). */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
   };
   getTotpStatus: {

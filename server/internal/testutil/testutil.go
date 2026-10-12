@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -84,3 +85,6 @@ func Server(tb testing.TB, app *tests.TestApp) *httptest.Server {
 	tb.Cleanup(srv.Close)
 	return srv
 }
+
+// Sleep pauses for ms milliseconds (polling in tests).
+func Sleep(ms int) { time.Sleep(time.Duration(ms) * time.Millisecond) }

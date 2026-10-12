@@ -39,6 +39,12 @@ type Config struct {
 	S3        S3
 	// Modules are the optional modules requested by the admin (validated names).
 	Modules []string
+	// UpdateCheck enables the daily release check (ALCOVE_UPDATE_CHECK, default on).
+	UpdateCheck bool
+	// UpdateURL overrides the releases API (mirrors, tests).
+	UpdateURL string
+	// InstallMode is "native" (alcove install), "docker" or "" (started by hand).
+	InstallMode string
 	// SetupToken presets the first-run wizard token (automated deployments).
 	SetupToken string
 	// SecretKey encrypts sensitive fields at rest (TOTP secrets). Empty: a key
@@ -56,7 +62,7 @@ func FromEnv(lookup func(string) (string, bool)) (Config, error) {
 		return strings.TrimSpace(v)
 	}
 	var errs []error
-	cfg := Config{Storage: StorageLocal}
+	cfg := Config{Storage: StorageLocal, UpdateCheck: true}
 
 	if domain := get("DOMAIN"); domain != "" {
 		if strings.ContainsAny(domain, "/: ") {
@@ -102,6 +108,27 @@ func FromEnv(lookup func(string) (string, bool)) (Config, error) {
 		if !slices.Contains(cfg.Modules, m) {
 			cfg.Modules = append(cfg.Modules, m)
 		}
+	}
+
+	switch v := strings.ToLower(get("UPDATE_CHECK")); v {
+	case "", "true", "1", "yes":
+	case "false", "0", "no":
+		cfg.UpdateCheck = false
+	default:
+		errs = append(errs, fmt.Errorf("%sUPDATE_CHECK must be true or false, got %q", EnvPrefix, v))
+	}
+	if u := get("UPDATE_URL"); u != "" {
+		if parsed, err := url.Parse(u); err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Host == "" {
+			errs = append(errs, fmt.Errorf("%sUPDATE_URL must be an absolute URL", EnvPrefix))
+		} else {
+			cfg.UpdateURL = u
+		}
+	}
+	switch m := get("INSTALL_MODE"); m {
+	case "", "native", "docker":
+		cfg.InstallMode = m
+	default:
+		errs = append(errs, fmt.Errorf("%sINSTALL_MODE must be native or docker", EnvPrefix))
 	}
 
 	if t := get("SETUP_TOKEN"); t != "" {

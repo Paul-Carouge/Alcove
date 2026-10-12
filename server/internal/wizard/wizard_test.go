@@ -87,7 +87,7 @@ func TestCompleteCreatesAdminAndAppAccountOnce(t *testing.T) {
 		t.Fatalf("superuser not created: %v", err)
 	}
 	user, err := e.app.FindAuthRecordByEmail("users", "camille@example.com")
-	if err != nil || !user.Verified() || user.GetString("name") != "Camille" || !user.ValidatePassword("long-enough-pw") {
+	if err != nil || !user.Verified() || user.GetString("name") != "Camille" || !user.ValidatePassword("long-enough-pw") || user.GetString("role") != "admin" {
 		t.Fatalf("app account not created: %v", err)
 	}
 	if s := e.app.Settings(); !s.SMTP.Enabled || s.SMTP.Host != "smtp.example.com" || s.Meta.SenderAddress != "noreply@example.com" {

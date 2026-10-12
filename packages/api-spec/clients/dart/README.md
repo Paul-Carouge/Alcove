@@ -74,6 +74,9 @@ Class | Method | HTTP request | Description
 *AccountApi* | [**getTotpStatus**](doc//AccountApi.md#gettotpstatus) | **GET** /api/v1/me/totp | Two-factor status of the signed-in user.
 *AccountApi* | [**regenerateRecoveryCodes**](doc//AccountApi.md#regeneraterecoverycodes) | **POST** /api/v1/me/totp/recovery-codes | Replace all recovery codes (password and a code required).
 *AccountApi* | [**setupTotp**](doc//AccountApi.md#setuptotp) | **POST** /api/v1/me/totp/setup | Start enrolment (new secret, not active until confirmed).
+*AdminApi* | [**applyUpdate**](doc//AdminApi.md#applyupdate) | **POST** /api/v1/admin/updates/apply | Install the latest release and restart (native installs only).
+*AdminApi* | [**checkUpdates**](doc//AdminApi.md#checkupdates) | **POST** /api/v1/admin/updates/check | Check for a new release now.
+*AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
@@ -93,6 +96,7 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [ApiRange](doc//ApiRange.md)
+ - [ApplyUpdate202Response](doc//ApplyUpdate202Response.md)
  - [CompleteSetupRequest](doc//CompleteSetupRequest.md)
  - [CompleteSetupRequestAllOfAdmin](doc//CompleteSetupRequestAllOfAdmin.md)
  - [CreateShare](doc//CreateShare.md)
@@ -108,6 +112,8 @@ Class | Method | HTTP request | Description
  - [SetupStatusStorage](doc//SetupStatusStorage.md)
  - [SetupToken](doc//SetupToken.md)
  - [SmtpSettings](doc//SmtpSettings.md)
+ - [SystemInfo](doc//SystemInfo.md)
+ - [SystemInfoUpdate](doc//SystemInfoUpdate.md)
  - [TestSetupSmtpRequest](doc//TestSetupSmtpRequest.md)
  - [TotpConfirm](doc//TotpConfirm.md)
  - [TotpSetup](doc//TotpSetup.md)

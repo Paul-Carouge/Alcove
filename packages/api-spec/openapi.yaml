@@ -39,6 +39,8 @@ tags:
     description: |
       First-run wizard. Available only while no administrator exists, and only with the one-time
       setup token printed in the server logs (or preset with `ALCOVE_SETUP_TOKEN`).
+  - name: admin
+    description: Server administration, for accounts with `role = admin` (ADR 0015).
   - name: uploads
     description: |
       Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
@@ -371,6 +373,66 @@ paths:
         "403": { description: Invalid setup token. }
         "409": { description: Setup is already complete. }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/admin/system:
+    get:
+      tags: [admin]
+      operationId: getSystem
+      summary: Version, installation and update status.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: System information.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemInfo" }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+  /api/v1/admin/updates/check:
+    post:
+      tags: [admin]
+      operationId: checkUpdates
+      summary: Check for a new release now.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Updated status.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemInfo" }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/admin/updates/apply:
+    post:
+      tags: [admin]
+      operationId: applyUpdate
+      summary: Install the latest release and restart (native installs only).
+      description: |
+        Downloads the release, verifies its signature and checksum, backs up the database, swaps the
+        binary and exits so the service manager restarts the new version. Answers 202 once the new
+        binary is in place; clients then poll `/health` until `version` changes.
+      security:
+        - userToken: []
+      responses:
+        "202":
+          description: Installed; the server restarts now.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version]
+                properties:
+                  version: { type: string, description: Version being started. }
+        "400": { description: "No update available, or this installation cannot update itself (Docker, manual)." }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+        "502":
+          description: The release could not be downloaded or verified (nothing was changed).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /api/v1/me/totp:
     get:
       tags: [account]
@@ -581,6 +643,29 @@ components:
     Module:
       type: string
       enum: [core, drive, photos, documents, ocr, faces, notes, calendar, contacts]
+    SystemInfo:
+      type: object
+      required: [version, installMode, canSelfUpdate, ffmpeg, update]
+      properties:
+        version: { type: string }
+        installMode:
+          type: string
+          enum: [native, docker, manual]
+          description: native = installed by `alcove install`; manual = started by hand.
+        canSelfUpdate: { type: boolean, description: "The \"Update now\" button can be used." }
+        updateCommand: { type: string, description: "Command to run on the host when self-update is not possible." }
+        ffmpeg: { type: boolean, description: "ffmpeg is available (video and HEIC thumbnails)." }
+        update:
+          type: object
+          required: [enabled, available]
+          properties:
+            enabled: { type: boolean, description: "Daily checks are on (ALCOVE_UPDATE_CHECK)." }
+            available: { type: boolean }
+            latest: { type: string }
+            notes: { type: string, description: Release notes (Markdown). }
+            url: { type: string }
+            checkedAt: { type: string, format: date-time }
+            error: { type: string, description: "Last check error, if any." }
     SetupToken:
       type: object
       required: [token]

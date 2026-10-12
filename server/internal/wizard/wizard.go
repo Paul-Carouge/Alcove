@@ -245,6 +245,7 @@ func (w *wizard) complete(e *core.RequestEvent) error {
 		user.SetPassword(body.Admin.Password)
 		user.SetVerified(true)
 		user.Set("name", strings.TrimSpace(body.Admin.Name))
+		user.Set("role", "admin")
 		if err := tx.Save(user); err != nil {
 			return err
 		}

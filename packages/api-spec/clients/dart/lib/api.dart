@@ -29,6 +29,7 @@ part 'auth/http_basic_auth.dart';
 part 'auth/http_bearer_auth.dart';
 
 part 'api/account_api.dart';
+part 'api/admin_api.dart';
 part 'api/drive_api.dart';
 part 'api/public_api.dart';
 part 'api/setup_api.dart';
@@ -37,6 +38,7 @@ part 'api/system_api.dart';
 part 'api/uploads_api.dart';
 
 part 'model/api_range.dart';
+part 'model/apply_update202_response.dart';
 part 'model/complete_setup_request.dart';
 part 'model/complete_setup_request_all_of_admin.dart';
 part 'model/create_share.dart';
@@ -52,6 +54,8 @@ part 'model/setup_status.dart';
 part 'model/setup_status_storage.dart';
 part 'model/setup_token.dart';
 part 'model/smtp_settings.dart';
+part 'model/system_info.dart';
+part 'model/system_info_update.dart';
 part 'model/test_setup_smtp_request.dart';
 part 'model/totp_confirm.dart';
 part 'model/totp_setup.dart';

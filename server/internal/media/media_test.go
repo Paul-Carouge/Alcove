@@ -308,3 +308,26 @@ func TestFacets(t *testing.T) {
 	}
 	empty.Test(t)
 }
+
+// testdata/tiled.heic: a 1536×1024 picture stored as 512-pixel tiles, like phone cameras do (made with
+// libheif's heif-enc --cut-tiles from a mediatest JPEG: 2025-08-15, OPPO Find X9 Pro, Paris).
+func TestTiledHEIC(t *testing.T) {
+	if !media.HEICSupported() {
+		t.Skip("needs ffmpeg 7.1 or newer")
+	}
+	e := setup(t)
+	content, err := os.ReadFile("testdata/tiled.heic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := e.upload(t, "IMG_0002.HEIC", content)
+	if rec == nil || rec.GetString("status") != "ready" || rec.GetString("thumb") == "" {
+		t.Fatalf("tiled heic = %v (error %q)", rec, rec.GetString("error"))
+	}
+	if rec.GetString("camera_model") != "Find X9 Pro" || !rec.GetBool("has_location") {
+		t.Errorf("metadata: model %q, location %v", rec.GetString("camera_model"), rec.GetBool("has_location"))
+	}
+	if rec.GetInt("width") != 1536 || rec.GetInt("height") != 1024 {
+		t.Errorf("size = %dx%d", rec.GetInt("width"), rec.GetInt("height"))
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image"
 	"io"
 	"net/http"
 	"os"
@@ -153,6 +154,7 @@ func (w *worker) start() {
 		go func() {
 			defer w.scan.Done()
 			w.backfill()
+			w.requeue("failed")  // a new version (or a newly installed ffmpeg) may handle them now
 			w.requeue("pending") // work interrupted by a restart
 		}()
 	})
@@ -349,6 +351,9 @@ func (w *worker) fill(rec, node *core.Record, tmp string) error {
 	if err != nil {
 		return err
 	}
+	if !video && rec.GetInt("width") == 0 {
+		fillSizeFromPreview(ctx, rec, src, preview)
+	}
 	if h, err := dhashFile(thumb); err == nil {
 		rec.Set("phash", h)
 	}
@@ -423,4 +428,27 @@ func original(e *core.RequestEvent) error {
 		return e.NotFoundError("", nil)
 	}
 	return drive.Serve(e, node, e.Request.URL.Query().Get("inline") == "1")
+}
+
+// fillSizeFromPreview sets the size of images whose metadata does not say it (HEIC without EXIF size):
+// the tile grid gives the size, the generated preview tells whether the picture is shown rotated.
+func fillSizeFromPreview(ctx context.Context, rec *core.Record, src, preview string) {
+	f, err := os.Open(preview) // #nosec G304 -- inside the worker's temp dir
+	if err != nil {
+		return
+	}
+	cfg, _, err := image.DecodeConfig(f)
+	_ = f.Close()
+	if err != nil || cfg.Height == 0 {
+		return
+	}
+	w, h := cfg.Width, cfg.Height
+	if _, gw, gh := HEIFGrid(ctx, src); gw > 0 && gh > 0 {
+		w, h = gw, gh
+		if (gw > gh) != (cfg.Width > cfg.Height) {
+			w, h = gh, gw
+		}
+	}
+	rec.Set("width", w)
+	rec.Set("height", h)
 }

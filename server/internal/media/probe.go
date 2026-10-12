@@ -21,6 +21,7 @@ import (
 
 	"github.com/evanoberholster/imagemeta"
 	"github.com/evanoberholster/imagemeta/meta"
+	"github.com/evanoberholster/imagemeta/meta/exif"
 	_ "golang.org/x/image/webp"
 
 	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
@@ -68,25 +69,14 @@ func ImageInfo(path string) (Info, error) {
 	var exifW, exifH int
 	rotated := false
 	if e, err := imagemeta.Decode(f); err == nil {
-		info.Taken = e.OriginalDate()
-		if info.Taken.IsZero() {
-			info.Taken = e.DigitizedDate()
+		exifW, exifH, rotated = applyExif(&info, e)
+	}
+	// Some phones (e.g. OPPO, MediaTek camera app) store HEIC metadata where the decoder does not look:
+	// find the EXIF block (a TIFF header) in the file itself.
+	if info.Taken.IsZero() && info.Model == "" && isHEIF(f) {
+		if e, ok := scanTiffExif(f); ok {
+			exifW, exifH, rotated = applyExif(&info, e)
 		}
-		info.Make = strings.TrimSpace(e.IFD0.Make)
-		info.Model = strings.TrimSpace(e.IFD0.Model)
-		info.Lens = strings.TrimSpace(e.ExifIFD.LensModel)
-		exifW, exifH = int(e.ExifIFD.PixelXDimension), int(e.ExifIFD.PixelYDimension)
-		if exifW == 0 {
-			exifW, exifH = int(e.IFD0.ImageWidth), int(e.IFD0.ImageHeight)
-		}
-		o := e.IFD0.Orientation
-		rotated = o >= meta.OrientationMirrorHorizontalRotate270 && o <= meta.OrientationRotate270
-		info.Orientation = int(o)
-		lat, lon := e.GPS.Latitude(), e.GPS.Longitude()
-		if (lat != 0 || lon != 0) && math.Abs(lat) <= 90 && math.Abs(lon) <= 180 {
-			info.HasLocation, info.Lat, info.Lon = true, lat, lon
-		}
-		info.Exposure = exposure(e.ExifIFD.ExposureTime.String(), e.ExifIFD.FNumber.String(), e.ExifIFD.ISOSpeedRatings, e.ExifIFD.FocalLength.String())
 	}
 	if _, err := f.Seek(0, io.SeekStart); err == nil {
 		if cfg, _, err := image.DecodeConfig(f); err == nil {
@@ -101,6 +91,75 @@ func ImageInfo(path string) (Info, error) {
 		info.Width, info.Height = info.Height, info.Width
 	}
 	return info, nil
+}
+
+func applyExif(info *Info, e exif.Exif) (w, h int, rotated bool) {
+	info.Taken = e.OriginalDate()
+	if info.Taken.IsZero() {
+		info.Taken = e.DigitizedDate()
+	}
+	info.Make = strings.TrimSpace(e.IFD0.Make)
+	info.Model = strings.TrimSpace(e.IFD0.Model)
+	info.Lens = strings.TrimSpace(e.ExifIFD.LensModel)
+	w, h = int(e.ExifIFD.PixelXDimension), int(e.ExifIFD.PixelYDimension)
+	if w == 0 {
+		w, h = int(e.IFD0.ImageWidth), int(e.IFD0.ImageHeight)
+	}
+	o := e.IFD0.Orientation
+	rotated = o >= meta.OrientationMirrorHorizontalRotate270 && o <= meta.OrientationRotate270
+	info.Orientation = int(o)
+	lat, lon := e.GPS.Latitude(), e.GPS.Longitude()
+	if (lat != 0 || lon != 0) && math.Abs(lat) <= 90 && math.Abs(lon) <= 180 {
+		info.HasLocation, info.Lat, info.Lon = true, lat, lon
+	}
+	info.Exposure = exposure(e.ExifIFD.ExposureTime.String(), e.ExifIFD.FNumber.String(), e.ExifIFD.ISOSpeedRatings, e.ExifIFD.FocalLength.String())
+	return w, h, rotated
+}
+
+// isHEIF reports whether f starts with an ISO-BMFF "ftyp" box of a HEIF brand.
+func isHEIF(f io.ReadSeeker) bool {
+	head := make([]byte, 12)
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return false
+	}
+	if _, err := io.ReadFull(f, head); err != nil || string(head[4:8]) != "ftyp" {
+		return false
+	}
+	switch string(head[8:12]) {
+	case "heic", "heix", "heim", "heis", "hevc", "hevx", "mif1", "msf1", "avif":
+		return true
+	}
+	return false
+}
+
+// maxExifScan bounds the HEIC metadata search (phone photos are a few megabytes).
+const maxExifScan = 64 << 20
+
+// scanTiffExif looks for a TIFF header (the EXIF payload) in the file and decodes the first one that
+// carries a date or a camera model.
+func scanTiffExif(f io.ReadSeeker) (exif.Exif, bool) {
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return exif.Exif{}, false
+	}
+	b, err := io.ReadAll(io.LimitReader(f, maxExifScan))
+	if err != nil {
+		return exif.Exif{}, false
+	}
+	for _, hdr := range [][]byte{[]byte("MM\x00\x2a"), []byte("II\x2a\x00")} {
+		for off := 0; ; {
+			i := bytes.Index(b[off:], hdr)
+			if i < 0 {
+				break
+			}
+			at := off + i
+			if e, err := imagemeta.DecodeTiff(bytes.NewReader(b[at:])); err == nil &&
+				(!e.OriginalDate().IsZero() || strings.TrimSpace(e.IFD0.Model) != "") {
+				return e, true
+			}
+			off = at + 4
+		}
+	}
+	return exif.Exif{}, false
 }
 
 func exposure(shutter, aperture string, iso uint32, focal string) string {
@@ -229,11 +288,22 @@ func Derivatives(ctx context.Context, src, thumb, preview string, video bool, du
 		at := math.Min(3, duration/10)
 		seek = []string{"-ss", strconv.FormatFloat(at, 'f', 2, 64)}
 	}
+	grid := false
+	if !video {
+		grid, _, _ = HEIFGrid(ctx, src)
+	}
 	run := func(dst, scale string) error {
 		ctx, cancel := context.WithTimeout(ctx, ffmpegTimeout)
 		defer cancel()
 		args := append([]string{"-nostdin", "-hide_banner", "-loglevel", "error", "-threads", "2"}, seek...)
-		args = append(args, "-i", src, "-frames:v", "1", "-vf", scale, "-q:v", "4", "-y", dst)
+		args = append(args, "-i", src, "-frames:v", "1")
+		if grid {
+			// Tiled HEIF (phone photos): ffmpeg assembles the tiles in a stream group; scale that.
+			args = append(args, "-filter_complex", "[0:g:0]"+scale+"[out]", "-map", "[out]")
+		} else {
+			args = append(args, "-vf", scale)
+		}
+		args = append(args, "-q:v", "4", "-y", dst)
 		var stderr bytes.Buffer
 		cmd := exec.CommandContext(ctx, "ffmpeg", args...) // #nosec G204 -- fixed binary and arguments
 		cmd.Stderr = &stderr
@@ -249,6 +319,39 @@ func Derivatives(ctx context.Context, src, thumb, preview string, video bool, du
 		return err
 	}
 	return run(preview, "scale=w=1600:h=1600:force_original_aspect_ratio=decrease:force_divisible_by=2")
+}
+
+// HEIFGrid reports whether a HEIF image is stored as a grid of tiles (as phones do) and the size of the
+// assembled picture, before any rotation.
+func HEIFGrid(ctx context.Context, path string) (grid bool, width, height int) {
+	ctx, cancel := context.WithTimeout(ctx, ffmpegTimeout)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "ffprobe", "-v", "error", "-print_format", "json",
+		"-show_stream_groups", path).Output() // #nosec G204 -- fixed binary, temp file path
+	if err != nil {
+		return false, 0, 0
+	}
+	var probe struct {
+		Groups []struct {
+			Type       string `json:"type"`
+			Components []struct {
+				Width  int `json:"width"`
+				Height int `json:"height"`
+			} `json:"components"`
+		} `json:"stream_groups"`
+	}
+	if json.Unmarshal(out, &probe) != nil {
+		return false, 0, 0
+	}
+	for _, g := range probe.Groups {
+		if g.Type == "Tile Grid" {
+			if len(g.Components) > 0 {
+				return true, g.Components[0].Width, g.Components[0].Height
+			}
+			return true, 0, 0
+		}
+	}
+	return false, 0, 0
 }
 
 func lastLine(s string) string {

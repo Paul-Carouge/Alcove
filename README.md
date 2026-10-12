@@ -7,7 +7,7 @@ archive with full-text search (OCR). Notes, calendar and contacts come later. It
 binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
 data on hardware you control.
 
-> **Status: early development (v0.15).** The web app has accounts with two-factor, a drive with
+> **Status: early development (v0.16).** The web app has accounts with two-factor, a drive with
 > resumable uploads, previews, share links and quotas, a photo and video timeline with albums shared between
 > accounts; one-command install and updates. Expect breaking changes before 1.0 and keep backups.
 
@@ -45,8 +45,8 @@ every option, backups, Tailscale and reverse proxies.
 ## Mobile app
 
 Android and iOS (Flutter). On first launch you enter your server's address; the app checks that it is
-compatible, then you sign in (two-factor included) and browse your photos, videos and files. Automatic
-photo backup comes next, then store releases (Play Store, and F-Droid if feasible). For now, build it with
+compatible, then you sign in (two-factor included), browse your photos, videos and files, and turn on
+**automatic photo backup** (original quality, no duplicates, Wi-Fi only if you want). Store releases come next (Play Store, and F-Droid if feasible). For now, build it with
 `cd mobile && flutter run`.
 
 ## Roadmap
@@ -58,7 +58,7 @@ photo backup comes next, then store releases (Play Store, and F-Droid if feasibl
 | – | One-command install and signed updates | ✅ v0.9 |
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters and map done |
 | 3 | Documents (OCR, full-text search) | |
-| 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos and files done; backup next |
+| 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, files and automatic backup done |
 | 5 | Notes, calendar (CalDAV), contacts (CardDAV) | |
 | 6 | Desktop app with folder sync | |
 

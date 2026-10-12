@@ -54,7 +54,8 @@ and file names, PDF text layer, tags, scan import from the mobile camera.
 ## Phase 4: Mobile app and automatic backup (in progress)
 
 - **v0.15** ✅ sign-in with two-factor, photo timeline and viewer (videos, favorites, details), file browser.
-- **v0.16** automatic photo/video backup. **v0.17** albums and sharing, installable builds.
+- **v0.16** ✅ automatic photo/video backup (originals, deduplicated, resumable; background on Android).
+- **v0.17** albums and sharing on mobile, installable builds, iOS background backup.
 
 Full scope: mobile login, drive browser, viewer, offline favorites, **automatic photo/video backup** (background
 tasks, Wi-Fi/charging constraints, resumable, deduplicated), QR-code server pairing, share sheet,

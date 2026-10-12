@@ -37,7 +37,8 @@ See [ADR 0014](adr/0014-native-install-docker-optional.md), [0015](adr/0015-sign
   link), favorites, video playback, HEIC, thumbnails and previews with bundled ffmpeg.
 - **v0.11** ✅ albums, shared with other accounts as viewers or contributors; multi-select in the timeline.
 - **v0.12** ✅ public album links (password, expiry; previews only, no location).
-- **v0.13** duplicates, map, filters.
+- **v0.13** ✅ duplicates (identical and similar photos) and timeline filters (year, camera, location).
+- **v0.14** map of your photos (offline basemap, optional OpenStreetMap tiles).
 
 Full scope: timeline by date taken, EXIF (date, camera, GPS, opt-in map), albums, favorites, shared albums,
 thumbnails and previews, video transcoding (ffmpeg, optional container), Live Photos/motion photos,

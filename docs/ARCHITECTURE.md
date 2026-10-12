@@ -51,6 +51,7 @@ server/
   internal/webui           go:embed of web/build, SPA fallback
   internal/drive           nodes invariants, downloads, quotas, trash purge
   internal/media           photo/video metadata (EXIF, ffprobe) and derivatives (ffmpeg), favorites
+  internal/duplicates      identical (SHA-256) and similar (dHash + average colour) photo groups
   internal/albums          album hooks (roles, cover, pruning) and reads (list, items, people, lookup)
   internal/ffbundle        Alcove's own ffmpeg for native Linux installs: verified install, PATH activation
   migrations/              versioned Go migrations (up + down)

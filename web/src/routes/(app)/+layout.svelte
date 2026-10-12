@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { FileText, Folder, Image, Menu, Share2, Trash2, X } from '@lucide/svelte';
+	import { BookImage, FileText, Folder, Image, Menu, Share2, Trash2, X } from '@lucide/svelte';
 	import { session } from '#lib/auth/session.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
@@ -27,6 +27,7 @@
 	const nav = [
 		{ label: m.nav_files, icon: Folder, href: resolve('/(app)'), ready: true },
 		{ label: m.nav_photos, icon: Image, href: resolve('/(app)/photos'), ready: true },
+		{ label: m.nav_albums, icon: BookImage, href: resolve('/(app)/albums'), ready: true },
 		{ label: m.nav_documents, icon: FileText, href: null, ready: false },
 		{ label: m.nav_shared, icon: Share2, href: resolve('/(app)/shared'), ready: true },
 		{ label: m.nav_trash, icon: Trash2, href: resolve('/(app)/trash'), ready: true }
@@ -74,6 +75,8 @@
 								href={item.href}
 								class="nav-item"
 								aria-current={page.url.pathname === item.href ||
+								(item.href !== resolve('/(app)') &&
+									page.url.pathname.startsWith(item.href + '/')) ||
 								(item.href === resolve('/(app)') && page.url.pathname.startsWith('/folders/'))
 									? 'page'
 									: undefined}

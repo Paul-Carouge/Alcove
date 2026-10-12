@@ -81,8 +81,18 @@ export function previewUrl(m: Media, token: string): string | null {
 	return null;
 }
 
-export const videoUrl = (m: Media, token: string) =>
-	m.expand?.node ? contentUrl(m.expand.node, token) : null;
+/** The original file, for its owner and the people of albums it is in (ADR 0018). */
+export const originalUrl = (m: Pick<Media, 'id'>, token: string, inline = true) =>
+	`/api/v1/media/${encodeURIComponent(m.id)}/original?token=${encodeURIComponent(token)}${inline ? '&inline=1' : ''}`;
+
+export const videoUrl = (m: Media, token: string) => originalUrl(m, token);
+
+export async function downloadMedia(m: Pick<Media, 'id'>) {
+	const a = document.createElement('a');
+	a.href = originalUrl(m, await fileToken(), false);
+	a.rel = 'noopener';
+	a.click();
+}
 
 export { fileToken };
 

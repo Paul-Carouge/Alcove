@@ -321,5 +321,113 @@
 	"photo_map": "Ouvrir dans OpenStreetMap",
 	"photo_duration": "Durée",
 	"photo_file": "Fichier",
-	"photo_no_preview": "Pas encore d’aperçu. Installez ffmpeg sur le serveur pour les aperçus vidéo et HEIC."
+	"photo_no_preview": "Pas encore d’aperçu. Installez ffmpeg sur le serveur pour les aperçus vidéo et HEIC.",
+	"nav_albums": "Albums",
+	"albums_title": "Albums",
+	"albums_empty_title": "Aucun album pour l’instant",
+	"albums_empty_body": "Regroupez vos photos en albums, puis partagez-les avec les personnes qui ont un compte sur ce serveur.",
+	"album_new": "Nouvel album",
+	"album_name_label": "Nom de l’album",
+	"album_name_too_long": "100 caractères maximum.",
+	"album_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément",
+				"countPlural=other": "{count} éléments"
+			}
+		}
+	],
+	"album_shared": "Partagé",
+	"album_shared_by": "Partagé par {name}",
+	"album_shared_with": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Partagé avec {count} personne",
+				"countPlural=other": "Partagé avec {count} personnes"
+			}
+		}
+	],
+	"album_someone": "quelqu’un",
+	"album_you_view": "Vous pouvez voir",
+	"album_you_contribute": "Vous pouvez ajouter des photos",
+	"album_add_photos": "Ajouter des photos",
+	"album_add_photos_to": "Ajouter des photos à {name}",
+	"album_add_to": "Ajouter à {name}",
+	"album_add_button": "Ajouter à un album",
+	"album_add_title": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Ajouter {count} élément à un album",
+				"countPlural=other": "Ajouter {count} éléments à un album"
+			}
+		}
+	],
+	"album_added": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément ajouté à {name}.",
+				"countPlural=other": "{count} éléments ajoutés à {name}."
+			}
+		}
+	],
+	"album_new_label": "Ou créer un album",
+	"album_create_and_add": "Créer et ajouter",
+	"album_share": "Partager",
+	"album_share_title": "Partager l’album",
+	"album_share_intro": "Des personnes qui ont un compte sur ce serveur. Les lecteurs voient l’album ; les contributeurs peuvent aussi y ajouter leurs photos.",
+	"album_share_add": "Ajouter",
+	"album_share_already": "Cette personne fait déjà partie de l’album.",
+	"album_share_unknown": "Aucun compte avec cette adresse sur ce serveur.",
+	"album_share_remove": "Retirer {name}",
+	"album_people": "Personnes",
+	"album_role_label": "Rôle",
+	"album_role_owner": "Propriétaire",
+	"album_role_viewer": "Peut voir",
+	"album_role_contributor": "Peut ajouter des photos",
+	"album_role_for": "Rôle de {name}",
+	"album_actions": "Actions pour {name}",
+	"album_delete": "Supprimer l’album",
+	"album_delete_title": "Supprimer « {name} » ?",
+	"album_delete_body": "L’album est supprimé pour toutes les personnes avec qui il est partagé. Les photos restent dans vos fichiers.",
+	"album_leave": "Quitter l’album",
+	"album_set_cover": "Utiliser comme couverture",
+	"album_cover_set": "Couverture mise à jour.",
+	"album_remove_item": "Retirer de l’album",
+	"album_remove_selected": "Retirer de l’album",
+	"album_removed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément retiré de l’album.",
+				"countPlural=other": "{count} éléments retirés de l’album."
+			}
+		}
+	],
+	"album_empty_owner": "Cet album est vide. Ajoutez des photos depuis votre chronologie.",
+	"album_empty_viewer": "Cet album est vide pour l’instant.",
+	"album_gone_title": "Cet album n’est pas disponible",
+	"album_gone_body": "Il a été supprimé, ou il n’est plus partagé avec vous.",
+	"photos_select": "Sélectionner",
+	"photos_selection": "Sélection",
+	"photos_selected": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} sélectionné",
+				"countPlural=other": "{count} sélectionnés"
+			}
+		}
+	],
+	"photo_select": "Sélectionner {name}",
+	"photo_more": "Plus d’actions pour {name}"
 }

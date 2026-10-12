@@ -1,6 +1,15 @@
 import { execFileSync } from 'node:child_process';
 import type { FullConfig } from '@playwright/test';
-import { ADMIN, ADMIN_USER, PHOTO_USER, QUOTA_USER, TOTP_USER, USER } from './fixtures';
+import {
+	ADMIN,
+	ADMIN_USER,
+	ALBUM_USER,
+	FRIEND_USER,
+	PHOTO_USER,
+	QUOTA_USER,
+	TOTP_USER,
+	USER
+} from './fixtures';
 
 // Creates an admin (via the CLI, on the same data dir) and a regular user
 // (via the API, since public sign-up is disabled).
@@ -99,4 +108,18 @@ export default async function globalSetup(config: FullConfig) {
 		})
 	});
 	if (!photoUser.ok) throw new Error(`photo user creation failed: ${photoUser.status}`);
+
+	for (const u of [ALBUM_USER, FRIEND_USER]) {
+		const res = await fetch(`${baseURL}/api/collections/users/records`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Authorization: token },
+			body: JSON.stringify({
+				email: u.email,
+				password: u.password,
+				passwordConfirm: u.password,
+				verified: true
+			})
+		});
+		if (!res.ok) throw new Error(`${u.email} creation failed: ${res.status}`);
+	}
 }

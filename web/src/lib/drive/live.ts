@@ -36,12 +36,22 @@ function channel<T extends RecordModel>(collection: string) {
 
 const nodes = channel<DriveNode>('nodes');
 const mediaChannel = channel<RecordModel>('media');
+const albumChannel = channel<RecordModel>('albums');
+const albumItemChannel = channel<RecordModel>('album_items');
 
 export const onNodeChange = (h: Handler<DriveNode>) => nodes.on(h);
 export const onMediaChange = <T extends RecordModel>(h: Handler<T>) =>
 	mediaChannel.on(h as Handler<RecordModel>);
 
+export const onAlbumChange = (h: Handler<RecordModel>) => albumChannel.on(h);
+export const onAlbumItemChange = (h: Handler<RecordModel>) => albumItemChannel.on(h);
+
 /** Closes every subscription (on sign-out). */
 export async function stopLiveUpdates() {
-	await Promise.all([nodes.close(), mediaChannel.close()]);
+	await Promise.all([
+		nodes.close(),
+		mediaChannel.close(),
+		albumChannel.close(),
+		albumItemChannel.close()
+	]);
 }

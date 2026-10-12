@@ -1,16 +1,32 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight, Download, Heart, Info, X } from '@lucide/svelte';
-	import { downloadNode } from '#lib/drive/api.js';
 	import { formatSize } from '#lib/drive/format.js';
+	import ActionsMenu, { type MenuAction } from '#lib/ui/ActionsMenu.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { fileToken, formatDuration, previewUrl, videoUrl, type Media } from './api.js';
+	import {
+		downloadMedia,
+		fileToken,
+		formatDuration,
+		previewUrl,
+		videoUrl,
+		type Media
+	} from './api.js';
 
 	let {
 		items,
 		index = $bindable(-1),
-		ontogglefavorite
-	}: { items: Media[]; index?: number; ontogglefavorite: (m: Media) => void } = $props();
+		ontogglefavorite,
+		canFavorite = () => true,
+		actions = () => []
+	}: {
+		items: Media[];
+		index?: number;
+		ontogglefavorite?: (m: Media) => void;
+		canFavorite?: (m: Media) => boolean;
+		/** Extra actions for the current item (add to album, set as cover…). */
+		actions?: (m: Media) => MenuAction[];
+	} = $props();
 
 	let dialog: HTMLDialogElement;
 	let token = $state('');
@@ -60,17 +76,17 @@
 		<header>
 			<span class="name">{node.name}</span>
 			<div class="tools">
-				<button
-					class="icon-btn"
-					class:fav={item.favorite}
-					aria-pressed={item.favorite}
-					aria-label={item.favorite
-						? m.photo_favorite_remove({ name: node.name })
-						: m.photo_favorite_add({ name: node.name })}
-					onclick={() => ontogglefavorite(item)}
-				>
-					<Heart size={20} aria-hidden="true" fill={item.favorite ? 'currentColor' : 'none'} />
-				</button>
+				{#if ontogglefavorite && canFavorite(item)}<button
+						class="icon-btn"
+						class:fav={item.favorite}
+						aria-pressed={item.favorite}
+						aria-label={item.favorite
+							? m.photo_favorite_remove({ name: node.name })
+							: m.photo_favorite_add({ name: node.name })}
+						onclick={() => ontogglefavorite?.(item)}
+					>
+						<Heart size={20} aria-hidden="true" fill={item.favorite ? 'currentColor' : 'none'} />
+					</button>{/if}
 				<button
 					class="icon-btn"
 					aria-pressed={showInfo}
@@ -84,10 +100,13 @@
 					class="icon-btn"
 					aria-label={m.action_download()}
 					title={m.action_download()}
-					onclick={() => downloadNode(node)}
+					onclick={() => downloadMedia(item)}
 				>
 					<Download size={20} aria-hidden="true" />
 				</button>
+				{#if actions(item).length}
+					<ActionsMenu label={m.photo_more({ name: node.name })} actions={actions(item)} />
+				{/if}
 				<button
 					class="icon-btn"
 					aria-label={m.viewer_close()}
@@ -176,6 +195,12 @@
 
 <style>
 	.viewer {
+		/* Always dark: shared components (menus) read these semantic tokens. */
+		--color-text: var(--color-on-stage);
+		--color-text-muted: var(--color-on-stage-muted);
+		--color-surface-raised: var(--color-stage-panel);
+		--color-surface-sunken: var(--color-stage-control);
+		--color-border: var(--color-stage-border);
 		width: 100vw;
 		height: 100dvh;
 		max-width: none;

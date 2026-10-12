@@ -321,5 +321,113 @@
 	"photo_map": "Open in OpenStreetMap",
 	"photo_duration": "Duration",
 	"photo_file": "File",
-	"photo_no_preview": "No preview yet. Install ffmpeg on the server for video and HEIC previews."
+	"photo_no_preview": "No preview yet. Install ffmpeg on the server for video and HEIC previews.",
+	"nav_albums": "Albums",
+	"albums_title": "Albums",
+	"albums_empty_title": "No albums yet",
+	"albums_empty_body": "Group photos into albums, then share them with people who have an account on this server.",
+	"album_new": "New album",
+	"album_name_label": "Album name",
+	"album_name_too_long": "Use 100 characters or fewer.",
+	"album_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item",
+				"countPlural=other": "{count} items"
+			}
+		}
+	],
+	"album_shared": "Shared",
+	"album_shared_by": "Shared by {name}",
+	"album_shared_with": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Shared with {count} person",
+				"countPlural=other": "Shared with {count} people"
+			}
+		}
+	],
+	"album_someone": "someone",
+	"album_you_view": "You can view",
+	"album_you_contribute": "You can add photos",
+	"album_add_photos": "Add photos",
+	"album_add_photos_to": "Add photos to {name}",
+	"album_add_to": "Add to {name}",
+	"album_add_button": "Add to album",
+	"album_add_title": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Add {count} item to an album",
+				"countPlural=other": "Add {count} items to an album"
+			}
+		}
+	],
+	"album_added": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item added to {name}.",
+				"countPlural=other": "{count} items added to {name}."
+			}
+		}
+	],
+	"album_new_label": "Or create an album",
+	"album_create_and_add": "Create and add",
+	"album_share": "Share",
+	"album_share_title": "Share album",
+	"album_share_intro": "People with an account on this server. Viewers see the album; contributors can also add their own photos.",
+	"album_share_add": "Add",
+	"album_share_already": "This person is already in the album.",
+	"album_share_unknown": "No account with this email on this server.",
+	"album_share_remove": "Remove {name}",
+	"album_people": "People",
+	"album_role_label": "Role",
+	"album_role_owner": "Owner",
+	"album_role_viewer": "Can view",
+	"album_role_contributor": "Can add photos",
+	"album_role_for": "Role of {name}",
+	"album_actions": "Actions for {name}",
+	"album_delete": "Delete album",
+	"album_delete_title": "Delete “{name}”?",
+	"album_delete_body": "The album is deleted for everyone it is shared with. The photos stay in your files.",
+	"album_leave": "Leave album",
+	"album_set_cover": "Use as cover",
+	"album_cover_set": "Cover updated.",
+	"album_remove_item": "Remove from album",
+	"album_remove_selected": "Remove from album",
+	"album_removed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item removed from the album.",
+				"countPlural=other": "{count} items removed from the album."
+			}
+		}
+	],
+	"album_empty_owner": "This album is empty. Add photos from your timeline.",
+	"album_empty_viewer": "This album is empty for now.",
+	"album_gone_title": "This album is not available",
+	"album_gone_body": "It was deleted, or it is no longer shared with you.",
+	"photos_select": "Select",
+	"photos_selection": "Selection",
+	"photos_selected": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} selected",
+				"countPlural=other": "{count} selected"
+			}
+		}
+	],
+	"photo_select": "Select {name}",
+	"photo_more": "More actions for {name}"
 }

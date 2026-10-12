@@ -1,28 +1,26 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page as routePage } from '$app/state';
 	import { untrack } from 'svelte';
-	import { Heart, Image as ImageIcon, LoaderCircle, Play } from '@lucide/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { BookImage, CircleCheck, Image as ImageIcon, X } from '@lucide/svelte';
 	import { onMediaChange } from '#lib/drive/live.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
 	import {
 		fileToken,
-		formatDuration,
 		getMedia,
 		listMedia,
-		monthKey,
-		monthLabel,
 		setFavorite,
-		thumbUrl,
 		type Media,
 		type PhotoFilter
 	} from '#lib/photos/api.js';
-	import { justify } from '#lib/photos/justify.js';
+	import { addToAlbum, getAlbum } from '#lib/photos/albums.js';
+	import AlbumPicker from '#lib/photos/AlbumPicker.svelte';
+	import PhotoGrid from '#lib/photos/PhotoGrid.svelte';
 	import PhotoViewer from '#lib/photos/PhotoViewer.svelte';
 	import Alert from '#lib/ui/Alert.svelte';
-
-	const locale = getLocale();
-	const GAP = 4;
+	import Button from '#lib/ui/Button.svelte';
 
 	let filter = $state<PhotoFilter>('all');
 	let items = $state<Media[]>([]);
@@ -31,21 +29,19 @@
 	let loading = $state(false);
 	let failed = $state(false);
 	let token = $state('');
-	let width = $state(0);
 	let viewerIndex = $state(-1);
 	let sentinel = $state<HTMLDivElement>();
 
-	const target = $derived(width < 600 ? 140 : 220);
+	// Selection mode: add several photos to an album at once.
+	let selected = $state<SvelteSet<string> | null>(null);
+	let pickerOpen = $state(false);
+	let pickerIds = $state<string[]>([]);
+	let status = $state('');
+	let adding = $state(false);
+	/** Opened from an album's "Add photos": the selection goes straight there. */
+	let target = $state<{ id: string; name: string } | null>(null);
+
 	const hasMore = $derived(items.length < total);
-	const months = $derived.by(() => {
-		const groups: { key: string; items: Media[] }[] = [];
-		for (const it of items) {
-			const key = monthKey(it.taken_at);
-			if (groups.at(-1)?.key !== key) groups.push({ key, items: [] });
-			groups.at(-1)!.items.push(it);
-		}
-		return groups;
-	});
 
 	// Same order as the server (-taken_at,-id): a video's date is only known once probed.
 	const sortTimeline = (list: Media[]) =>
@@ -83,6 +79,15 @@
 	$effect(() => {
 		fileToken().then((t) => (token = t));
 		untrack(loadMore);
+		const addTo = routePage.url.searchParams.get('addTo');
+		if (addTo) {
+			getAlbum(addTo)
+				.then((a) => {
+					target = { id: a.id, name: a.name };
+					selected = new SvelteSet();
+				})
+				.catch(() => {});
+		}
 		// Tokens expire: refresh them so lazily loaded thumbnails keep working.
 		const refresh = setInterval(() => fileToken().then((t) => (token = t)), 60_000);
 		const stop = onMediaChange<Media>(async ({ action, record }) => {
@@ -131,8 +136,40 @@
 		}
 	}
 
-	const ratio = (it: Media) => (it.width && it.height ? it.width / it.height : 1);
-	const open = (it: Media) => (viewerIndex = items.indexOf(it));
+	function toggleSelect(item: Media) {
+		if (!selected) return;
+		if (selected.has(item.id)) selected.delete(item.id);
+		else selected.add(item.id);
+	}
+
+	function endSelection() {
+		selected = null;
+		if (target) goto(resolve('/(app)/albums/[id]', { id: target.id }));
+	}
+
+	function chooseAlbum(ids: string[]) {
+		pickerIds = ids;
+		pickerOpen = true;
+	}
+
+	async function addSelection() {
+		if (!selected?.size) return;
+		if (!target) return chooseAlbum([...selected]);
+		adding = true;
+		try {
+			await addToAlbum(target.id, [...selected]);
+			goto(resolve('/(app)/albums/[id]', { id: target.id }));
+		} catch {
+			status = m.error_unexpected();
+		} finally {
+			adding = false;
+		}
+	}
+
+	function added(album: { id: string; name: string }, count: number) {
+		status = m.album_added({ count, name: album.name });
+		selected = null;
+	}
 </script>
 
 <svelte:head>
@@ -140,85 +177,75 @@
 </svelte:head>
 
 <div class="head">
-	<h1>{m.photos_title()}</h1>
-	<div class="chips" role="radiogroup" aria-label={m.photos_filter_label()}>
-		{#each [['all', m.photos_all], ['favorites', m.photos_favorites], ['videos', m.photos_videos]] as [value, label] (value)}
-			<button
-				role="radio"
-				aria-checked={filter === value}
-				onclick={() => setFilter(value as PhotoFilter)}
-			>
-				{(label as () => string)()}
-			</button>
-		{/each}
+	<h1>{target ? m.album_add_photos_to({ name: target.name }) : m.photos_title()}</h1>
+	<div class="tools">
+		<div class="chips" role="radiogroup" aria-label={m.photos_filter_label()}>
+			{#each [['all', m.photos_all], ['favorites', m.photos_favorites], ['videos', m.photos_videos]] as [value, label] (value)}
+				<button
+					role="radio"
+					aria-checked={filter === value}
+					onclick={() => setFilter(value as PhotoFilter)}
+				>
+					{(label as () => string)()}
+				</button>
+			{/each}
+		</div>
+		{#if !selected && items.length}
+			<Button variant="secondary" onclick={() => (selected = new SvelteSet())}>
+				<CircleCheck size={16} aria-hidden="true" />{m.photos_select()}
+			</Button>
+		{/if}
 	</div>
 </div>
 
-<div class="timeline" bind:clientWidth={width}>
-	{#if failed && items.length === 0}
-		<Alert>{m.error_load()}</Alert>
-	{:else if !loading && items.length === 0 && page > 0}
-		<section class="empty" aria-labelledby="empty-title">
-			<span class="art" aria-hidden="true"><ImageIcon size={26} /></span>
-			<h2 id="empty-title">{m.photos_empty_title()}</h2>
-			<p>{filter === 'favorites' ? m.photos_favorites_empty() : m.photos_empty_body()}</p>
-			{#if filter === 'all'}<a href={resolve('/(app)')}>{m.nav_files()}</a>{/if}
-		</section>
-	{:else}
-		{#each months as group (group.key)}
-			<section class="month" aria-labelledby="month-{group.key}">
-				<h2 id="month-{group.key}">{monthLabel(group.key, locale)}</h2>
-				{#each justify(group.items, ratio, width, target, GAP) as row, r (r)}
-					<div class="row" style:height="{row.height}px">
-						{#each row.items as it (it.id)}
-							{@const name = it.expand?.node?.name ?? ''}
-							{@const src = token ? thumbUrl(it, token) : null}
-							<div class="tile" class:fav={it.favorite} style:width="{ratio(it) * row.height}px">
-								<button class="open" aria-label={m.photo_open({ name })} onclick={() => open(it)}>
-									{#if src}
-										<img {src} alt="" loading="lazy" decoding="async" />
-									{:else}
-										<span class="placeholder">
-											{#if it.status === 'pending'}<LoaderCircle
-													size={20}
-													aria-label={m.photos_processing()}
-												/>{:else}<ImageIcon size={20} aria-hidden="true" />{/if}
-										</span>
-									{/if}
-									{#if it.kind === 'video'}
-										<span class="badge"
-											><Play size={12} aria-hidden="true" fill="currentColor" />{formatDuration(
-												it.duration
-											)}</span
-										>
-									{/if}
-								</button>
-								<button
-									class="heart"
-									aria-pressed={it.favorite}
-									aria-label={it.favorite
-										? m.photo_favorite_remove({ name })
-										: m.photo_favorite_add({ name })}
-									onclick={() => toggleFavorite(it)}
-								>
-									<Heart
-										size={18}
-										aria-hidden="true"
-										fill={it.favorite ? 'currentColor' : 'none'}
-									/>
-								</button>
-							</div>
-						{/each}
-					</div>
-				{/each}
-			</section>
-		{/each}
-		{#if loading}<p class="muted center">{m.loading()}</p>{/if}
-		<div bind:this={sentinel} aria-hidden="true"></div>
-	{/if}
-</div>
+{#if selected}
+	<div class="selection-bar" role="region" aria-label={m.photos_selection()}>
+		<span class="count">{m.photos_selected({ count: selected.size })}</span>
+		<div class="bar-actions">
+			<Button variant="ghost" onclick={endSelection}>
+				<X size={16} aria-hidden="true" />{m.cancel_button()}
+			</Button>
+			<Button disabled={!selected.size} loading={adding} onclick={addSelection}>
+				<BookImage size={16} aria-hidden="true" />{target
+					? m.album_add_to({ name: target.name })
+					: m.album_add_button()}
+			</Button>
+		</div>
+	</div>
+{/if}
+<p class="status" role="status">{status}</p>
 
-<PhotoViewer {items} bind:index={viewerIndex} ontogglefavorite={toggleFavorite} />
+{#if failed && items.length === 0}
+	<Alert>{m.error_load()}</Alert>
+{:else if !loading && items.length === 0 && page > 0}
+	<section class="empty" aria-labelledby="empty-title">
+		<span class="art" aria-hidden="true"><ImageIcon size={26} /></span>
+		<h2 id="empty-title">{m.photos_empty_title()}</h2>
+		<p>{filter === 'favorites' ? m.photos_favorites_empty() : m.photos_empty_body()}</p>
+		{#if filter === 'all'}<a href={resolve('/(app)')}>{m.nav_files()}</a>{/if}
+	</section>
+{:else}
+	<PhotoGrid
+		{items}
+		{token}
+		{selected}
+		onopen={(it) => (viewerIndex = items.indexOf(it))}
+		ontogglefavorite={toggleFavorite}
+		ontoggleselect={toggleSelect}
+	/>
+	{#if loading}<p class="muted center">{m.loading()}</p>{/if}
+	<div bind:this={sentinel} aria-hidden="true"></div>
+{/if}
+
+<PhotoViewer
+	{items}
+	bind:index={viewerIndex}
+	ontogglefavorite={toggleFavorite}
+	actions={(it) => [
+		{ label: m.album_add_button(), icon: BookImage, onselect: () => chooseAlbum([it.id]) }
+	]}
+/>
+<AlbumPicker bind:open={pickerOpen} mediaIds={pickerIds} onadded={added} />
 
 <style>
 	.head {
@@ -227,11 +254,17 @@
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--space-4);
-		margin: var(--space-2) 0 var(--space-4);
+		margin: var(--space-2) 0 var(--space-2);
 	}
 	h1 {
 		font-size: var(--text-2xl);
 		letter-spacing: -0.02em;
+	}
+	.tools {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 	.chips {
 		display: inline-flex;
@@ -257,108 +290,35 @@
 		font-weight: var(--weight-medium);
 		box-shadow: var(--shadow-sm);
 	}
-	.month {
-		margin-bottom: var(--space-5);
-	}
-	.month h2 {
-		position: sticky;
-		top: 4rem;
-		z-index: 2;
+	.status {
+		min-height: var(--space-5);
 		margin: 0 0 var(--space-2);
-		padding: var(--space-2) 0;
-		font-size: var(--text-md);
-		background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+		color: var(--color-success);
+		font-size: var(--text-sm);
 	}
-	.row {
+	.selection-bar {
+		/* Under the app header, above month headings (the upload panel owns the bottom corner). */
+		position: sticky;
+		top: calc(4rem + var(--space-2));
+		z-index: 4;
 		display: flex;
-		gap: 4px;
-		margin-bottom: 4px;
-	}
-	.tile {
-		position: relative;
-		flex: none;
-		overflow: hidden;
-		border-radius: var(--radius-sm);
-		background: var(--color-surface-sunken);
-	}
-	.open {
-		display: block;
-		width: 100%;
-		height: 100%;
-		padding: 0;
-		border: 0;
-		background: none;
-		cursor: zoom-in;
-	}
-	.open img {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transition: transform var(--duration-base) var(--ease-standard);
-	}
-	.tile:hover .open img {
-		transform: scale(1.03);
-	}
-	.placeholder {
-		display: grid;
-		place-items: center;
-		width: 100%;
-		height: 100%;
-		color: var(--color-text-muted);
-	}
-	.placeholder :global(.lucide-loader-circle) {
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-	.badge {
-		position: absolute;
-		right: var(--space-2);
-		bottom: var(--space-2);
-		display: inline-flex;
 		align-items: center;
-		gap: 3px;
-		padding: 1px var(--space-2);
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
+		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
+		border: 1px solid var(--color-border);
 		border-radius: var(--radius-full);
-		background: var(--color-stage-scrim);
-		color: var(--color-on-stage);
-		font-size: var(--text-xs);
-		font-variant-numeric: tabular-nums;
+		background: var(--color-surface-raised);
+		box-shadow: var(--shadow-lg);
 	}
-	.heart {
-		position: absolute;
-		top: var(--space-1);
-		right: var(--space-1);
-		display: grid;
-		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border: 0;
-		border-radius: var(--radius-full);
-		background: transparent;
-		color: var(--color-on-stage);
-		filter: drop-shadow(var(--shadow-sm));
-		cursor: pointer;
-		opacity: 0;
-		transition: opacity var(--duration-fast) var(--ease-standard);
+	.count {
+		font-weight: var(--weight-medium);
 	}
-	.tile:hover .heart,
-	.tile:focus-within .heart,
-	.tile.fav .heart {
-		opacity: 1;
-	}
-	.tile.fav .heart {
-		color: var(--color-favorite);
-	}
-	/* No hover on touch screens: only favorites show their heart, toggled from the viewer. */
-	@media (hover: none) {
-		.tile:not(.fav) .heart {
-			display: none;
-		}
+	.bar-actions {
+		display: flex;
+		gap: var(--space-2);
 	}
 	.muted {
 		color: var(--color-text-muted);

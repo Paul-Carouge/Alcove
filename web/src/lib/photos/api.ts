@@ -179,3 +179,37 @@ export async function dismissDuplicates(items: string[]) {
 	});
 	if (!response.ok) throw new Error(`dismiss failed: ${response.status}`);
 }
+
+export type Location =
+	paths['/api/v1/photos/locations']['get']['responses']['200']['content']['application/json']['items'][number];
+export type MapConfig = components['schemas']['MapConfig'];
+
+export async function listLocations() {
+	const { data, response } = await api().GET('/api/v1/photos/locations', { headers: auth() });
+	if (!data) throw new Error(`locations failed: ${response.status}`);
+	return data;
+}
+
+export async function getMapConfig(): Promise<MapConfig> {
+	const { data, response } = await api().GET('/api/v1/map/config', { headers: auth() });
+	if (!data) throw new Error(`map config failed: ${response.status}`);
+	return data;
+}
+
+export async function setMapTiles(osm: boolean): Promise<MapConfig> {
+	const { data, response } = await api().PUT('/api/v1/admin/map', {
+		headers: auth(),
+		body: { osm }
+	});
+	if (!data) throw new Error(`map tiles failed: ${response.status}`);
+	return data;
+}
+
+/** Full records (with file names) for the viewer, newest first. */
+export function getMediaMany(ids: string[]) {
+	return pb.collection<Media>('media').getFullList({
+		filter: ids.map((id) => pb.filter('id = {:id}', { id })).join(' || '),
+		expand: 'node',
+		sort: '-taken_at,-id'
+	});
+}

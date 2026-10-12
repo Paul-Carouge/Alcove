@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Check, Copy, RefreshCw, Server } from '@lucide/svelte';
+	import { Check, Copy, Map as MapIcon, RefreshCw, Server } from '@lucide/svelte';
 	import { AdminError, applyUpdate, checkUpdates, waitForVersion } from '#lib/admin/api.js';
 	import { renderNotes } from '#lib/admin/markdown.js';
 	import { system } from '#lib/admin/system.svelte.js';
@@ -7,6 +7,7 @@
 	import { formatDateTime } from '#lib/drive/format.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getMapConfig, setMapTiles } from '#lib/photos/api.js';
 	import { serverStatus } from '#lib/server-status/store.svelte.js';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -28,6 +29,25 @@
 	$effect(() => {
 		if (session.isAdmin) system.load();
 	});
+
+	// Map tiles (ADR 0020).
+	let osm = $state<boolean | null>(null);
+	let osmSaving = $state(false);
+	$effect(() => {
+		getMapConfig()
+			.then((c) => (osm = !!c.tiles))
+			.catch(() => {});
+	});
+	async function toggleOSM(on: boolean) {
+		osmSaving = true;
+		try {
+			osm = !!(await setMapTiles(on)).tiles;
+		} catch {
+			error = m.error_unexpected();
+		} finally {
+			osmSaving = false;
+		}
+	}
 
 	async function check() {
 		checking = true;
@@ -88,6 +108,24 @@
 				<dt>{m.system_ffmpeg()}</dt>
 				<dd class:warn={!info.ffmpeg}>{info.ffmpeg ? m.system_available() : m.system_missing()}</dd>
 			</dl>
+		</div>
+	</section>
+
+	<section class="card" aria-labelledby="map-title">
+		<div class="icon" aria-hidden="true"><MapIcon size={22} /></div>
+		<div class="body">
+			<h2 id="map-title">{m.admin_map_title()}</h2>
+			<label class="switch">
+				<input
+					type="checkbox"
+					role="switch"
+					checked={osm === true}
+					disabled={osm === null || osmSaving}
+					onchange={(e) => toggleOSM(e.currentTarget.checked)}
+				/>
+				{m.admin_map_osm()}
+			</label>
+			<p class="hint">{m.admin_map_body()}</p>
 		</div>
 	</section>
 
@@ -173,6 +211,23 @@
 		font-size: var(--text-2xl);
 		letter-spacing: -0.02em;
 		margin: var(--space-2) 0 var(--space-5);
+	}
+	.switch {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.75rem;
+		font-weight: var(--weight-medium);
+	}
+	.switch input {
+		width: 1.25rem;
+		height: 1.25rem;
+		accent-color: var(--color-accent);
+	}
+	.hint {
+		margin: var(--space-1) 0 0;
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
 	}
 	.card {
 		display: flex;

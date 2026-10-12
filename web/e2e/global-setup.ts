@@ -5,6 +5,7 @@ import {
 	ADMIN_USER,
 	ALBUM_USER,
 	DUP_USER,
+	MAP_USER,
 	FRIEND_USER,
 	PHOTO_USER,
 	QUOTA_USER,
@@ -110,7 +111,7 @@ export default async function globalSetup(config: FullConfig) {
 	});
 	if (!photoUser.ok) throw new Error(`photo user creation failed: ${photoUser.status}`);
 
-	for (const u of [ALBUM_USER, FRIEND_USER, DUP_USER]) {
+	for (const u of [ALBUM_USER, FRIEND_USER, DUP_USER, MAP_USER]) {
 		const res = await fetch(`${baseURL}/api/collections/users/records`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', Authorization: token },

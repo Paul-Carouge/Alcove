@@ -101,7 +101,7 @@
 	"folder_empty_title": "Ce dossier est vide",
 	"folder_empty_body": "Déposez des fichiers ici ou utilisez Importer.",
 	"loading": "Chargement…",
-	"error_load": "Impossible de charger ce dossier.",
+	"error_load": "Impossible de charger cette page. Vérifiez votre connexion et réessayez.",
 	"folder_not_found": "Ce dossier n’existe pas ou a été supprimé.",
 	"actions_for": "Actions pour {name}",
 	"action_download": "Télécharger",
@@ -493,5 +493,32 @@
 			}
 		}
 	],
-	"duplicates_clean_all_confirm": "Mettre à la corbeille"
+	"duplicates_clean_all_confirm": "Mettre à la corbeille",
+	"map_title": "Carte",
+	"map_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} photo avec un lieu",
+				"countPlural=other": "{count} photos avec un lieu"
+			}
+		}
+	],
+	"map_cluster": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} photo ici",
+				"countPlural=other": "{count} photos ici"
+			}
+		}
+	],
+	"map_photo": "Photo",
+	"map_empty": "Aucune photo n’a encore de lieu. Les téléphones l’enregistrent quand la localisation est activée pour l’appareil photo.",
+	"map_show": "Voir sur la carte",
+	"admin_map_title": "Carte",
+	"admin_map_osm": "Fonds de carte détaillés OpenStreetMap",
+	"admin_map_body": "Désactivé : tout le monde voit une carte du monde simple intégrée à Alcove, sans aucune requête vers l’extérieur. Activé : les navigateurs chargent des fonds détaillés depuis OpenStreetMap, qui voit alors l’adresse IP et la zone consultée."
 }

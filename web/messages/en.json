@@ -101,7 +101,7 @@
 	"folder_empty_title": "This folder is empty",
 	"folder_empty_body": "Drop files here or use Upload.",
 	"loading": "Loading…",
-	"error_load": "Could not load this folder.",
+	"error_load": "Could not load this page. Check your connection and try again.",
 	"folder_not_found": "This folder does not exist or was deleted.",
 	"actions_for": "Actions for {name}",
 	"action_download": "Download",
@@ -493,5 +493,32 @@
 			}
 		}
 	],
-	"duplicates_clean_all_confirm": "Move to trash"
+	"duplicates_clean_all_confirm": "Move to trash",
+	"map_title": "Map",
+	"map_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} photo with a location",
+				"countPlural=other": "{count} photos with a location"
+			}
+		}
+	],
+	"map_cluster": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} photo here",
+				"countPlural=other": "{count} photos here"
+			}
+		}
+	],
+	"map_photo": "Photo",
+	"map_empty": "No photo has a location yet. Phones usually record it when location is enabled for the camera.",
+	"map_show": "Show on map",
+	"admin_map_title": "Map",
+	"admin_map_osm": "Detailed map tiles from OpenStreetMap",
+	"admin_map_body": "Off: everyone sees a simple world map built into Alcove, with no request leaving your server. On: browsers load street-level tiles from OpenStreetMap, which then sees the IP address and the area viewed."
 }

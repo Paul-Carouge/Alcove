@@ -9,6 +9,7 @@
 		CircleCheck,
 		Copy,
 		Image as ImageIcon,
+		MapPin,
 		SlidersHorizontal,
 		X
 	} from '@lucide/svelte';
@@ -184,6 +185,11 @@
 		}
 	}
 
+	function showOnMap(id: string) {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query
+		goto(`${resolve('/(app)/photos/map')}?focus=${encodeURIComponent(id)}`);
+	}
+
 	function toggleSelect(item: Media) {
 		if (!selected) return;
 		if (selected.has(item.id)) selected.delete(item.id);
@@ -253,6 +259,9 @@
 			</Button>
 		{/if}
 		{#if !target}
+			<a class="link-btn" href={resolve('/(app)/photos/map')}>
+				<MapPin size={16} aria-hidden="true" />{m.map_title()}
+			</a>
 			<a class="link-btn" href={resolve('/(app)/photos/duplicates')}>
 				<Copy size={16} aria-hidden="true" />{m.duplicates_title()}
 			</a>
@@ -355,7 +364,16 @@
 	bind:index={viewerIndex}
 	ontogglefavorite={toggleFavorite}
 	actions={(it) => [
-		{ label: m.album_add_button(), icon: BookImage, onselect: () => chooseAlbum([it.id]) }
+		{ label: m.album_add_button(), icon: BookImage, onselect: () => chooseAlbum([it.id]) },
+		...(it.has_location
+			? [
+					{
+						label: m.map_show(),
+						icon: MapPin,
+						onselect: () => showOnMap(it.id)
+					}
+				]
+			: [])
 	]}
 />
 <AlbumPicker bind:open={pickerOpen} mediaIds={pickerIds} onadded={added} />

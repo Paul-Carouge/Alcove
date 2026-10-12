@@ -15,4 +15,6 @@ export const ALBUM_USER = { email: 'albums@e2e.test', password: 'e2e-albums-pass
 export const FRIEND_USER = { email: 'friend@e2e.test', password: 'e2e-friend-password-123' };
 /** Duplicates and filters. */
 export const DUP_USER = { email: 'dups@e2e.test', password: 'e2e-dups-password-123' };
+/** Photo map. */
+export const MAP_USER = { email: 'map@e2e.test', password: 'e2e-map-password-123' };
 export const FAKE_RELEASES_PORT = 8099;

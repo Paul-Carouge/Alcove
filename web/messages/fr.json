@@ -593,5 +593,9 @@
 		}
 	],
 	"search_many": "Les {count} premiers résultats sur {total}",
-	"search_in": "dans {folder}"
+	"search_in": "dans {folder}",
+	"account_mobile": "Alcove sur votre téléphone",
+	"account_mobile_body": "Parcourez vos photos et fichiers, et sauvegardez automatiquement les photos du téléphone. Après l’installation, saisissez l’adresse de ce serveur.",
+	"account_mobile_android": "Télécharger pour Android",
+	"account_mobile_ios": "L’app iPhone viendra plus tard. Android peut vous demander d’autoriser l’installation d’apps depuis le navigateur."
 }

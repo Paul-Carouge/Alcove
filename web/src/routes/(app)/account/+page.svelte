@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { ClientResponseError } from 'pocketbase';
-	import { Shield } from '@lucide/svelte';
+	import { Download, Shield, Smartphone } from '@lucide/svelte';
+	import { ANDROID_APK_URL } from '#lib/brand.js';
 	import { session } from '#lib/auth/session.svelte.js';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_CHANGED } from '#lib/auth/validation.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -122,6 +123,16 @@
 	</form>
 </section>
 
+<section class="card" aria-labelledby="mobile-title">
+	<h2 id="mobile-title"><Smartphone size={20} aria-hidden="true" />{m.account_mobile()}</h2>
+	<p class="muted">{m.account_mobile_body()}</p>
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external download -->
+	<a class="download" href={ANDROID_APK_URL} rel="noopener noreferrer">
+		<Download size={18} aria-hidden="true" />{m.account_mobile_android()}
+	</a>
+	<p class="muted small">{m.account_mobile_ios()}</p>
+</section>
+
 <a class="security" href={resolve('/(app)/security')}>
 	<Shield size={18} aria-hidden="true" />{m.nav_security()}
 </a>
@@ -167,6 +178,31 @@
 	.ok {
 		color: var(--color-success);
 		font-size: var(--text-sm);
+	}
+	h2 :global(svg) {
+		vertical-align: -3px;
+		margin-right: var(--space-2);
+		color: var(--color-accent);
+	}
+	.download {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.75rem;
+		margin: var(--space-3) 0;
+		padding: 0 var(--space-4);
+		border-radius: var(--radius-md);
+		background: var(--color-accent);
+		color: var(--color-accent-contrast);
+		font-weight: var(--weight-medium);
+		text-decoration: none;
+	}
+	.download:hover {
+		background: var(--color-accent-hover);
+	}
+	.small {
+		margin: 0;
+		font-size: var(--text-xs);
 	}
 	.security {
 		display: inline-flex;

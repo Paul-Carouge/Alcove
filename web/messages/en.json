@@ -593,5 +593,9 @@
 		}
 	],
 	"search_many": "First {count} of {total} results",
-	"search_in": "in {folder}"
+	"search_in": "in {folder}",
+	"account_mobile": "Alcove on your phone",
+	"account_mobile_body": "Browse your photos and files, and back up your phone's photos automatically. After installing, enter this server's address.",
+	"account_mobile_android": "Download for Android",
+	"account_mobile_ios": "The iPhone app comes later. Android may ask you to allow installing apps from your browser."
 }

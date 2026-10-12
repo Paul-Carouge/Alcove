@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.12.0](2026-10-12-v0.12.0.md) | 2026-10-12 | Showing the photos, not where they were taken |
 | [0.11.1](2026-10-12-v0.11.1.md) | 2026-10-12 | The photos that were already there |
 | [0.11.0](2026-10-12-v0.11.0.md) | 2026-10-12 | Albums, and the people you share them with |
 | [0.10.2](2026-10-12-v0.10.2.md) | 2026-10-12 | Bringing our own ffmpeg |

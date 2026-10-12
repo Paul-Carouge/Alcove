@@ -7,6 +7,18 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-12
+
+### Added
+- **Public album links**: album owners create a link (optional password and expiry) from the album menu,
+  for people without an account. Visitors see the album as it is now, in the same photo grid and viewer.
+  Links are listed and revoked on the Shared page ([ADR 0019](docs/adr/0019-public-album-links.md)).
+- API: `POST /api/v1/shares` accepts `album`; `GET /api/v1/public/shares/{token}/media/{mediaId}/{variant}`.
+
+### Security
+- Album links expose no location, camera or lens data, and serve photos only as re-encoded previews
+  without metadata; original photos are never served. Videos still play from the original file.
+
 ## [0.11.1] - 2026-10-12
 
 ### Fixed
@@ -210,7 +222,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.1...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.1...v0.10.2

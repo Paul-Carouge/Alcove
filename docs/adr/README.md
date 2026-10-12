@@ -18,5 +18,8 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0011](0011-resumable-uploads-tus.md) | Resumable uploads with tus (tusd embedded) | Accepted |
 | [0012](0012-web-token-localstorage.md) | Web session token in localStorage | Accepted |
 | [0013](0013-2fa-email-otp-then-totp.md) | 2FA: email OTP first, TOTP later in phase 1 | Accepted |
+| [0014](0014-native-install-docker-optional.md) | Native single-binary install first, Docker optional | Accepted |
+| [0015](0015-signed-self-updates.md) | Self-updates from signed releases (CLI, web, mobile) | Accepted |
+| [0016](0016-bundled-ffmpeg.md) | ffmpeg bundled, not an optional container | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

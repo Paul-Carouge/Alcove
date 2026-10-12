@@ -7,6 +7,12 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-12
+
+### Fixed
+- Photos and videos uploaded before v0.10 now appear in Photos: they are indexed at the next start.
+  Servers updated from v0.9 showed an empty Photos page.
+
 ## [0.11.0] - 2026-10-12
 
 ### Added
@@ -204,7 +210,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.0...v0.10.1

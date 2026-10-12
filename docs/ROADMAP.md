@@ -25,15 +25,19 @@ OpenAPI → TS + Dart clients, Docker + Caddy deployment, CI, docs and ADRs.
 - Ops: automatic pre-migration backup, migration up/down CI on a fresh DB, release workflow publishing
   multi-arch images to GHCR, signed with provenance.
 
-## v0.9: Install and updates (next)
+## v0.9: Install and updates ✅
 
 One-line installer and `alcove install` (native service with automatic HTTPS, or Docker), signed
 self-updates via `alcove update` and an admin "Update now" button, admin role, System page.
 See [ADR 0014](adr/0014-native-install-docker-optional.md), [0015](adr/0015-signed-self-updates.md).
 
-## Phase 2: Photos and videos
+## Phase 2: Photos and videos (in progress)
 
-Timeline by date taken, EXIF (date, camera, GPS, opt-in map), albums, favorites, shared albums,
+- **v0.10** ✅ timeline by date taken (justified grid, months), photo/video viewer with details (EXIF, map
+  link), favorites, video playback, HEIC, thumbnails and previews with bundled ffmpeg.
+- **v0.11** albums, shared albums. **v0.12** duplicates, map, filters.
+
+Full scope: timeline by date taken, EXIF (date, camera, GPS, opt-in map), albums, favorites, shared albums,
 thumbnails and previews, video transcoding (ffmpeg, optional container), Live Photos/motion photos,
 HEIC/RAW support, duplicate detection. Originals are never modified. Optional face recognition module
 (local, opt-in, separate container).

@@ -49,6 +49,8 @@ server/
   internal/health          GET /health
   internal/healthcheck     `alcove healthcheck` for the container HEALTHCHECK
   internal/webui           go:embed of web/build, SPA fallback
+  internal/drive           nodes invariants, downloads, quotas, trash purge
+  internal/media           photo/video metadata (EXIF, ffprobe) and derivatives (ffmpeg), favorites
   migrations/              versioned Go migrations (up + down)
 ```
 
@@ -75,8 +77,13 @@ per folder among non-trashed nodes, cycle-free moves, cascading deletes. Still p
 | `shares` | node→nodes, created_by→users, token_hash, access_secret, password_hash, has_password, expires_at | **Implemented** (read-only links). Token shown once, SHA-256 stored; secrets hidden; public routes under `/api/v1/public/` |
 | `devices` | user→users, name, platform, push_endpoint, last_seen | For sync state and UnifiedPush |
 
-**Planned (phase 2+):** `media` (node→nodes, taken_at, width, height, duration, exif JSON, geo),
-`albums`, `album_items`, `derivatives` (node, kind=`thumb_256`|`preview_1600`|`video_720p`, blob),
+**Photos (phase 2):** `media` (migration `1791709200_media`) holds one record per image or video node:
+`kind`, `status` (`pending` → `ready`|`failed`), `taken_at`, size, duration, camera, lens, exposure,
+location, `favorite`, and the derivatives `thumb` (360 px high) and `preview` (1600 px) as protected files.
+Owner-only read rules; **no write through the API** (the server fills it, favorites go through
+`PUT /api/v1/media/{id}/favorite`). It is deleted with its node (cascade). See [Photos pipeline](#photos-pipeline).
+
+**Planned (phase 2+):** `albums`, `album_items`, `video_720p` transcodes,
 `documents` (node, ocr_text, language, FTS5 index), `people`/`faces` (phase 2b, optional module).
 Originals are never rewritten. Derivatives live in separate records and can be regenerated.
 
@@ -128,6 +135,20 @@ the same API rules as reads, so a client only sees changes it is allowed to read
 Mobile apps do not hold a stream in the background. They sync when opened and in periodic background
 tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-unifiedpush.md)).
 
+## Photos pipeline
+
+1. A `nodes` create/update hook detects images and videos (by MIME) and upserts a `pending` `media` record.
+2. A small worker pool (at most 2, so a Raspberry Pi stays responsive) copies the file to a temp dir and reads
+   metadata: EXIF with `imagemeta` (size from the decoded header when Go can read it, since EXIF sizes go stale
+   after edits), `ffprobe` for videos and HEIC (creation dates, rotation, ISO 6709 location).
+3. `ffmpeg` renders the thumbnail and preview (2-minute timeout, 2 threads; files are untrusted). JPEG/PNG/WebP
+   work without ffmpeg; HEIC and videos need it ([ADR 0016](adr/0016-bundled-ffmpeg.md)).
+4. The record becomes `ready` (or `failed` with a hidden error). Clients get it through realtime
+   subscriptions on `media`. Pending records are resumed at boot and failed ones retried daily.
+
+`taken_at` falls back to the upload date when a file has no date. The web timeline lists `media` sorted by
+`-taken_at,-id`, groups it by month and lays it out in justified rows (`web/src/lib/photos/justify.ts`).
+
 ## Storage
 
 - Default: local disk under `pb_data/storage` (Docker volume `alcove_data`).
@@ -139,8 +160,8 @@ tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-
   with tus at `/api/v1/uploads/` ([ADR 0011](adr/0011-resumable-uploads-tus.md)), per-user quotas.
 - **Thumbnails (now):** PocketBase's built-in thumbnails for JPEG/PNG/GIF/WebP in `nodes.blob`
   (`96x96`, `320x320`, `1600x0`), generated lazily on first request and cached next to the file.
-  Originals are never touched. **Later:** HEIC/RAW/video/PDF derivatives produced asynchronously into
-  a `derivatives` collection (photos module), since PocketBase cannot render those.
+  Originals are never touched. Photo and video derivatives (including HEIC) are produced asynchronously
+  by the photos pipeline into `media`. RAW and PDF thumbnails come later.
 - **Previews:** `GET /api/v1/nodes/{id}/download?inline=1` displays only passive types (images, PDF,
   plain text, MP4/WebM, audio) with a restrictive CSP (sandboxed except PDF). HTML/SVG/XML are always attachments.
 

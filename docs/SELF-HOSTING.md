@@ -1,11 +1,11 @@
 # Self-hosting
 
-> Alcove is in early development. These instructions work, but there are no features worth hosting yet.
+> Alcove is in early development (drive and photo timeline work). Keep backups and expect breaking changes before 1.0.
 
 ## Requirements
 
 - Linux (x86-64, ARM64 or ARMv7: Raspberry Pi 3+), macOS (Intel or Apple Silicon) or Windows 10/11 (x86-64).
-  1 GB RAM minimum. Disk: your data plus about 10%.
+  1 GB RAM minimum. Disk: your data plus about 10% (thumbnails and previews of photos and videos).
 - Linux: systemd (Debian, Ubuntu, Fedora, Arch…) or OpenRC (Alpine).
 - For public HTTPS: a domain name whose DNS points to the machine, with ports **80 and 443** reachable.
   For private use only, choose "local network" during install and see [Tailscale](#private-access-with-tailscale).
@@ -25,6 +25,10 @@ asks how you will reach Alcove:
 
 It then creates a dedicated system user (Linux), installs the service (systemd, OpenRC, launchd or a
 Windows startup task), offers to install ffmpeg, starts Alcove and prints the setup link.
+
+**ffmpeg** is needed for video and HEIC thumbnails (the Docker image includes it). Without it, JPEG, PNG
+and WebP photos still work; videos and HEIC files show without a thumbnail. If you install ffmpeg later,
+those files are processed again within a day (failed items are retried daily).
 
 Non-interactive (scripts, cloud-init):
 

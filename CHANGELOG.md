@@ -7,6 +7,13 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-12
+
+### Fixed
+- HEIC photos on servers with ffmpeg older than 7.1 (Debian 12, Ubuntu 24.04) now fail with a clear
+  message instead of "Invalid data found when processing input". The Docker image (ffmpeg 8.1) was not
+  affected.
+
 ## [0.10.0] - 2026-10-12
 
 Phase 2 (photos and videos) begins.
@@ -163,7 +170,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.8.0...v0.9.0

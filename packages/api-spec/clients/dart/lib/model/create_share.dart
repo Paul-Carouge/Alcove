@@ -13,13 +13,29 @@ part of alcove_api;
 class CreateShare {
   /// Returns a new [CreateShare] instance.
   CreateShare({
-    required this.node,
+    this.node,
+    this.album,
     this.expiresAt,
     this.password,
   });
 
   /// Id of a file or folder you own (not trashed).
-  String node;
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? node;
+
+  /// Id of an album you own (ADR 0019).
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? album;
 
   /// Optional expiry, in the future and at most one year ahead.
   ///
@@ -42,22 +58,33 @@ class CreateShare {
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateShare &&
     other.node == node &&
+    other.album == album &&
     other.expiresAt == expiresAt &&
     other.password == password;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (node.hashCode) +
+    (node == null ? 0 : node!.hashCode) +
+    (album == null ? 0 : album!.hashCode) +
     (expiresAt == null ? 0 : expiresAt!.hashCode) +
     (password == null ? 0 : password!.hashCode);
 
   @override
-  String toString() => 'CreateShare[node=$node, expiresAt=$expiresAt, password=$password]';
+  String toString() => 'CreateShare[node=$node, album=$album, expiresAt=$expiresAt, password=$password]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+    if (this.node != null) {
       json[r'node'] = this.node;
+    } else {
+      json[r'node'] = null;
+    }
+    if (this.album != null) {
+      json[r'album'] = this.album;
+    } else {
+      json[r'album'] = null;
+    }
     if (this.expiresAt != null) {
       json[r'expiresAt'] = this.expiresAt!.toUtc().toIso8601String();
     } else {
@@ -90,7 +117,8 @@ class CreateShare {
       }());
 
       return CreateShare(
-        node: mapValueOfType<String>(json, r'node')!,
+        node: mapValueOfType<String>(json, r'node'),
+        album: mapValueOfType<String>(json, r'album'),
         expiresAt: mapDateTime(json, r'expiresAt', r''),
         password: mapValueOfType<String>(json, r'password'),
       );
@@ -140,7 +168,6 @@ class CreateShare {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'node',
   };
 }
 

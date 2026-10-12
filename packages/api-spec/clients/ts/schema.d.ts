@@ -35,7 +35,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Create a public link to one of your files or folders. */
+    /** Create a public link to one of your files, folders or albums. */
     post: operations["createShare"];
     delete?: never;
     options?: never;
@@ -56,7 +56,7 @@ export interface paths {
       };
       cookie?: never;
     };
-    /** Describe a shared item (and list a shared folder's content). */
+    /** Describe a shared item (and list a shared folder's or album's content). */
     get: operations["getPublicShare"];
     put?: never;
     post?: never;
@@ -80,6 +80,35 @@ export interface paths {
     put?: never;
     /** Exchange the link password for a 1-hour access token. */
     post: operations["unlockShare"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/public/shares/{token}/media/{mediaId}/{variant}": {
+    parameters: {
+      query?: {
+        /** @description Access token from `unlock` (password-protected links only). */
+        access?: components["parameters"]["ShareAccess"];
+      };
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+        mediaId: string;
+        /**
+         * @description `thumb` (360 px high) and `preview` (1600 px) are generated JPEGs without metadata. `video`
+         *     streams the original video (Range requests supported). Original photos are never served.
+         */
+        variant: "thumb" | "preview" | "video";
+      };
+      cookie?: never;
+    };
+    /** An image or video of a shared album. */
+    get: operations["getSharedMedia"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -690,9 +719,12 @@ export interface components {
       /** @description Quota in bytes; 0 means unlimited. */
       quota: number;
     };
+    /** @description Exactly one of `node` and `album`. */
     CreateShare: {
       /** @description Id of a file or folder you own (not trashed). */
-      node: string;
+      node?: string;
+      /** @description Id of an album you own (ADR 0019). */
+      album?: string;
       /**
        * Format: date-time
        * @description Optional expiry, in the future and at most one year ahead.
@@ -718,8 +750,30 @@ export interface components {
       mime: string;
       updated: string;
     };
+    /** @description A photo or video of a shared album. No location or camera data is ever exposed. */
+    PublicMedia: {
+      id: string;
+      /** @enum {string} */
+      kind: "image" | "video";
+      /** @description Thumbnail and preview are available. */
+      ready: boolean;
+      width: number;
+      height: number;
+      duration: number;
+      taken_at: string;
+      name: string;
+    };
     PublicShare: {
-      item: components["schemas"]["PublicNode"];
+      /** @description The shared file or folder (absent for albums). */
+      item?: components["schemas"]["PublicNode"];
+      /** @description The shared album (album links only). */
+      album?: {
+        name: string;
+        /** @description Owner's display name (may be empty). */
+        owner: string;
+      };
+      /** @description The album's photos and videos, newest first (album links only). */
+      media?: components["schemas"]["PublicMedia"][];
       /** Format: date-time */
       expiresAt: string | null;
       /** @description The folder being listed (shared folders only). */
@@ -822,7 +876,7 @@ export interface operations {
           "application/json": components["schemas"]["CreatedShare"];
         };
       };
-      /** @description Invalid node, expiry or password. */
+      /** @description Invalid node or album, expiry or password. */
       400: {
         headers: {
           [name: string]: unknown;
@@ -944,6 +998,67 @@ export interface operations {
         content?: never;
       };
       429: components["responses"]["TooManyRequests"];
+    };
+  };
+  getSharedMedia: {
+    parameters: {
+      query?: {
+        /** @description Access token from `unlock` (password-protected links only). */
+        access?: components["parameters"]["ShareAccess"];
+      };
+      header?: never;
+      path: {
+        /** @description The link token (43 URL-safe characters). */
+        token: components["parameters"]["ShareToken"];
+        mediaId: string;
+        /**
+         * @description `thumb` (360 px high) and `preview` (1600 px) are generated JPEGs without metadata. `video`
+         *     streams the original video (Range requests supported). Original photos are never served.
+         */
+        variant: "thumb" | "preview" | "video";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "image/jpeg": string;
+          "video/mp4": string;
+        };
+      };
+      /** @description Partial content (video). */
+      206: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Password required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown link, item not in the album or in the trash, or not ready yet. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Link expired. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
   };
   downloadSharedFile: {

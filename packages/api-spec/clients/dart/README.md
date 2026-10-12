@@ -87,12 +87,13 @@ Class | Method | HTTP request | Description
 *PhotosApi* | [**listAlbums**](doc//PhotosApi.md#listalbums) | **GET** /api/v1/albums | Albums the caller owns or takes part in, most recently updated first.
 *PhotosApi* | [**setFavorite**](doc//PhotosApi.md#setfavorite) | **PUT** /api/v1/media/{mediaId}/favorite | Mark or unmark a photo or video as favorite.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
-*PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's content).
+*PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's or album's content).
+*PublicApi* | [**getSharedMedia**](doc//PublicApi.md#getsharedmedia) | **GET** /api/v1/public/shares/{token}/media/{mediaId}/{variant} | An image or video of a shared album.
 *PublicApi* | [**unlockShare**](doc//PublicApi.md#unlockshare) | **POST** /api/v1/public/shares/{token}/unlock | Exchange the link password for a 1-hour access token.
 *SetupApi* | [**completeSetup**](doc//SetupApi.md#completesetup) | **POST** /api/v1/setup | Create the administrator (admin UI + app account) and save optional settings.
 *SetupApi* | [**getSetupStatus**](doc//SetupApi.md#getsetupstatus) | **POST** /api/v1/setup/status | Check the setup token and the storage before creating the administrator.
 *SetupApi* | [**testSetupSmtp**](doc//SetupApi.md#testsetupsmtp) | **POST** /api/v1/setup/smtp-test | Send a test email with SMTP settings (not saved).
-*SharesApi* | [**createShare**](doc//SharesApi.md#createshare) | **POST** /api/v1/shares | Create a public link to one of your files or folders.
+*SharesApi* | [**createShare**](doc//SharesApi.md#createshare) | **POST** /api/v1/shares | Create a public link to one of your files, folders or albums.
 *SystemApi* | [**getHealth**](doc//SystemApi.md#gethealth) | **GET** /health | Server health, version and compatibility information.
 *UploadsApi* | [**appendUpload**](doc//UploadsApi.md#appendupload) | **PATCH** /api/v1/uploads/{uploadId} | Append a chunk (max 64 MiB per request).
 *UploadsApi* | [**cancelUpload**](doc//UploadsApi.md#cancelupload) | **DELETE** /api/v1/uploads/{uploadId} | Cancel an upload and delete its partial data.
@@ -121,8 +122,10 @@ Class | Method | HTTP request | Description
  - [MediaFiles](doc//MediaFiles.md)
  - [Module](doc//Module.md)
  - [Person](doc//Person.md)
+ - [PublicMedia](doc//PublicMedia.md)
  - [PublicNode](doc//PublicNode.md)
  - [PublicShare](doc//PublicShare.md)
+ - [PublicShareAlbum](doc//PublicShareAlbum.md)
  - [RecoveryCodes](doc//RecoveryCodes.md)
  - [SetFavoriteRequest](doc//SetFavoriteRequest.md)
  - [SetupStatus](doc//SetupStatus.md)

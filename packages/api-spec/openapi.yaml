@@ -92,7 +92,7 @@ paths:
     post:
       tags: [shares]
       operationId: createShare
-      summary: Create a public link to one of your files or folders.
+      summary: Create a public link to one of your files, folders or albums.
       security:
         - userToken: []
       requestBody:
@@ -106,7 +106,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CreatedShare" }
-        "400": { description: "Invalid node, expiry or password." }
+        "400": { description: "Invalid node or album, expiry or password." }
         "401": { description: Authentication required. }
   /api/v1/public/shares/{token}:
     parameters:
@@ -115,7 +115,7 @@ paths:
     get:
       tags: [public]
       operationId: getPublicShare
-      summary: Describe a shared item (and list a shared folder's content).
+      summary: Describe a shared item (and list a shared folder's or album's content).
       security: []
       parameters:
         - name: folder
@@ -169,6 +169,38 @@ paths:
         "404": { description: Unknown or revoked link. }
         "410": { description: Link expired. }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/public/shares/{token}/media/{mediaId}/{variant}:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+      - $ref: "#/components/parameters/ShareAccess"
+      - name: mediaId
+        in: path
+        required: true
+        schema: { type: string, maxLength: 64 }
+      - name: variant
+        in: path
+        required: true
+        description: |
+          `thumb` (360 px high) and `preview` (1600 px) are generated JPEGs without metadata. `video`
+          streams the original video (Range requests supported). Original photos are never served.
+        schema: { type: string, enum: [thumb, preview, video] }
+    get:
+      tags: [public]
+      operationId: getSharedMedia
+      summary: An image or video of a shared album.
+      security: []
+      responses:
+        "200":
+          description: The file.
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            video/mp4:
+              schema: { type: string, format: binary }
+        "206": { description: Partial content (video). }
+        "401": { description: Password required. }
+        "404": { description: "Unknown link, item not in the album or in the trash, or not ready yet." }
+        "410": { description: Link expired. }
   /api/v1/public/shares/{token}/files/{nodeId}:
     parameters:
       - $ref: "#/components/parameters/ShareToken"
@@ -986,9 +1018,10 @@ components:
     CreateShare:
       type: object
       additionalProperties: false
-      required: [node]
+      description: Exactly one of `node` and `album`.
       properties:
         node: { type: string, maxLength: 64, description: "Id of a file or folder you own (not trashed)." }
+        album: { type: string, maxLength: 64, description: "Id of an album you own (ADR 0019)." }
         expiresAt:
           type: string
           format: date-time
@@ -1016,11 +1049,37 @@ components:
         size: { type: integer }
         mime: { type: string }
         updated: { type: string }
+    PublicMedia:
+      type: object
+      description: A photo or video of a shared album. No location or camera data is ever exposed.
+      required: [id, kind, ready, width, height, duration, taken_at, name]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [image, video] }
+        ready: { type: boolean, description: Thumbnail and preview are available. }
+        width: { type: integer }
+        height: { type: integer }
+        duration: { type: number }
+        taken_at: { type: string }
+        name: { type: string }
     PublicShare:
       type: object
-      required: [item, expiresAt]
+      required: [expiresAt]
       properties:
-        item: { $ref: "#/components/schemas/PublicNode" }
+        item:
+          description: The shared file or folder (absent for albums).
+          allOf: [{ $ref: "#/components/schemas/PublicNode" }]
+        album:
+          description: The shared album (album links only).
+          type: object
+          required: [name, owner]
+          properties:
+            name: { type: string }
+            owner: { type: string, description: "Owner's display name (may be empty)." }
+        media:
+          type: array
+          description: The album's photos and videos, newest first (album links only).
+          items: { $ref: "#/components/schemas/PublicMedia" }
         expiresAt: { type: [string, "null"], format: date-time }
         folder:
           description: The folder being listed (shared folders only).

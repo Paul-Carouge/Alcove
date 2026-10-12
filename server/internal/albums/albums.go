@@ -355,3 +355,41 @@ func lookup(e *core.RequestEvent) error {
 	}
 	return e.JSON(http.StatusOK, personOf(u, ""))
 }
+
+// PublicItem is what anonymous visitors of an album link see (ADR 0019): no location, camera or lens.
+type PublicItem struct {
+	ID       string  `db:"id" json:"id"`
+	Kind     string  `db:"kind" json:"kind"`
+	Ready    bool    `db:"ready" json:"ready"`
+	Width    int     `db:"width" json:"width"`
+	Height   int     `db:"height" json:"height"`
+	Duration float64 `db:"duration" json:"duration"`
+	TakenAt  string  `db:"taken_at" json:"taken_at"`
+	Name     string  `db:"name" json:"name"`
+}
+
+// PublicItems lists an album's items (not in the trash), newest first.
+func PublicItems(app core.App, album string, limit int) ([]PublicItem, error) {
+	out := []PublicItem{}
+	err := visibleItems(app, album).
+		Select("m.id", "m.kind", "m.width", "m.height", "m.duration", "m.taken_at", "n.name").
+		AndSelect("(m.status = 'ready' AND m.thumb != '' AND m.preview != '') AS ready").
+		OrderBy("m.taken_at DESC", "m.id DESC").Limit(int64(limit)).
+		All(&out)
+	return out, err
+}
+
+// MediaInAlbum returns the media record and its node when the item is in the album and not trashed.
+func MediaInAlbum(app core.App, album, mediaID string) (media, node *core.Record, err error) {
+	var row struct {
+		ID string `db:"id"`
+	}
+	if err := visibleItems(app, album).Select("m.id").AndWhere(dbx.HashExp{"m.id": mediaID}).One(&row); err != nil {
+		return nil, nil, err
+	}
+	if media, err = app.FindRecordById("media", row.ID); err != nil {
+		return nil, nil, err
+	}
+	node, err = app.FindRecordById("nodes", media.GetString("node"))
+	return media, node, err
+}

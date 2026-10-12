@@ -16,7 +16,7 @@ class SharesApi {
 
   final ApiClient apiClient;
 
-  /// Create a public link to one of your files or folders.
+  /// Create a public link to one of your files, folders or albums.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -48,7 +48,7 @@ class SharesApi {
     );
   }
 
-  /// Create a public link to one of your files or folders.
+  /// Create a public link to one of your files, folders or albums.
   ///
   /// Parameters:
   ///

@@ -13,14 +13,34 @@ part of alcove_api;
 class PublicShare {
   /// Returns a new [PublicShare] instance.
   PublicShare({
-    required this.item,
+    this.item,
+    this.album,
+    this.media = const [],
     required this.expiresAt,
     this.folder,
     this.path = const [],
     this.children = const [],
   });
 
-  PublicNode item;
+  /// The shared file or folder (absent for albums).
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  PublicNode? item;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  PublicShareAlbum? album;
+
+  /// The album's photos and videos, newest first (album links only).
+  List<PublicMedia> media;
 
   DateTime? expiresAt;
 
@@ -41,6 +61,8 @@ class PublicShare {
   @override
   bool operator ==(Object other) => identical(this, other) || other is PublicShare &&
     other.item == item &&
+    other.album == album &&
+    _deepEquality.equals(other.media, media) &&
     other.expiresAt == expiresAt &&
     other.folder == folder &&
     _deepEquality.equals(other.path, path) &&
@@ -49,18 +71,30 @@ class PublicShare {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (item.hashCode) +
+    (item == null ? 0 : item!.hashCode) +
+    (album == null ? 0 : album!.hashCode) +
+    (media.hashCode) +
     (expiresAt == null ? 0 : expiresAt!.hashCode) +
     (folder == null ? 0 : folder!.hashCode) +
     (path.hashCode) +
     (children.hashCode);
 
   @override
-  String toString() => 'PublicShare[item=$item, expiresAt=$expiresAt, folder=$folder, path=$path, children=$children]';
+  String toString() => 'PublicShare[item=$item, album=$album, media=$media, expiresAt=$expiresAt, folder=$folder, path=$path, children=$children]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+    if (this.item != null) {
       json[r'item'] = this.item;
+    } else {
+      json[r'item'] = null;
+    }
+    if (this.album != null) {
+      json[r'album'] = this.album;
+    } else {
+      json[r'album'] = null;
+    }
+      json[r'media'] = this.media;
     if (this.expiresAt != null) {
       json[r'expiresAt'] = this.expiresAt!.toUtc().toIso8601String();
     } else {
@@ -95,7 +129,9 @@ class PublicShare {
       }());
 
       return PublicShare(
-        item: PublicNode.fromJson(json[r'item'])!,
+        item: PublicNode.fromJson(json[r'item']),
+        album: PublicShareAlbum.fromJson(json[r'album']),
+        media: PublicMedia.listFromJson(json[r'media']),
         expiresAt: mapDateTime(json, r'expiresAt', r''),
         folder: PublicNode.fromJson(json[r'folder']),
         path: PublicNode.listFromJson(json[r'path']),
@@ -147,7 +183,6 @@ class PublicShare {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'item',
     'expiresAt',
   };
 }

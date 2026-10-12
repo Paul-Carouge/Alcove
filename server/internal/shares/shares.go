@@ -18,6 +18,7 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/Paul-Carouge/Alcove/server/internal/albums"
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 )
 
@@ -39,6 +40,7 @@ func Register(app core.App) {
 		pub.GET("", describe)
 		pub.POST("/unlock", unlock)
 		pub.GET("/files/{nodeId}", downloadFile)
+		pub.GET("/media/{mediaId}/{variant}", sharedMedia)
 		return se.Next()
 	})
 }
@@ -60,6 +62,7 @@ func hashToken(token string) string {
 
 type createBody struct {
 	Node      string `json:"node"`
+	Album     string `json:"album"`
 	ExpiresAt string `json:"expiresAt"`
 	Password  string `json:"password"`
 }
@@ -69,9 +72,21 @@ func create(e *core.RequestEvent) error {
 	if err := e.BindBody(&body); err != nil {
 		return e.BadRequestError("Invalid body.", err)
 	}
-	node, err := e.App.FindRecordById(drive.Collection, body.Node)
-	if err != nil || node.GetString("owner") != e.Auth.Id || !node.GetDateTime("trashed_at").IsZero() {
-		return e.BadRequestError("Unknown node.", nil)
+	if (body.Node == "") == (body.Album == "") {
+		return e.BadRequestError("Provide either node or album.", nil)
+	}
+	field, target := "node", body.Node
+	if body.Album != "" {
+		album, err := e.App.FindRecordById(albums.Collection, body.Album)
+		if err != nil || album.GetString("owner") != e.Auth.Id {
+			return e.BadRequestError("Unknown album.", nil)
+		}
+		field, target = "album", body.Album
+	} else {
+		node, err := e.App.FindRecordById(drive.Collection, body.Node)
+		if err != nil || node.GetString("owner") != e.Auth.Id || !node.GetDateTime("trashed_at").IsZero() {
+			return e.BadRequestError("Unknown node.", nil)
+		}
 	}
 
 	var expires types.DateTime
@@ -96,7 +111,7 @@ func create(e *core.RequestEvent) error {
 		return err
 	}
 	share := core.NewRecord(col)
-	share.Set("node", node.Id)
+	share.Set(field, target)
 	share.Set("created_by", e.Auth.Id)
 	share.Set("token_hash", hash)
 	share.Set("access_secret", security.RandomString(48))
@@ -128,7 +143,7 @@ var (
 	errLocked   = errors.New("password required")
 )
 
-// resolve finds an active share and its (non-trashed) root node.
+// resolve finds an active share and its target: a (non-trashed) node or an album.
 func resolve(app core.App, token string) (share, root *core.Record, err error) {
 	share, err = app.FindFirstRecordByData(Collection, "token_hash", hashToken(token))
 	if err != nil {
@@ -136,6 +151,12 @@ func resolve(app core.App, token string) (share, root *core.Record, err error) {
 	}
 	if exp := share.GetDateTime("expires_at"); !exp.IsZero() && time.Now().After(exp.Time()) {
 		return nil, nil, errGone
+	}
+	if id := share.GetString("album"); id != "" {
+		if root, err = app.FindRecordById(albums.Collection, id); err != nil {
+			return nil, nil, errNotFound
+		}
+		return share, root, nil
 	}
 	root, err = app.FindRecordById(drive.Collection, share.GetString("node"))
 	if err != nil || !root.GetDateTime("trashed_at").IsZero() {
@@ -229,6 +250,9 @@ func describe(e *core.RequestEvent) error {
 		return fail(e, err)
 	}
 	e.Response.Header().Set("Cache-Control", "no-store")
+	if isAlbum(root) {
+		return describeAlbum(e, share, root)
+	}
 	res := map[string]any{"item": publicNode(root), "expiresAt": expiresOf(share)}
 	if root.GetString("kind") != drive.KindFolder {
 		return e.JSON(http.StatusOK, res)
@@ -291,6 +315,9 @@ func downloadFile(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
+	if isAlbum(root) {
+		return e.NotFoundError("", nil)
+	}
 	node, err := e.App.FindRecordById(drive.Collection, e.Request.PathValue("nodeId"))
 	if err != nil || node.GetString("kind") != drive.KindFile || node.GetString("blob") == "" {
 		return e.NotFoundError("", nil)
@@ -299,4 +326,68 @@ func downloadFile(e *core.RequestEvent) error {
 		return e.NotFoundError("", nil)
 	}
 	return drive.Serve(e, node, e.Request.URL.Query().Get("inline") == "1")
+}
+
+func isAlbum(r *core.Record) bool { return r.Collection().Name == albums.Collection }
+
+// maxAlbumItems bounds the public listing of an album.
+const maxAlbumItems = 5000
+
+func describeAlbum(e *core.RequestEvent, share, album *core.Record) error {
+	items, err := albums.PublicItems(e.App, album.Id, maxAlbumItems)
+	if err != nil {
+		return err
+	}
+	owner := ""
+	if u, err := e.App.FindRecordById("users", album.GetString("owner")); err == nil {
+		owner = u.GetString("name")
+	}
+	return e.JSON(http.StatusOK, map[string]any{
+		"album":     map[string]any{"name": album.GetString("name"), "owner": owner},
+		"media":     items,
+		"expiresAt": expiresOf(share),
+	})
+}
+
+// sharedMedia serves an album item: generated JPEGs (no metadata) for photos, the original stream for
+// videos. Original photos are never served through a link (ADR 0019).
+func sharedMedia(e *core.RequestEvent) error {
+	_, root, err := open(e)
+	if err != nil {
+		return fail(e, err)
+	}
+	if !isAlbum(root) {
+		return e.NotFoundError("", nil)
+	}
+	rec, node, err := albums.MediaInAlbum(e.App, root.Id, e.Request.PathValue("mediaId"))
+	if err != nil {
+		return e.NotFoundError("", nil)
+	}
+	variant := e.Request.PathValue("variant")
+	switch variant {
+	case "video":
+		if rec.GetString("kind") != "video" {
+			return e.NotFoundError("", nil)
+		}
+		return drive.Serve(e, node, true)
+	case "thumb", "preview":
+		file := rec.GetString(variant)
+		if file == "" {
+			return e.NotFoundError("", nil)
+		}
+		fsys, err := e.App.NewFilesystem()
+		if err != nil {
+			return err
+		}
+		defer func() { _ = fsys.Close() }()
+		h := e.Response.Header()
+		h.Set("Content-Type", "image/jpeg")
+		h.Set("Content-Security-Policy", "default-src 'none'; sandbox")
+		h.Set("Cache-Control", "private, max-age=300")
+		if err := fsys.Serve(e.Response, e.Request, rec.BaseFilesPath()+"/"+file, variant+".jpg"); err != nil {
+			return e.NotFoundError("", err)
+		}
+		return nil
+	}
+	return e.NotFoundError("", nil)
 }

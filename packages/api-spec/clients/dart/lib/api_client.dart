@@ -220,10 +220,14 @@ class ApiClient {
           return ModuleTypeTransformer().decode(value);
         case 'Person':
           return Person.fromJson(value);
+        case 'PublicMedia':
+          return PublicMedia.fromJson(value);
         case 'PublicNode':
           return PublicNode.fromJson(value);
         case 'PublicShare':
           return PublicShare.fromJson(value);
+        case 'PublicShareAlbum':
+          return PublicShareAlbum.fromJson(value);
         case 'RecoveryCodes':
           return RecoveryCodes.fromJson(value);
         case 'SetFavoriteRequest':

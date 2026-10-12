@@ -7,6 +7,27 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-12
+
+### Added
+- **Albums**: create albums, add photos and videos from the timeline (new multi-select mode) or the viewer,
+  choose a cover, rename, delete.
+- **Shared albums**: share an album with other accounts of the server, each person either *can view* or
+  *can add photos* (their own). Participants see shared albums in their Albums page, can play videos and
+  download originals, and can leave; removing a contributor also removes the photos they added
+  ([ADR 0018](docs/adr/0018-albums-and-sharing-between-accounts.md)).
+- API: `GET /api/v1/albums`, `/albums/{id}/items`, `/albums/{id}/people`, `POST /albums/{id}/leave`,
+  `GET /api/v1/users/lookup`, `GET /api/v1/media/{id}/original`.
+
+### Changed
+- Every photo now gets its own thumbnail and preview, made without ffmpeg for JPEG, PNG, GIF and WebP when
+  it is missing; existing photos are processed again once at startup.
+- The selection bar sits at the top of the page, clear of the upload panel.
+
+### Security
+- Drive files stay readable by their owner only; shared photos are served through the album's rules,
+  checked on every request.
+
 ## [0.10.2] - 2026-10-12
 
 ### Added
@@ -183,7 +204,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.2...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.1...v0.10.0

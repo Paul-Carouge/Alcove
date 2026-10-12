@@ -234,3 +234,25 @@ func TestHEIC(t *testing.T) {
 		t.Errorf("taken_at = %s", got)
 	}
 }
+
+func TestFilesFromBeforeThePhotosModuleAreTracked(t *testing.T) {
+	e := setup(t)
+	rec := e.upload(t, "old.jpg", mediatest.JPEG(mediatest.Photo{Width: 20, Height: 10}))
+	node := rec.GetString("node")
+	// As if the file had been uploaded before v0.10: no media record.
+	if err := e.app.Delete(rec); err != nil {
+		t.Fatal(err)
+	}
+	media.Backfill(e.app)
+	got, err := e.app.FindFirstRecordByData(media.Collection, "node", node)
+	if err != nil {
+		t.Fatal("pre-existing photo not tracked")
+	}
+	if err := media.Process(e.app, got.Id); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = e.app.FindRecordById(media.Collection, got.Id)
+	if got.GetString("status") != "ready" || got.GetString("thumb") == "" {
+		t.Errorf("status %q thumb %q", got.GetString("status"), got.GetString("thumb"))
+	}
+}

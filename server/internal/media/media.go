@@ -167,8 +167,24 @@ func (w *worker) stop() {
 	w.wg.Wait()
 }
 
-// backfill reprocesses items made before every item had its own thumbnail (v0.11).
+// backfill tracks files uploaded before the photos module existed (v0.10) and reprocesses items made
+// before every item had its own thumbnail (v0.11).
 func (w *worker) backfill() {
+	var untracked []*core.Record
+	err := w.app.RecordQuery(drive.Collection).
+		AndWhere(dbx.HashExp{"kind": drive.KindFile}).
+		AndWhere(dbx.NewExp("blob != '' AND (mime LIKE 'image/%' OR mime LIKE 'video/%')")).
+		AndWhere(dbx.NewExp("NOT EXISTS (SELECT 1 FROM " + Collection + " m WHERE m.node = nodes.id)")).
+		All(&untracked)
+	if err == nil {
+		for _, n := range untracked {
+			if w.stopping() {
+				return
+			}
+			w.track(n)
+		}
+	}
+
 	recs, err := w.app.FindAllRecords(Collection, dbx.HashExp{"status": "ready", "thumb": ""})
 	if err != nil {
 		return
@@ -205,6 +221,9 @@ func (w *worker) loop() {
 		_ = w.process(id) // errors are logged and kept on the record
 	}
 }
+
+// Backfill runs the startup scan synchronously (exported for tests).
+func Backfill(app core.App) { (&worker{app: app}).backfill() }
 
 // Process handles one record synchronously (exported for tests).
 func Process(app core.App, id string) error { return (&worker{app: app}).process(id) }

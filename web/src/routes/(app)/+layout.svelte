@@ -26,7 +26,7 @@
 	// Sections arrive phase by phase (see docs/ROADMAP.md); upcoming ones are shown, disabled.
 	const nav = [
 		{ label: m.nav_files, icon: Folder, href: resolve('/(app)'), ready: true },
-		{ label: m.nav_photos, icon: Image, href: null, ready: false },
+		{ label: m.nav_photos, icon: Image, href: resolve('/(app)/photos'), ready: true },
 		{ label: m.nav_documents, icon: FileText, href: null, ready: false },
 		{ label: m.nav_shared, icon: Share2, href: resolve('/(app)/shared'), ready: true },
 		{ label: m.nav_trash, icon: Trash2, href: resolve('/(app)/trash'), ready: true }

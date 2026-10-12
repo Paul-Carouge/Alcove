@@ -8,4 +8,6 @@ export const QUOTA_USER = {
 };
 export const TOTP_USER = { email: 'totp@e2e.test', password: 'e2e-totp-password-123' };
 export const ADMIN_USER = { email: 'boss@e2e.test', password: 'e2e-boss-password-123' };
+/** Owns the photo timeline tests: other tests upload images to USER. */
+export const PHOTO_USER = { email: 'photos@e2e.test', password: 'e2e-photos-password-123' };
 export const FAKE_RELEASES_PORT = 8099;

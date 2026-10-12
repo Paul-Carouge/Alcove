@@ -531,6 +531,7 @@ export interface components {
       role: "owner" | "contributor" | "viewer";
       owner: {
         id: string;
+        /** @description The owner's name, or email when they have none. */
         name: string;
       };
       /** @description Items not in the trash. */

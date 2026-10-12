@@ -19,6 +19,7 @@ class AlbumSummaryOwner {
 
   String id;
 
+  /// The owner's name, or email when they have none.
   String name;
 
   @override

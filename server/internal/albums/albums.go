@@ -3,6 +3,7 @@
 package albums
 
 import (
+	"cmp"
 	"errors"
 	"net/http"
 	"slices"
@@ -250,7 +251,7 @@ func list(e *core.RequestEvent) error {
 		owner := a.GetString("owner")
 		if _, ok := names[owner]; !ok {
 			if u, err := e.App.FindRecordById("users", owner); err == nil {
-				names[owner] = u.GetString("name")
+				names[owner] = cmp.Or(u.GetString("name"), u.Email())
 			}
 		}
 		var cover any

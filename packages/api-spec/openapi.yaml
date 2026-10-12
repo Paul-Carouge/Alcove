@@ -813,7 +813,7 @@ components:
           required: [id, name]
           properties:
             id: { type: string }
-            name: { type: string }
+            name: { type: string, description: "The owner's name, or email when they have none." }
         count: { type: integer, description: Items not in the trash. }
         shared: { type: boolean, description: The album has participants. }
         cover:

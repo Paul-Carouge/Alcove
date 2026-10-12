@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.10.0](2026-10-12-v0.10.0.md) | 2026-10-12 | A place for your photos |
 | [0.9.1](2026-10-12-v0.9.1.md) | 2026-10-12 | The version that wasn't |
 | [0.9.0](2026-10-12-v0.9.0.md) | 2026-10-12 | One command to install, one to update |
 | [0.8.0](2026-10-12-v0.8.0.md) | 2026-10-12 | The first five minutes |

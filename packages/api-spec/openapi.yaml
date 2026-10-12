@@ -620,6 +620,51 @@ paths:
         "206": { description: Partial content (Range request). }
         "401": { description: Missing or invalid file token. }
         "404": { description: "Unknown item, in the trash, or not visible to this account." }
+  /api/v1/app/android:
+    get:
+      tags: [system]
+      operationId: getAndroidApp
+      summary: The Android app matching this server's version (in-app updates, ADR 0024).
+      description: |
+        The mobile app compares `version` with its own and offers to update when the server is newer and
+        `available` is true. The APK comes from the GitHub release of the server's version, cached by the
+        server; Android itself refuses an update signed with another key.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: What the server can offer.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, available]
+                properties:
+                  version: { type: string, description: "The server's version, e.g. 0.19.0." }
+                  available: { type: boolean, description: "An APK for this version exists (development builds: false)." }
+                  size: { type: integer, description: "APK size in bytes, when known." }
+        "401": { description: Authentication required. }
+  /api/v1/app/android.apk:
+    get:
+      tags: [system]
+      operationId: downloadAndroidApp
+      summary: Download the Android app for this server's version.
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          description: A file token (from `POST /api/files/token`), so the URL works in a plain link.
+          schema: { type: string }
+      responses:
+        "200":
+          description: The APK.
+          content:
+            application/vnd.android.package-archive:
+              schema: { type: string, format: binary }
+        "401": { description: Missing or invalid file token. }
+        "404": { description: No APK for this server version. }
+        "502": { description: The release could not be downloaded. }
   /api/v1/backup/known:
     post:
       tags: [drive]

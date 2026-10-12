@@ -105,6 +105,8 @@ Class | Method | HTTP request | Description
 *SetupApi* | [**getSetupStatus**](doc//SetupApi.md#getsetupstatus) | **POST** /api/v1/setup/status | Check the setup token and the storage before creating the administrator.
 *SetupApi* | [**testSetupSmtp**](doc//SetupApi.md#testsetupsmtp) | **POST** /api/v1/setup/smtp-test | Send a test email with SMTP settings (not saved).
 *SharesApi* | [**createShare**](doc//SharesApi.md#createshare) | **POST** /api/v1/shares | Create a public link to one of your files, folders or albums.
+*SystemApi* | [**downloadAndroidApp**](doc//SystemApi.md#downloadandroidapp) | **GET** /api/v1/app/android.apk | Download the Android app for this server's version.
+*SystemApi* | [**getAndroidApp**](doc//SystemApi.md#getandroidapp) | **GET** /api/v1/app/android | The Android app matching this server's version (in-app updates, ADR 0024).
 *SystemApi* | [**getHealth**](doc//SystemApi.md#gethealth) | **GET** /health | Server health, version and compatibility information.
 *UploadsApi* | [**appendUpload**](doc//UploadsApi.md#appendupload) | **PATCH** /api/v1/uploads/{uploadId} | Append a chunk (max 64 MiB per request).
 *UploadsApi* | [**cancelUpload**](doc//UploadsApi.md#cancelupload) | **DELETE** /api/v1/uploads/{uploadId} | Cancel an upload and delete its partial data.
@@ -132,6 +134,7 @@ Class | Method | HTTP request | Description
  - [Error](doc//Error.md)
  - [GetAlbumPeople200Response](doc//GetAlbumPeople200Response.md)
  - [GetAlbumPeople200ResponsePeopleInner](doc//GetAlbumPeople200ResponsePeopleInner.md)
+ - [GetAndroidApp200Response](doc//GetAndroidApp200Response.md)
  - [GetPhotoFacets200Response](doc//GetPhotoFacets200Response.md)
  - [GetPhotoFacets200ResponseCamerasInner](doc//GetPhotoFacets200ResponseCamerasInner.md)
  - [GetPhotoFacets200ResponseYearsInner](doc//GetPhotoFacets200ResponseYearsInner.md)

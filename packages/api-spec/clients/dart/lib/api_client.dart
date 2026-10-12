@@ -218,6 +218,8 @@ class ApiClient {
           return GetAlbumPeople200Response.fromJson(value);
         case 'GetAlbumPeople200ResponsePeopleInner':
           return GetAlbumPeople200ResponsePeopleInner.fromJson(value);
+        case 'GetAndroidApp200Response':
+          return GetAndroidApp200Response.fromJson(value);
         case 'GetPhotoFacets200Response':
           return GetPhotoFacets200Response.fromJson(value);
         case 'GetPhotoFacets200ResponseCamerasInner':

@@ -28,5 +28,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0021](0021-mobile-app-stack.md) | Mobile app: PocketBase Dart SDK, official Flutter packages, no framework | Accepted |
 | [0022](0022-mobile-photo-backup.md) | Mobile photo backup | Accepted |
 | [0023](0023-android-distribution.md) | Android app: signed APK in every release, http on private networks | Accepted |
+| [0024](0024-in-app-updates.md) | Mobile app updates itself from its server | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

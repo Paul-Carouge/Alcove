@@ -239,6 +239,44 @@ func (c *Client) Download(ctx context.Context, r *Release, dir string) (string, 
 	return out, nil
 }
 
+// SaveAsset streams a release asset to path (atomically, at most limit bytes). Used for files that carry
+// their own signature, like the Android app.
+func (c *Client) SaveAsset(ctx context.Context, r *Release, name, path string, limit int64) error {
+	url := r.Assets[name]
+	if url == "" {
+		return fmt.Errorf("%s is not part of v%s", name, r.Version)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	res, err := c.HTTP.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("download %s: HTTP %d", name, res.StatusCode)
+	}
+	tmp := path + ".part"
+	f, err := os.Create(tmp) // #nosec G304 -- path chosen by the caller (data directory)
+	if err != nil {
+		return err
+	}
+	n, err := io.Copy(f, io.LimitReader(res.Body, limit+1))
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil && n > limit {
+		err = fmt.Errorf("download %s: too large", name)
+	}
+	if err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return os.Rename(tmp, path)
+}
+
 // FetchAsset downloads a release asset and checks it against sums (from VerifiedSums).
 func (c *Client) FetchAsset(ctx context.Context, r *Release, name string, sums map[string]string) ([]byte, error) {
 	url := r.Assets[name]

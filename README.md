@@ -49,7 +49,8 @@ compatible, then you sign in (two-factor included), browse your photos, videos a
 **automatic photo backup** (original quality, no duplicates, Wi-Fi only if you want).
 
 **Android:** download `alcove-android.apk` from the [latest release](https://github.com/Paul-Carouge/Alcove/releases/latest)
-(or from the web app: Account → Alcove on your phone). The iPhone app comes later.
+(or from the web app: Account → Alcove on your phone). It then **updates itself from your server**: update
+Alcove and phones offer the matching version at their next launch. The iPhone app comes later.
 
 ## Roadmap
 
@@ -60,7 +61,7 @@ compatible, then you sign in (two-factor included), browse your photos, videos a
 | – | One-command install and signed updates | ✅ v0.9 |
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters and map done |
 | 3 | Documents (OCR, full-text search) | |
-| 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, files and automatic backup done |
+| 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, albums, files, automatic backup and in-app updates done |
 | 5 | Notes, calendar (CalDAV), contacts (CardDAV) | |
 | 6 | Desktop app with folder sync | |
 

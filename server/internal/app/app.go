@@ -7,6 +7,8 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/accounts"
 	"github.com/Paul-Carouge/Alcove/server/internal/albums"
+	"github.com/Paul-Carouge/Alcove/server/internal/appdist"
+	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 	"github.com/Paul-Carouge/Alcove/server/internal/duplicates"
@@ -18,6 +20,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/setup"
 	"github.com/Paul-Carouge/Alcove/server/internal/shares"
 	"github.com/Paul-Carouge/Alcove/server/internal/totp"
+	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 	"github.com/Paul-Carouge/Alcove/server/internal/updates"
 	"github.com/Paul-Carouge/Alcove/server/internal/uploads"
 	"github.com/Paul-Carouge/Alcove/server/internal/webui"
@@ -37,7 +40,11 @@ func Wire(app core.App, cfg config.Config) {
 	accounts.Register(app)
 	shares.Register(app)
 	totp.Register(app, secrets.New(app, cfg.SecretKey))
-	updates.Register(app, updates.FromConfig(cfg))
+	updateOpts := updates.FromConfig(cfg)
+	updates.Register(app, updateOpts)
+	if releases, err := updater.New(updateOpts.APIBase, buildinfo.Repo, buildinfo.ReleasePublicKey); err == nil {
+		appdist.Register(app, releases, buildinfo.Version)
+	}
 	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
 	// Optional modules from ALCOVE_MODULES (ocr, faces) are not implemented yet.
 	health.Register(app, []string{drive.Module, media.Module})

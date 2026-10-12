@@ -428,6 +428,45 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/app/android": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The Android app matching this server's version (in-app updates, ADR 0024).
+     * @description The mobile app compares `version` with its own and offers to update when the server is newer and
+     *     `available` is true. The APK comes from the GitHub release of the server's version, cached by the
+     *     server; Android itself refuses an update signed with another key.
+     */
+    get: operations["getAndroidApp"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/app/android.apk": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Download the Android app for this server's version. */
+    get: operations["downloadAndroidApp"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/backup/known": {
     parameters: {
       query?: never;
@@ -2033,6 +2072,84 @@ export interface operations {
       };
       /** @description Unknown item, in the trash, or not visible to this account. */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getAndroidApp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description What the server can offer. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description The server's version, e.g. 0.19.0. */
+            version: string;
+            /** @description An APK for this version exists (development builds: false). */
+            available: boolean;
+            /** @description APK size in bytes, when known. */
+            size?: number;
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  downloadAndroidApp: {
+    parameters: {
+      query: {
+        /** @description A file token (from `POST /api/files/token`), so the URL works in a plain link. */
+        token: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The APK. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/vnd.android.package-archive": string;
+        };
+      };
+      /** @description Missing or invalid file token. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No APK for this server version. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The release could not be downloaded. */
+      502: {
         headers: {
           [name: string]: unknown;
         };

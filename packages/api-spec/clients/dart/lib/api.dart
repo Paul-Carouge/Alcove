@@ -56,6 +56,7 @@ part 'model/enable_totp_request.dart';
 part 'model/error.dart';
 part 'model/get_album_people200_response.dart';
 part 'model/get_album_people200_response_people_inner.dart';
+part 'model/get_android_app200_response.dart';
 part 'model/get_photo_facets200_response.dart';
 part 'model/get_photo_facets200_response_cameras_inner.dart';
 part 'model/get_photo_facets200_response_years_inner.dart';

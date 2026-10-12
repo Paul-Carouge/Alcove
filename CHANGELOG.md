@@ -7,6 +7,17 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-12
+
+### Added
+- **Automatic photo backup** in the mobile app: the phone's photos and videos are copied to a "Phone backup"
+  folder in original quality (HEIC, RAW, videos as taken, with dates and locations). Runs when the app opens,
+  with "Back up now", and about every hour in the background on Android. Options: include videos, Wi-Fi only.
+- No duplicates: files the server already has (even uploaded from the web, or before a reinstall) are
+  skipped; interrupted uploads resume ([ADR 0022](docs/adr/0022-mobile-photo-backup.md)).
+- API: `POST /api/v1/backup/known`.
+- `make dev DEV_HOST=0.0.0.0` to try the app on a phone against a development server.
+
 ## [0.15.0] - 2026-10-12
 
 Phase 4 (mobile app) begins.
@@ -266,7 +277,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.12.0...v0.13.0

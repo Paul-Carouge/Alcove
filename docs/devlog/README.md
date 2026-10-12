@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.16.0](2026-10-12-v0.16.0.md) | 2026-10-12 | Every photo, once |
 | [0.15.0](2026-10-12-v0.15.0.md) | 2026-10-12 | Alcove in your pocket |
 | [0.14.0](2026-10-12-v0.14.0.md) | 2026-10-12 | A map that stays at home |
 | [0.13.0](2026-10-12-v0.13.0.md) | 2026-10-12 | Twice the same photo |

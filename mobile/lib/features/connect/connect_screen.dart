@@ -187,6 +187,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     _ResultCard(
                       text: _statusText(l, result),
                       result: result,
+                      insecure: _checked?.scheme == 'http',
                       onContinue: widget.onConnected == null || _checked == null
                           ? null
                           : () => widget.onConnected!(_checked!),
@@ -209,9 +210,17 @@ class _ConnectScreenState extends State<ConnectScreen> {
 }
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.text, required this.result, this.onContinue});
+  const _ResultCard({
+    required this.text,
+    required this.result,
+    this.onContinue,
+    this.insecure = false,
+  });
 
   final String text;
+
+  /// The address uses plain http (private network).
+  final bool insecure;
   final ServerCheckResult result;
   final VoidCallback? onContinue;
 
@@ -251,6 +260,19 @@ class _ResultCard extends StatelessWidget {
           if (setupRequired) ...[
             const SizedBox(height: AlcoveSpace.s3),
             Text(l.setupRequired, style: TextStyle(color: colors.textMuted)),
+          ],
+          if (ok && insecure) ...[
+            const SizedBox(height: AlcoveSpace.s3),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.lock_open, size: 18, color: colors.warning),
+                const SizedBox(width: AlcoveSpace.s2),
+                Expanded(
+                  child: Text(l.insecureWarning, style: TextStyle(color: colors.textMuted)),
+                ),
+              ],
+            ),
           ],
           if (ok && !setupRequired) ...[
             const SizedBox(height: AlcoveSpace.s4),

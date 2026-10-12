@@ -200,5 +200,36 @@
     }
   },
   "backupBackground": "On Android, backups also run in the background about every hour. On iPhone, open the app to back up.",
-  "backupOff": "Off"
+  "backupOff": "Off",
+  "insecureWarning": "Unencrypted connection: use this address only on your home network or Tailscale.",
+  "albumsTitle": "Albums",
+  "albumsEmpty": "No albums yet. Create them in the web app.",
+  "albumCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@albumCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "albumShared": "Shared",
+  "albumSharedBy": "Shared by {name}",
+  "@albumSharedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trashTitle": "Move to trash?",
+  "trashBody": "“{name}” goes to the trash; you can restore it from the web app for 30 days.",
+  "@trashBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trashConfirm": "Move to trash",
+  "cancel": "Cancel"
 }

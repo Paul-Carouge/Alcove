@@ -16,12 +16,16 @@ class PhotoViewer extends StatefulWidget {
     required this.items,
     required this.initial,
     this.onChanged,
+    this.onTrashed,
   });
 
   final Session session;
   final List<MediaItem> items;
   final int initial;
   final VoidCallback? onChanged;
+
+  /// Set where items can be moved to the trash (the timeline); called after it succeeded.
+  final void Function(MediaItem item)? onTrashed;
 
   @override
   State<PhotoViewer> createState() => _PhotoViewerState();
@@ -61,6 +65,45 @@ class _PhotoViewerState extends State<PhotoViewer> {
       widget.onChanged?.call();
     } catch (_) {
       if (mounted) setState(() => item.favorite = !next);
+    }
+  }
+
+  bool _mine(MediaItem item) => item.record.getStringValue('owner') == widget.session.user?.id;
+
+  Future<void> _trash() async {
+    final l = AppLocalizations.of(context);
+    final item = _item;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.trashTitle),
+        content: Text(l.trashBody(item.name)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l.trashConfirm)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await widget.session.pb
+          .collection('nodes')
+          .update(
+            item.record.getStringValue('node'),
+            body: {'trashed_at': DateTime.now().toUtc().toIso8601String()},
+          );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.errorUnexpected)));
+      }
+      return;
+    }
+    widget.onTrashed?.call(item);
+    if (!mounted) return;
+    if (widget.items.isEmpty) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _index = _index.clamp(0, widget.items.length - 1));
     }
   }
 
@@ -126,15 +169,22 @@ class _PhotoViewerState extends State<PhotoViewer> {
         foregroundColor: colors.onStage,
         title: Text(item.name, overflow: TextOverflow.ellipsis),
         actions: [
-          IconButton(
-            tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
-            onPressed: _toggleFavorite,
-            icon: Icon(
-              item.favorite ? Icons.favorite : Icons.favorite_border,
-              color: item.favorite ? colors.favorite : null,
+          if (_mine(item))
+            IconButton(
+              tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
+              onPressed: _toggleFavorite,
+              icon: Icon(
+                item.favorite ? Icons.favorite : Icons.favorite_border,
+                color: item.favorite ? colors.favorite : null,
+              ),
             ),
-          ),
           IconButton(tooltip: l.details, onPressed: _details, icon: const Icon(Icons.info_outline)),
+          if (widget.onTrashed != null && _mine(item))
+            IconButton(
+              tooltip: l.trashConfirm,
+              onPressed: _trash,
+              icon: const Icon(Icons.delete_outline),
+            ),
         ],
       ),
       body: _token.isEmpty

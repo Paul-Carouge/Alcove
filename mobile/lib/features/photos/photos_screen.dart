@@ -6,6 +6,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import '../backup/backup_controller.dart';
+import 'albums_screen.dart';
 import 'media.dart';
 import 'photo_viewer.dart';
 
@@ -87,6 +88,10 @@ class _PhotosScreenState extends State<PhotosScreen> {
           items: _items,
           initial: _items.indexOf(item),
           onChanged: () => setState(() {}),
+          onTrashed: (item) => setState(() {
+            _items.remove(item);
+            _total -= 1;
+          }),
         ),
       ),
     );
@@ -104,6 +109,13 @@ class _PhotosScreenState extends State<PhotosScreen> {
       SliverAppBar.large(
         title: Text(l.tabPhotos),
         actions: [
+          IconButton(
+            tooltip: l.albumsTitle,
+            icon: const Icon(Icons.photo_album_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => AlbumsScreen(session: widget.session)),
+            ),
+          ),
           if (widget.backup case final c?)
             ListenableBuilder(
               listenable: c,
@@ -177,7 +189,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
                 crossAxisSpacing: 2,
               ),
               itemCount: items.length,
-              itemBuilder: (_, i) => _Tile(
+              itemBuilder: (_, i) => MediaTile(
                 item: items[i],
                 url: items[i].thumbUrl(widget.session.pb, _token),
                 onTap: () => _open(items[i]),
@@ -203,8 +215,8 @@ class _PhotosScreenState extends State<PhotosScreen> {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({required this.item, required this.url, required this.onTap});
+class MediaTile extends StatelessWidget {
+  const MediaTile({super.key, required this.item, required this.url, required this.onTap});
 
   final MediaItem item;
   final Uri? url;

@@ -15,21 +15,32 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "io.github.paulcarouge.alcove"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // Release signing (published APKs): the keystore comes from the environment (CI secrets) or
+    // ALCOVE_ANDROID_KEYSTORE on a maintainer machine. Without it, release builds use the debug key
+    // so that `flutter run --release` still works; such APKs must not be published.
+    val keystore = System.getenv("ALCOVE_ANDROID_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (keystore != null) {
+            create("release") {
+                storeFile = keystore
+                storePassword = System.getenv("ALCOVE_ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = "alcove"
+                keyPassword = System.getenv("ALCOVE_ANDROID_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig =
+                if (keystore != null) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }

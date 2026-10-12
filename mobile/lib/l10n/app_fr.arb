@@ -87,5 +87,15 @@
   "backupRefused": "Le serveur a refusé : {reason}",
   "backupSomeFailed": "{count} éléments n’ont pas pu être lus et seront réessayés.",
   "backupBackground": "Sur Android, la sauvegarde se fait aussi en arrière-plan environ toutes les heures. Sur iPhone, ouvrez l’app pour sauvegarder.",
-  "backupOff": "Désactivée"
+  "backupOff": "Désactivée",
+  "insecureWarning": "Connexion non chiffrée : utilisez cette adresse uniquement sur votre réseau domestique ou Tailscale.",
+  "albumsTitle": "Albums",
+  "albumsEmpty": "Aucun album pour l’instant. Créez-en depuis l’application web.",
+  "albumCount": "{count, plural, =1{1 élément} other{{count} éléments}}",
+  "albumShared": "Partagé",
+  "albumSharedBy": "Partagé par {name}",
+  "trashTitle": "Mettre à la corbeille ?",
+  "trashBody": "« {name} » va dans la corbeille ; vous pouvez la restaurer depuis l’application web pendant 30 jours.",
+  "trashConfirm": "Mettre à la corbeille",
+  "cancel": "Annuler"
 }

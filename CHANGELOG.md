@@ -7,6 +7,23 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-10-12
+
+### Added
+- **The Android app updates itself from your server**: after a server update, the app shows a badge on
+  Account and an **Update now** button; the server serves the APK of its own version (fetched once from its
+  release, kept in `pb_data/app`) and Android installs it only if it has the same signature
+  ([ADR 0024](docs/adr/0024-in-app-updates.md)). `GET /api/v1/app/android` and `/api/v1/app/android.apk`.
+- Mobile: an **Albums** tab.
+
+### Changed
+- **Mobile redesign**: large collapsing titles, grouped lists, rounded photo tiles that fade in, month
+  headers that stay visible while scrolling, a profile header and server badge on Account, a progress ring
+  for backup, an immersive photo viewer (tap to hide the controls) and a branded sign-in. Buttons now use
+  the Inter font like the rest of the app.
+- Web: the Account page downloads the app from your server, with its version. On phones the photo tools
+  fit in one scrolling row and the files search takes the full width.
+
 ## [0.18.1] - 2026-10-12
 
 ### Fixed

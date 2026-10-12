@@ -1,2 +1,2 @@
 /// The app version, kept in sync with pubspec.yaml by scripts/release.sh.
-const kAppVersion = '0.18.1';
+const kAppVersion = '0.19.0';

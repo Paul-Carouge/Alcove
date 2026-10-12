@@ -81,7 +81,7 @@ test-e2e: build ## Browser tests against the built binary (Playwright)
 	pnpm --filter @alcove/web test:e2e
 
 ## --- Build -------------------------------------------------------------
-.PHONY: build build-web build-server build-apk docker docker-up
+.PHONY: build build-web build-server build-apk docker docker-up dist
 build: build-server ## Build the server binary with the web UI embedded (server/bin/alcove)
 
 build-web:
@@ -92,6 +92,9 @@ build-web:
 build-server: build-web
 	cd server && CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/alcove .
 	@echo "built server/bin/alcove ($(VERSION))"
+
+dist: ## Release archives for all platforms + SHA256SUMS (signed if ALCOVE_SIGNING_KEY is set)
+	scripts/dist.sh $(VERSION)
 
 build-apk: ## Build a release Android APK
 	cd mobile && flutter build apk --release
@@ -110,5 +113,5 @@ release: ## Cut a release: make release V=0.6.0 (needs CHANGELOG section + devlo
 ## --- Housekeeping ------------------------------------------------------
 .PHONY: clean
 clean: ## Remove build outputs
-	rm -rf server/bin web/build mobile/build
+	rm -rf server/bin web/build mobile/build dist
 	find $(WEBUI_DIST) -mindepth 1 ! -name .gitkeep -delete

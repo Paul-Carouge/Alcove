@@ -32,3 +32,6 @@ target/
 
 # Runtime data (docker compose volumes)
 deploy/data/
+
+# Release archives
+dist/

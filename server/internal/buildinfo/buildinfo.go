@@ -17,3 +17,13 @@ const (
 	APIMin = 1
 	APIMax = 1
 )
+
+// Release channel used by the updater (ADR 0015).
+const (
+	// Repo hosts the releases ("owner/name" on GitHub).
+	Repo = "Paul-Carouge/Alcove"
+	// ReleasesAPI is the GitHub API base; ALCOVE_UPDATE_URL overrides it (mirrors, tests).
+	ReleasesAPI = "https://api.github.com"
+	// ReleasePublicKey verifies the Ed25519 signature of each release's SHA256SUMS.
+	ReleasePublicKey = "8Zq0Y000dsFVDUjanc3Tf/pub4U3RfwuBaYeUDeaDEA="
+)

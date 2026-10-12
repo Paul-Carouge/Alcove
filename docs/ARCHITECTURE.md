@@ -51,6 +51,7 @@ server/
   internal/webui           go:embed of web/build, SPA fallback
   internal/drive           nodes invariants, downloads, quotas, trash purge
   internal/media           photo/video metadata (EXIF, ffprobe) and derivatives (ffmpeg), favorites
+  internal/albums          album hooks (roles, cover, pruning) and reads (list, items, people, lookup)
   internal/ffbundle        Alcove's own ffmpeg for native Linux installs: verified install, PATH activation
   migrations/              versioned Go migrations (up + down)
 ```
@@ -84,7 +85,13 @@ location, `favorite`, and the derivatives `thumb` (360 px high) and `preview` (1
 Owner-only read rules; **no write through the API** (the server fills it, favorites go through
 `PUT /api/v1/media/{id}/favorite`). It is deleted with its node (cascade). See [Photos pipeline](#photos-pipeline).
 
-**Planned (phase 2+):** `albums`, `album_items`, `video_720p` transcodes,
+**Albums (v0.11, [ADR 0018](adr/0018-albums-and-sharing-between-accounts.md)):** `albums` (owner, name, cover,
+`members` = viewers, `contributors`) and `album_items` (album, media, added_by). Participants read the photos of
+their albums through the `media` view rule (`album_items_via_media` back-relation); the list rule stays owner-only.
+Drive `nodes` stay owner-only: originals of shared items are served by `GET /api/v1/media/{id}/original`, which
+checks the `media` view rule.
+
+**Planned (phase 2+):** public album links, `video_720p` transcodes,
 `documents` (node, ocr_text, language, FTS5 index), `people`/`faces` (phase 2b, optional module).
 Originals are never rewritten. Derivatives live in separate records and can be regenerated.
 
@@ -142,7 +149,8 @@ tasks, with optional UnifiedPush/ntfy wake-ups ([ADR 0010](adr/0010-no-firebase-
 2. A small worker pool (at most 2, so a Raspberry Pi stays responsive) copies the file to a temp dir and reads
    metadata: EXIF with `imagemeta` (size from the decoded header when Go can read it, since EXIF sizes go stale
    after edits), `ffprobe` for videos and HEIC (creation dates, rotation, ISO 6709 location).
-3. `ffmpeg` renders the thumbnail and preview (2-minute timeout, 2 threads; files are untrusted). JPEG/PNG/WebP
+3. Every item gets its own thumbnail (360 px high) and preview (1600 px) so album participants never need the
+   drive file. `ffmpeg` renders them (2-minute timeout, 2 threads; files are untrusted). JPEG/PNG/WebP
    work without ffmpeg; HEIC (7.1+) and videos need it ([ADR 0016](adr/0016-bundled-ffmpeg.md),
    [0017](adr/0017-ffmpeg-bundle-for-native-linux.md)).
 4. The record becomes `ready` (or `failed` with a hidden error). Clients get it through realtime

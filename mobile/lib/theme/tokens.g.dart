@@ -26,6 +26,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     required this.dangerContrast,
     required this.focus,
     required this.overlay,
+    required this.stage,
+    required this.stagePanel,
+    required this.stageBorder,
+    required this.onStage,
+    required this.onStageMuted,
+    required this.onStageLink,
+    required this.stageControl,
+    required this.stageScrim,
+    required this.favorite,
     required this.shadowSM,
     required this.shadowMD,
     required this.shadowLG,
@@ -49,6 +58,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
   final Color dangerContrast;
   final Color focus;
   final Color overlay;
+  final Color stage;
+  final Color stagePanel;
+  final Color stageBorder;
+  final Color onStage;
+  final Color onStageMuted;
+  final Color onStageLink;
+  final Color stageControl;
+  final Color stageScrim;
+  final Color favorite;
   final List<BoxShadow> shadowSM;
   final List<BoxShadow> shadowMD;
   final List<BoxShadow> shadowLG;
@@ -72,6 +90,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     dangerContrast: Color(0xFFFFFFFF),
     focus: Color(0xFF3E5C8A),
     overlay: Color(0x661A1D21),
+    stage: Color(0xFF0B0C0E),
+    stagePanel: Color(0xFF15171A),
+    stageBorder: Color(0xFF2E333A),
+    onStage: Color(0xFFE8EAED),
+    onStageMuted: Color(0xFFA0A8B3),
+    onStageLink: Color(0xFF93B2E0),
+    stageControl: Color(0x1FFFFFFF),
+    stageScrim: Color(0x99000000),
+    favorite: Color(0xFFFF6B81),
     shadowSM: [
       BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x0F1A1D21)),
     ],
@@ -102,6 +129,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     dangerContrast: Color(0xFF1A0B09),
     focus: Color(0xFF93B2E0),
     overlay: Color(0xA3000000),
+    stage: Color(0xFF0B0C0E),
+    stagePanel: Color(0xFF15171A),
+    stageBorder: Color(0xFF2E333A),
+    onStage: Color(0xFFE8EAED),
+    onStageMuted: Color(0xFFA0A8B3),
+    onStageLink: Color(0xFF93B2E0),
+    stageControl: Color(0x1FFFFFFF),
+    stageScrim: Color(0x99000000),
+    favorite: Color(0xFFFF6B81),
     shadowSM: [
       BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x66000000)),
     ],
@@ -133,6 +169,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     Color? dangerContrast,
     Color? focus,
     Color? overlay,
+    Color? stage,
+    Color? stagePanel,
+    Color? stageBorder,
+    Color? onStage,
+    Color? onStageMuted,
+    Color? onStageLink,
+    Color? stageControl,
+    Color? stageScrim,
+    Color? favorite,
     List<BoxShadow>? shadowSM,
     List<BoxShadow>? shadowMD,
     List<BoxShadow>? shadowLG,
@@ -156,6 +201,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
       dangerContrast: dangerContrast ?? this.dangerContrast,
       focus: focus ?? this.focus,
       overlay: overlay ?? this.overlay,
+      stage: stage ?? this.stage,
+      stagePanel: stagePanel ?? this.stagePanel,
+      stageBorder: stageBorder ?? this.stageBorder,
+      onStage: onStage ?? this.onStage,
+      onStageMuted: onStageMuted ?? this.onStageMuted,
+      onStageLink: onStageLink ?? this.onStageLink,
+      stageControl: stageControl ?? this.stageControl,
+      stageScrim: stageScrim ?? this.stageScrim,
+      favorite: favorite ?? this.favorite,
       shadowSM: shadowSM ?? this.shadowSM,
       shadowMD: shadowMD ?? this.shadowMD,
       shadowLG: shadowLG ?? this.shadowLG,
@@ -184,6 +238,15 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
       dangerContrast: Color.lerp(dangerContrast, other.dangerContrast, t)!,
       focus: Color.lerp(focus, other.focus, t)!,
       overlay: Color.lerp(overlay, other.overlay, t)!,
+      stage: Color.lerp(stage, other.stage, t)!,
+      stagePanel: Color.lerp(stagePanel, other.stagePanel, t)!,
+      stageBorder: Color.lerp(stageBorder, other.stageBorder, t)!,
+      onStage: Color.lerp(onStage, other.onStage, t)!,
+      onStageMuted: Color.lerp(onStageMuted, other.onStageMuted, t)!,
+      onStageLink: Color.lerp(onStageLink, other.onStageLink, t)!,
+      stageControl: Color.lerp(stageControl, other.stageControl, t)!,
+      stageScrim: Color.lerp(stageScrim, other.stageScrim, t)!,
+      favorite: Color.lerp(favorite, other.favorite, t)!,
       shadowSM: BoxShadow.lerpList(shadowSM, other.shadowSM, t)!,
       shadowMD: BoxShadow.lerpList(shadowMD, other.shadowMD, t)!,
       shadowLG: BoxShadow.lerpList(shadowLG, other.shadowLG, t)!,

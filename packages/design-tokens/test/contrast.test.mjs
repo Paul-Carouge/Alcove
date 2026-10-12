@@ -35,6 +35,11 @@ const PAIRS = [
   ["warning", "surface", 4.5],
   ["focus", "bg", 3],
   ["borderStrong", "surface", 1.8],
+  ["onStage", "stage", 4.5],
+  ["onStage", "stagePanel", 4.5],
+  ["onStageMuted", "stagePanel", 4.5],
+  ["onStageLink", "stagePanel", 4.5],
+  ["favorite", "stage", 3],
 ];
 
 for (const mode of ["light", "dark"]) {

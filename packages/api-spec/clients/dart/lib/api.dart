@@ -58,6 +58,8 @@ part 'model/get_photo_facets200_response.dart';
 part 'model/get_photo_facets200_response_cameras_inner.dart';
 part 'model/get_photo_facets200_response_years_inner.dart';
 part 'model/health.dart';
+part 'model/known_hashes200_response.dart';
+part 'model/known_hashes_request.dart';
 part 'model/list_album_items200_response.dart';
 part 'model/list_albums200_response.dart';
 part 'model/list_duplicates200_response.dart';

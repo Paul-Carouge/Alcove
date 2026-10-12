@@ -620,6 +620,42 @@ paths:
         "206": { description: Partial content (Range request). }
         "401": { description: Missing or invalid file token. }
         "404": { description: "Unknown item, in the trash, or not visible to this account." }
+  /api/v1/backup/known:
+    post:
+      tags: [drive]
+      operationId: knownHashes
+      summary: Which of these file fingerprints you already have (phone backup deduplication).
+      description: |
+        The mobile app sends the SHA-256 of photos it is about to back up and skips those you already
+        have anywhere in your drive, trash included (a deleted photo is not brought back).
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hashes]
+              properties:
+                hashes:
+                  type: array
+                  maxItems: 1000
+                  items: { type: string, pattern: "^[a-f0-9]{64}$" }
+      responses:
+        "200":
+          description: The subset of `hashes` you already have.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [known]
+                properties:
+                  known:
+                    type: array
+                    items: { type: string }
+        "400": { description: Invalid hashes. }
+        "401": { description: Authentication required. }
   /api/v1/photos/facets:
     get:
       tags: [photos]

@@ -133,4 +133,60 @@ class DriveApi {
     }
     return null;
   }
+
+  /// Which of these file fingerprints you already have (phone backup deduplication).
+  ///
+  /// The mobile app sends the SHA-256 of photos it is about to back up and skips those you already have anywhere in your drive, trash included (a deleted photo is not brought back). 
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [KnownHashesRequest] knownHashesRequest (required):
+  Future<Response> knownHashesWithHttpInfo(KnownHashesRequest knownHashesRequest,) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/backup/known';
+
+    // ignore: prefer_final_locals
+    Object? postBody = knownHashesRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Which of these file fingerprints you already have (phone backup deduplication).
+  ///
+  /// The mobile app sends the SHA-256 of photos it is about to back up and skips those you already have anywhere in your drive, trash included (a deleted photo is not brought back). 
+  ///
+  /// Parameters:
+  ///
+  /// * [KnownHashesRequest] knownHashesRequest (required):
+  Future<KnownHashes200Response?> knownHashes(KnownHashesRequest knownHashesRequest,) async {
+    final response = await knownHashesWithHttpInfo(knownHashesRequest,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'KnownHashes200Response',) as KnownHashes200Response;
+    
+    }
+    return null;
+  }
 }

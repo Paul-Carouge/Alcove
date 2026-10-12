@@ -222,6 +222,10 @@ class ApiClient {
           return GetPhotoFacets200ResponseYearsInner.fromJson(value);
         case 'Health':
           return Health.fromJson(value);
+        case 'KnownHashes200Response':
+          return KnownHashes200Response.fromJson(value);
+        case 'KnownHashesRequest':
+          return KnownHashesRequest.fromJson(value);
         case 'ListAlbumItems200Response':
           return ListAlbumItems200Response.fromJson(value);
         case 'ListAlbums200Response':

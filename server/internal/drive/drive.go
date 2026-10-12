@@ -92,6 +92,7 @@ func Register(app core.App) {
 	})
 	registerDownload(app)
 	registerUsage(app)
+	registerKnown(app)
 	app.Cron().MustAdd("alcovePurgeTrash", "30 3 * * *", func() {
 		if n, err := PurgeTrash(app, time.Now().Add(-TrashRetention)); err != nil {
 			app.Logger().Error("trash purge failed", "error", err)

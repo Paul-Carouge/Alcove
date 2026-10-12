@@ -81,6 +81,7 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**setMapTiles**](doc//AdminApi.md#setmaptiles) | **PUT** /api/v1/admin/map | Enable or disable OpenStreetMap tiles for every user's map.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
+*DriveApi* | [**knownHashes**](doc//DriveApi.md#knownhashes) | **POST** /api/v1/backup/known | Which of these file fingerprints you already have (phone backup deduplication).
 *PhotosApi* | [**dismissDuplicates**](doc//PhotosApi.md#dismissduplicates) | **POST** /api/v1/photos/duplicates/dismiss | Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
 *PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
 *PhotosApi* | [**getMapConfig**](doc//PhotosApi.md#getmapconfig) | **GET** /api/v1/map/config | How the web app draws maps (ADR 0020).
@@ -129,6 +130,8 @@ Class | Method | HTTP request | Description
  - [GetPhotoFacets200ResponseCamerasInner](doc//GetPhotoFacets200ResponseCamerasInner.md)
  - [GetPhotoFacets200ResponseYearsInner](doc//GetPhotoFacets200ResponseYearsInner.md)
  - [Health](doc//Health.md)
+ - [KnownHashes200Response](doc//KnownHashes200Response.md)
+ - [KnownHashesRequest](doc//KnownHashesRequest.md)
  - [ListAlbumItems200Response](doc//ListAlbumItems200Response.md)
  - [ListAlbums200Response](doc//ListAlbums200Response.md)
  - [ListDuplicates200Response](doc//ListDuplicates200Response.md)

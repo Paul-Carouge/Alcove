@@ -428,6 +428,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/backup/known": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Which of these file fingerprints you already have (phone backup deduplication).
+     * @description The mobile app sends the SHA-256 of photos it is about to back up and skips those you already
+     *     have anywhere in your drive, trash included (a deleted photo is not brought back).
+     */
+    post: operations["knownHashes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/photos/facets": {
     parameters: {
       query?: never;
@@ -1957,6 +1978,48 @@ export interface operations {
       };
       /** @description Unknown item, in the trash, or not visible to this account. */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  knownHashes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          hashes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description The subset of `hashes` you already have. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            known: string[];
+          };
+        };
+      };
+      /** @description Invalid hashes. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
         headers: {
           [name: string]: unknown;
         };

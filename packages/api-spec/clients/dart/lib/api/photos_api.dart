@@ -113,6 +113,50 @@ class PhotosApi {
     return null;
   }
 
+  /// How the web app draws maps (ADR 0020).
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> getMapConfigWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/map/config';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// How the web app draws maps (ADR 0020).
+  Future<MapConfig?> getMapConfig() async {
+    final response = await getMapConfigWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'MapConfig',) as MapConfig;
+    
+    }
+    return null;
+  }
+
   /// The original file of a photo or video, for its owner and the people of albums it is in.
   ///
   /// Authenticated with a short-lived **file token** in the query string, like `/api/v1/nodes/{nodeId}/download`. Access follows the `media` view rule (ADR 0018), so album participants can play or download a shared item without access to the owner's drive. Attachment unless `inline=1` for a passive type; supports Range requests. 
@@ -431,6 +475,50 @@ class PhotosApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListDuplicates200Response',) as ListDuplicates200Response;
+    
+    }
+    return null;
+  }
+
+  /// Your photos and videos that have a location, for the map.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> listPhotoLocationsWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/photos/locations';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Your photos and videos that have a location, for the map.
+  Future<ListPhotoLocations200Response?> listPhotoLocations() async {
+    final response = await listPhotoLocationsWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListPhotoLocations200Response',) as ListPhotoLocations200Response;
     
     }
     return null;

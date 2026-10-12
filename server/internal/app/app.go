@@ -10,6 +10,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 	"github.com/Paul-Carouge/Alcove/server/internal/duplicates"
 	"github.com/Paul-Carouge/Alcove/server/internal/health"
+	"github.com/Paul-Carouge/Alcove/server/internal/maps"
 	"github.com/Paul-Carouge/Alcove/server/internal/media"
 	"github.com/Paul-Carouge/Alcove/server/internal/secrets"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
@@ -26,7 +27,8 @@ import (
 func Wire(app core.App, cfg config.Config) {
 	setup.Register(app, cfg)
 	wizard.Register(app, cfg)
-	security.RegisterHeaders(app, webui.ScriptSrc())
+	mapSettings := maps.Register(app)
+	security.RegisterHeaders(app, webui.ScriptSrc(), mapSettings.ExtraImgSrc)
 	drive.Register(app)
 	media.Register(app)
 	albums.Register(app)

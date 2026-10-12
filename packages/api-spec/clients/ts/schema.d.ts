@@ -445,6 +445,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/photos/locations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Your photos and videos that have a location, for the map. */
+    get: operations["listPhotoLocations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/map/config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** How the web app draws maps (ADR 0020). */
+    get: operations["getMapConfig"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/map": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Enable or disable OpenStreetMap tiles for every user's map. */
+    put: operations["setMapTiles"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/photos/duplicates": {
     parameters: {
       query?: never;
@@ -634,6 +685,14 @@ export interface components {
       collectionId: string;
       thumb: string;
       preview: string;
+    };
+    MapConfig: {
+      tiles: null | {
+        /** @example https://tile.openstreetmap.org/{z}/{x}/{y}.png */
+        url: string;
+        attribution: string;
+        maxZoom: number;
+      };
     };
     DuplicateGroup: {
       /** @enum {string} */
@@ -1936,6 +1995,110 @@ export interface operations {
       };
       /** @description Authentication required. */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listPhotoLocations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Compact list (items in the trash are left out), newest first. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description The media collection (for thumbnail URLs). */
+            collectionId: string;
+            items: {
+              id: string;
+              lat: number;
+              lon: number;
+              thumb: string;
+              taken_at: string;
+            }[];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getMapConfig: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description `tiles` is null when only the built-in offline basemap is used. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MapConfig"];
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setMapTiles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          osm: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MapConfig"];
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
         headers: {
           [name: string]: unknown;
         };

@@ -45,3 +45,31 @@ func facets(e *core.RequestEvent) error {
 	e.Response.Header().Set("Cache-Control", "no-store")
 	return e.JSON(http.StatusOK, map[string]any{"years": years, "cameras": cameras, "withLocation": located})
 }
+
+type location struct {
+	ID      string  `db:"id" json:"id"`
+	Lat     float64 `db:"lat" json:"lat"`
+	Lon     float64 `db:"lon" json:"lon"`
+	Thumb   string  `db:"thumb" json:"thumb"`
+	TakenAt string  `db:"taken_at" json:"taken_at"`
+}
+
+// locations lists the caller's located items for the map, in one compact response.
+func locations(e *core.RequestEvent) error {
+	out := []location{}
+	err := e.App.DB().Select("m.id", "m.lat", "m.lon", "m.thumb", "m.taken_at").From(Collection+" m").
+		InnerJoin("nodes n", dbx.NewExp("n.id = m.node")).
+		Where(dbx.HashExp{"m.owner": e.Auth.Id, "m.has_location": true}).
+		AndWhere(dbx.NewExp("n.trashed_at = ''")).
+		OrderBy("m.taken_at DESC", "m.id DESC").
+		All(&out)
+	if err != nil {
+		return err
+	}
+	cid := ""
+	if c, err := e.App.FindCachedCollectionByNameOrId(Collection); err == nil {
+		cid = c.Id
+	}
+	e.Response.Header().Set("Cache-Control", "no-store")
+	return e.JSON(http.StatusOK, map[string]any{"collectionId": cid, "items": out})
+}

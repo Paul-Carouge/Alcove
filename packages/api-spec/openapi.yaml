@@ -655,6 +655,73 @@ paths:
                         count: { type: integer }
                   withLocation: { type: integer }
         "401": { description: Authentication required. }
+  /api/v1/photos/locations:
+    get:
+      tags: [photos]
+      operationId: listPhotoLocations
+      summary: Your photos and videos that have a location, for the map.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Compact list (items in the trash are left out), newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [collectionId, items]
+                properties:
+                  collectionId: { type: string, description: The media collection (for thumbnail URLs). }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, lat, lon, thumb, taken_at]
+                      properties:
+                        id: { type: string }
+                        lat: { type: number }
+                        lon: { type: number }
+                        thumb: { type: string }
+                        taken_at: { type: string }
+        "401": { description: Authentication required. }
+  /api/v1/map/config:
+    get:
+      tags: [photos]
+      operationId: getMapConfig
+      summary: How the web app draws maps (ADR 0020).
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: "`tiles` is null when only the built-in offline basemap is used."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MapConfig" }
+        "401": { description: Authentication required. }
+  /api/v1/admin/map:
+    put:
+      tags: [admin]
+      operationId: setMapTiles
+      summary: Enable or disable OpenStreetMap tiles for every user's map.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [osm]
+              properties:
+                osm: { type: boolean }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MapConfig" }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
   /api/v1/photos/duplicates:
     get:
       tags: [photos]
@@ -947,6 +1014,19 @@ components:
         collectionId: { type: string }
         thumb: { type: string }
         preview: { type: string }
+    MapConfig:
+      type: object
+      required: [tiles]
+      properties:
+        tiles:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [url, attribution, maxZoom]
+              properties:
+                url: { type: string, example: "https://tile.openstreetmap.org/{z}/{x}/{y}.png" }
+                attribution: { type: string }
+                maxZoom: { type: integer }
     DuplicateGroup:
       type: object
       required: [kind, keep, items]

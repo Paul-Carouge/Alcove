@@ -292,6 +292,14 @@ func TestFacets(t *testing.T) {
 			`{"make":"Apple","model":"iPhone 16","count":2}`, `"withLocation":1`},
 	}
 	scenario.Test(t)
+	located := tests.ApiScenario{
+		Name: "only located photos on the map", Method: http.MethodGet, URL: "/api/v1/photos/locations",
+		Headers:        map[string]string{"Authorization": e.aliceTok},
+		TestAppFactory: func(testing.TB) *tests.TestApp { return e.app }, DisableTestAppCleanup: true,
+		ExpectedStatus: 200, ExpectedContent: []string{`"lat":45`, `"lon":4`, `"collectionId":"`},
+		NotExpectedContent: []string{`"lat":0`},
+	}
+	located.Test(t)
 	empty := tests.ApiScenario{
 		Name: "bob has none", Method: http.MethodGet, URL: "/api/v1/photos/facets",
 		Headers:        map[string]string{"Authorization": e.bobTok},

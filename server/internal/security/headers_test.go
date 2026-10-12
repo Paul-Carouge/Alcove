@@ -2,6 +2,7 @@ package security_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -17,7 +18,7 @@ func TestHeaders(t *testing.T) {
 		if err != nil {
 			tb.Fatal(err)
 		}
-		security.RegisterHeaders(app, scriptSrc)
+		security.RegisterHeaders(app, scriptSrc, nil)
 		app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 			se.Router.GET("/page", func(e *core.RequestEvent) error { return e.String(http.StatusOK, "ok") })
 			return se.Next()
@@ -43,4 +44,17 @@ func TestHeaders(t *testing.T) {
 		},
 	}
 	scenario.Test(t)
+}
+
+func TestExtraImageOrigin(t *testing.T) {
+	p := security.ContentSecurityPolicy("script-src 'self'", "https://tile.openstreetmap.org")
+	if !strings.Contains(p, "img-src 'self' data: blob: https://tile.openstreetmap.org;") {
+		t.Errorf("tile origin not in img-src: %s", p)
+	}
+	if strings.Count(p, "tile.openstreetmap.org") != 1 {
+		t.Errorf("tile origin allowed elsewhere: %s", p)
+	}
+	if strings.Contains(security.ContentSecurityPolicy("script-src 'self'"), "openstreetmap") {
+		t.Error("tile origin allowed by default")
+	}
 }

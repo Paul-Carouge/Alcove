@@ -78,16 +78,19 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**applyUpdate**](doc//AdminApi.md#applyupdate) | **POST** /api/v1/admin/updates/apply | Install the latest release and restart (native installs only).
 *AdminApi* | [**checkUpdates**](doc//AdminApi.md#checkupdates) | **POST** /api/v1/admin/updates/check | Check for a new release now.
 *AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
+*AdminApi* | [**setMapTiles**](doc//AdminApi.md#setmaptiles) | **PUT** /api/v1/admin/map | Enable or disable OpenStreetMap tiles for every user's map.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *PhotosApi* | [**dismissDuplicates**](doc//PhotosApi.md#dismissduplicates) | **POST** /api/v1/photos/duplicates/dismiss | Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
 *PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
+*PhotosApi* | [**getMapConfig**](doc//PhotosApi.md#getmapconfig) | **GET** /api/v1/map/config | How the web app draws maps (ADR 0020).
 *PhotosApi* | [**getMediaOriginal**](doc//PhotosApi.md#getmediaoriginal) | **GET** /api/v1/media/{mediaId}/original | The original file of a photo or video, for its owner and the people of albums it is in.
 *PhotosApi* | [**getPhotoFacets**](doc//PhotosApi.md#getphotofacets) | **GET** /api/v1/photos/facets | Years and cameras present in your photos, for the timeline filters.
 *PhotosApi* | [**leaveAlbum**](doc//PhotosApi.md#leavealbum) | **POST** /api/v1/albums/{albumId}/leave | Stop taking part in an album shared with you (your photos are removed from it).
 *PhotosApi* | [**listAlbumItems**](doc//PhotosApi.md#listalbumitems) | **GET** /api/v1/albums/{albumId}/items | Photos and videos of an album, newest first (items in the trash are left out).
 *PhotosApi* | [**listAlbums**](doc//PhotosApi.md#listalbums) | **GET** /api/v1/albums | Albums the caller owns or takes part in, most recently updated first.
 *PhotosApi* | [**listDuplicates**](doc//PhotosApi.md#listduplicates) | **GET** /api/v1/photos/duplicates | Groups of identical files and visually similar photos among your own items.
+*PhotosApi* | [**listPhotoLocations**](doc//PhotosApi.md#listphotolocations) | **GET** /api/v1/photos/locations | Your photos and videos that have a location, for the map.
 *PhotosApi* | [**setFavorite**](doc//PhotosApi.md#setfavorite) | **PUT** /api/v1/media/{mediaId}/favorite | Mark or unmark a photo or video as favorite.
 *PublicApi* | [**downloadSharedFile**](doc//PublicApi.md#downloadsharedfile) | **GET** /api/v1/public/shares/{token}/files/{nodeId} | Download (or display) a file that is the shared item or inside the shared folder.
 *PublicApi* | [**getPublicShare**](doc//PublicApi.md#getpublicshare) | **GET** /api/v1/public/shares/{token} | Describe a shared item (and list a shared folder's or album's content).
@@ -129,6 +132,10 @@ Class | Method | HTTP request | Description
  - [ListAlbumItems200Response](doc//ListAlbumItems200Response.md)
  - [ListAlbums200Response](doc//ListAlbums200Response.md)
  - [ListDuplicates200Response](doc//ListDuplicates200Response.md)
+ - [ListPhotoLocations200Response](doc//ListPhotoLocations200Response.md)
+ - [ListPhotoLocations200ResponseItemsInner](doc//ListPhotoLocations200ResponseItemsInner.md)
+ - [MapConfig](doc//MapConfig.md)
+ - [MapConfigTiles](doc//MapConfigTiles.md)
  - [MediaFiles](doc//MediaFiles.md)
  - [Module](doc//Module.md)
  - [Person](doc//Person.md)
@@ -138,6 +145,7 @@ Class | Method | HTTP request | Description
  - [PublicShareAlbum](doc//PublicShareAlbum.md)
  - [RecoveryCodes](doc//RecoveryCodes.md)
  - [SetFavoriteRequest](doc//SetFavoriteRequest.md)
+ - [SetMapTilesRequest](doc//SetMapTilesRequest.md)
  - [SetupStatus](doc//SetupStatus.md)
  - [SetupStatusStorage](doc//SetupStatusStorage.md)
  - [SetupToken](doc//SetupToken.md)

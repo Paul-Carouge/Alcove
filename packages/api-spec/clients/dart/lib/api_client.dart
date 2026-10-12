@@ -228,6 +228,14 @@ class ApiClient {
           return ListAlbums200Response.fromJson(value);
         case 'ListDuplicates200Response':
           return ListDuplicates200Response.fromJson(value);
+        case 'ListPhotoLocations200Response':
+          return ListPhotoLocations200Response.fromJson(value);
+        case 'ListPhotoLocations200ResponseItemsInner':
+          return ListPhotoLocations200ResponseItemsInner.fromJson(value);
+        case 'MapConfig':
+          return MapConfig.fromJson(value);
+        case 'MapConfigTiles':
+          return MapConfigTiles.fromJson(value);
         case 'MediaFiles':
           return MediaFiles.fromJson(value);
         case 'Module':
@@ -246,6 +254,8 @@ class ApiClient {
           return RecoveryCodes.fromJson(value);
         case 'SetFavoriteRequest':
           return SetFavoriteRequest.fromJson(value);
+        case 'SetMapTilesRequest':
+          return SetMapTilesRequest.fromJson(value);
         case 'SetupStatus':
           return SetupStatus.fromJson(value);
         case 'SetupStatusStorage':

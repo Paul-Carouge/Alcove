@@ -21,5 +21,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0014](0014-native-install-docker-optional.md) | Native single-binary install first, Docker optional | Accepted |
 | [0015](0015-signed-self-updates.md) | Self-updates from signed releases (CLI, web, mobile) | Accepted |
 | [0016](0016-bundled-ffmpeg.md) | ffmpeg bundled, not an optional container | Accepted |
+| [0017](0017-ffmpeg-bundle-for-native-linux.md) | Native Linux installs get Alcove's own ffmpeg | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

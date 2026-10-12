@@ -19,6 +19,8 @@ make dev       # server :8090 + web :5173 → open http://localhost:5173
 
 On the first `make dev`, open the setup link printed in the terminal to create the local admin account.
 Mobile: `cd mobile && flutter run`. Debug builds accept `http://10.0.2.2:8090` (Android emulator).
+On a real phone on the same Wi-Fi: `make dev DEV_HOST=0.0.0.0`, then enter `http://<your computer's IP>:8090`
+(debug builds only accept plain http).
 
 ## Workflow
 

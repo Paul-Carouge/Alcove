@@ -24,8 +24,11 @@ setup: ## Install all dependencies and git hooks
 dev: ## Run server (:8090) and web dev server (:5173) together
 	@$(MAKE) -j2 dev-server dev-web
 
-dev-server: ## Run the Go server with auto-migrations (go run)
-	cd server && go run -ldflags "-X github.com/Paul-Carouge/Alcove/server/internal/buildinfo.Version=$(VERSION)" . serve --http=127.0.0.1:8090
+# DEV_HOST=0.0.0.0 makes the dev server reachable from a phone on the same network.
+DEV_HOST ?= 127.0.0.1
+
+dev-server: ## Run the Go server with auto-migrations (go run); DEV_HOST=0.0.0.0 for phones on the LAN
+	cd server && go run -ldflags "-X github.com/Paul-Carouge/Alcove/server/internal/buildinfo.Version=$(VERSION)" . serve --http=$(DEV_HOST):8090
 
 dev-web: ## Run the SvelteKit dev server (proxies API to :8090)
 	pnpm --filter @alcove/web dev

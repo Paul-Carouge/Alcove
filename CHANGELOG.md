@@ -7,6 +7,20 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-12
+
+### Added
+- **Users** page for administrators (account menu): accounts with storage use and two-factor status; create
+  an account with a generated password to hand over, change name, quota and role, reset a password, delete
+  an account and everything it owns (typed confirmation). No need for the PocketBase console anymore.
+- **Account** page: change your name and password (you are signed out everywhere and sign in again).
+- **Photos**: favorite or move to trash several photos from the selection; move to trash from the viewer.
+- **Search** in Files: find files and folders by name across all folders.
+- API: `GET/POST /api/v1/admin/users`, `PATCH/DELETE /api/v1/admin/users/{id}`.
+
+### Changed
+- Administrators cannot demote or delete themselves, and a server always keeps one administrator.
+
 ## [0.16.0] - 2026-10-12
 
 ### Added
@@ -277,7 +291,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.13.0...v0.14.0

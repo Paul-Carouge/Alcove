@@ -7,7 +7,7 @@ archive with full-text search (OCR). Notes, calendar and contacts come later. It
 binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
 data on hardware you control.
 
-> **Status: early development (v0.17).** The web app has accounts with two-factor, a drive with
+> **Status: early development (v0.18).** The web app has accounts with two-factor, a drive with
 > resumable uploads, previews, share links and quotas, a photo and video timeline with albums shared between
 > accounts; one-command install and updates. Expect breaking changes before 1.0 and keep backups.
 
@@ -46,8 +46,10 @@ every option, backups, Tailscale and reverse proxies.
 
 Android and iOS (Flutter). On first launch you enter your server's address; the app checks that it is
 compatible, then you sign in (two-factor included), browse your photos, videos and files, and turn on
-**automatic photo backup** (original quality, no duplicates, Wi-Fi only if you want). Store releases come next (Play Store, and F-Droid if feasible). For now, build it with
-`cd mobile && flutter run`.
+**automatic photo backup** (original quality, no duplicates, Wi-Fi only if you want).
+
+**Android:** download `alcove-android.apk` from the [latest release](https://github.com/Paul-Carouge/Alcove/releases/latest)
+(or from the web app: Account → Alcove on your phone). The iPhone app comes later.
 
 ## Roadmap
 

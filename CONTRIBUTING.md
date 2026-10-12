@@ -40,6 +40,8 @@ On a real phone on the same Wi-Fi: `make dev DEV_HOST=0.0.0.0`, then enter `http
 1. Move the `[Unreleased]` entries of `CHANGELOG.md` into `## [X.Y.Z] - YYYY-MM-DD`.
 2. Write the devlog `docs/devlog/YYYY-MM-DD-vX.Y.Z.md` and add it to `docs/devlog/README.md`.
 3. `make release V=X.Y.Z` (bumps npm and Flutter versions, commits `chore(release): vX.Y.Z`, tags).
+   Release builds of the Android app are signed in CI with the `ANDROID_KEYSTORE_*` secrets (ADR 0023);
+   locally, set `ALCOVE_ANDROID_KEYSTORE` and `ALCOVE_ANDROID_KEYSTORE_PASSWORD`.
 4. `git push --follow-tags`: the Release workflow publishes `ghcr.io/paul-carouge/alcove:X.Y.Z`
    (amd64 + arm64) and a GitHub Release with the changelog notes.
 

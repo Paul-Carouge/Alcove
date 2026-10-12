@@ -188,6 +188,11 @@ If something goes wrong after an update made from the app: `sudo alcove rollback
 binary and the pre-update database backup. Database backups made before updates are kept in
 `pb_data/alcove_backups` (last 5); `alcove backup --dir=<data>/pb_data` makes one on demand.
 
+**Mobile app.** Android users download `alcove-android.apk` from the latest release (link in the web app:
+Account → Alcove on your phone) and enter your server's address. HTTPS addresses always work; plain
+`http://` is accepted only for private-network addresses (home network, `.local`, Tailscale), with a
+warning. The iPhone app comes later.
+
 **Map tiles.** The photo map uses a world map built into Alcove: no request leaves your server. An
 administrator can enable detailed OpenStreetMap tiles on the System page; browsers then load them from
 tile.openstreetmap.org (which sees the area viewed). For many users, prefer your own tile server (planned).

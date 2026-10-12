@@ -7,6 +7,8 @@ import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import 'media.dart';
 import 'photo_viewer.dart';
+import '../../ui/kit.dart';
+import '../../ui/remote_image.dart';
 import 'photos_screen.dart';
 
 /// Albums you own and albums shared with you (GET /api/v1/albums).
@@ -61,98 +63,156 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     final l = AppLocalizations.of(context);
     final colors = context.colors;
     final albums = _albums;
-    Widget body;
+    final Widget content;
     if (_failed && albums == null) {
-      body = Center(
-        child: TextButton(onPressed: _load, child: Text(l.loadFailed)),
+      content = SliverFillRemaining(
+        hasScrollBody: false,
+        child: EmptyState(
+          icon: Icons.cloud_off_outlined,
+          title: l.loadFailed,
+          action: OutlinedButton(onPressed: _load, child: Text(l.retry)),
+        ),
       );
     } else if (albums == null) {
-      body = const Center(child: CircularProgressIndicator());
-    } else if (albums.isEmpty) {
-      body = ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AlcoveSpace.s7),
-            child: Text(
-              l.albumsEmpty,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colors.textMuted),
-            ),
+      content = SliverPadding(
+        padding: const EdgeInsets.all(AlcoveSpace.s4),
+        sliver: SliverGrid.builder(
+          gridDelegate: _grid,
+          itemCount: 4,
+          itemBuilder: (_, _) => const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [AspectRatio(aspectRatio: 1, child: Skeleton(radius: AlcoveRadius.lg))],
           ),
-        ],
+        ),
+      );
+    } else if (albums.isEmpty) {
+      content = SliverFillRemaining(
+        hasScrollBody: false,
+        child: EmptyState(
+          icon: Icons.photo_album_outlined,
+          title: l.albumsEmptyTitle,
+          body: l.albumsEmpty,
+        ),
       );
     } else {
-      body = GridView.builder(
-        padding: const EdgeInsets.all(AlcoveSpace.s4),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 220,
-          mainAxisSpacing: AlcoveSpace.s4,
-          crossAxisSpacing: AlcoveSpace.s4,
-          childAspectRatio: 0.78,
+      content = SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          AlcoveSpace.s4,
+          AlcoveSpace.s2,
+          AlcoveSpace.s4,
+          AlcoveSpace.s7,
         ),
-        itemCount: albums.length,
-        itemBuilder: (_, i) {
-          final a = albums[i];
-          final cover = _cover(a);
-          final shared = a['role'] != 'owner'
-              ? l.albumSharedBy((a['owner'] as Map)['name'] as String? ?? '')
-              : (a['shared'] == true ? l.albumShared : '');
-          return Semantics(
-            button: true,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => AlbumScreen(
-                    session: widget.session,
-                    id: a['id'] as String,
-                    name: a['name'] as String,
-                  ),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-                      child: ColoredBox(
-                        color: colors.accentSubtle,
-                        child: cover == null
-                            ? Icon(Icons.photo_album_outlined, color: colors.accent, size: 36)
-                            : Image.network(cover.toString(), fit: BoxFit.cover, cacheWidth: 400),
-                      ),
+        sliver: SliverGrid.builder(
+          gridDelegate: _grid,
+          itemCount: albums.length,
+          itemBuilder: (_, i) {
+            final a = albums[i];
+            final cover = _cover(a);
+            final shared = a['role'] != 'owner'
+                ? l.albumSharedBy((a['owner'] as Map)['name'] as String? ?? '')
+                : (a['shared'] == true ? l.albumShared : '');
+            return Semantics(
+              button: true,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => AlbumScreen(
+                      session: widget.session,
+                      id: a['id'] as String,
+                      name: a['name'] as String,
                     ),
                   ),
-                  const SizedBox(height: AlcoveSpace.s2),
-                  Text(
-                    a['name'] as String,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: AlcoveFont.semibold),
-                  ),
-                  Text(
-                    [
-                      l.albumCount((a['count'] as num).toInt()),
-                      if (shared.isNotEmpty) shared,
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: colors.textMuted, fontSize: AlcoveFont.sizeSm),
-                  ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+                          boxShadow: colors.shadowMD,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+                          child: ColoredBox(
+                            color: colors.accentSubtle,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (cover == null)
+                                  Icon(Icons.photo_album_outlined, color: colors.accent, size: 36)
+                                else
+                                  RemoteImage(url: cover, cacheWidth: 480),
+                                if (shared.isNotEmpty)
+                                  Positioned(
+                                    top: AlcoveSpace.s2,
+                                    right: AlcoveSpace.s2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+                                        color: colors.stageScrim,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.people_alt_outlined,
+                                        size: 14,
+                                        color: colors.onStage,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AlcoveSpace.s2 + 2),
+                    Text(
+                      a['name'] as String,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: AlcoveFont.semibold,
+                        fontSize: AlcoveFont.sizeMd,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        l.albumCount((a['count'] as num).toInt()),
+                        if (shared.isNotEmpty) shared,
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: colors.textMuted, fontSize: AlcoveFont.sizeSm),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     }
-    return Scaffold(
-      appBar: AppBar(title: Text(l.albumsTitle)),
-      body: RefreshIndicator(onRefresh: _load, child: body),
+    return RefreshIndicator(
+      onRefresh: _load,
+      edgeOffset: 120,
+      child: CustomScrollView(
+        slivers: [
+          LargeTitleAppBar(title: l.albumsTitle),
+          content,
+        ],
+      ),
     );
   }
+
+  static const _grid = SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: 240,
+    mainAxisSpacing: AlcoveSpace.s5,
+    crossAxisSpacing: AlcoveSpace.s4,
+    childAspectRatio: 0.74,
+  );
 }
 
 /// The photos of one album (GET /api/v1/albums/{id}/items).
@@ -213,36 +273,74 @@ class _AlbumScreenState extends State<AlbumScreen> {
     final items = _items;
     final width = MediaQuery.sizeOf(context).width;
     final columns = width >= 900 ? 6 : (width >= 600 ? 5 : 3);
-    Widget body;
+    final grid = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: columns,
+      mainAxisSpacing: 3,
+      crossAxisSpacing: 3,
+    );
+    final List<Widget> content;
     if (_failed && items == null) {
-      body = Center(
-        child: TextButton(onPressed: _load, child: Text(l.loadFailed)),
-      );
-    } else if (items == null) {
-      body = const Center(child: CircularProgressIndicator());
-    } else {
-      body = GridView.builder(
-        padding: const EdgeInsets.all(AlcoveSpace.s1),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
+      content = [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: EmptyState(
+            icon: Icons.cloud_off_outlined,
+            title: l.loadFailed,
+            action: OutlinedButton(onPressed: _load, child: Text(l.retry)),
+          ),
         ),
-        itemCount: items.length,
-        itemBuilder: (_, i) => MediaTile(
-          item: items[i],
-          url: items[i].thumbUrl(widget.session.pb, _token),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => PhotoViewer(session: widget.session, items: items, initial: i),
+      ];
+    } else if (items == null) {
+      content = [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s2),
+          sliver: SliverGrid.builder(
+            gridDelegate: grid,
+            itemCount: columns * 4,
+            itemBuilder: (_, _) => const Skeleton(),
+          ),
+        ),
+      ];
+    } else {
+      content = [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s3),
+            child: Text(
+              l.albumCount(items.length),
+              style: TextStyle(color: context.colors.textMuted),
             ),
           ),
         ),
-      );
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(AlcoveSpace.s2, 0, AlcoveSpace.s2, AlcoveSpace.s7),
+          sliver: SliverGrid.builder(
+            gridDelegate: grid,
+            itemCount: items.length,
+            itemBuilder: (_, i) => MediaTile(
+              item: items[i],
+              url: items[i].thumbUrl(widget.session.pb, _token),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PhotoViewer(session: widget.session, items: items, initial: i),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ];
     }
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name)),
-      body: RefreshIndicator(onRefresh: _load, child: body),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        edgeOffset: 120,
+        child: CustomScrollView(
+          slivers: [
+            LargeTitleAppBar(title: widget.name),
+            ...content,
+          ],
+        ),
+      ),
     );
   }
 }

@@ -13,6 +13,7 @@ import '../../core/server_url.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/kit.dart';
 
 /// First screen: the user enters (later: scans) the URL of their server,
 /// which is validated against GET /health before going further.
@@ -131,6 +132,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const BrandHeader(name: kProductName),
+                  const SizedBox(height: AlcoveSpace.s8),
                   Semantics(
                     header: true,
                     child: Text(l.connectTitle, style: theme.textTheme.headlineSmall),

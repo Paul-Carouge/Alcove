@@ -95,7 +95,7 @@
   "tabPhotos": "Photos",
   "tabFiles": "Files",
   "tabAccount": "Account",
-  "photosEmpty": "No photos yet. Add some from the web app; automatic backup from this phone is coming.",
+  "photosEmpty": "Turn on photo backup to copy this phone’s pictures to your server, or add some from the web app.",
   "loadFailed": "Could not load. Pull to retry.",
   "retry": "Retry",
   "favoriteAdd": "Add to favorites",
@@ -203,7 +203,7 @@
   "backupOff": "Off",
   "insecureWarning": "Unencrypted connection: use this address only on your home network or Tailscale.",
   "albumsTitle": "Albums",
-  "albumsEmpty": "No albums yet. Create them in the web app.",
+  "albumsEmpty": "Create albums in the web app; albums shared with you appear here too.",
   "albumCount": "{count, plural, =1{1 item} other{{count} items}}",
   "@albumCount": {
     "placeholders": {
@@ -231,5 +231,32 @@
     }
   },
   "trashConfirm": "Move to trash",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "photosEmptyTitle": "No photos yet",
+  "albumsEmptyTitle": "No albums yet",
+  "appSection": "Application",
+  "updateCheck": "Check for updates",
+  "updateChecking": "Checking…",
+  "updateUpToDate": "The app is up to date with your server.",
+  "updateAvailableShort": "Version {version} is available",
+  "@updateAvailableShort": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailable": "Alcove {version} is available",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateBody": "Your server was updated. Install the matching app; your settings and backups are kept.",
+  "updateFailed": "The download failed. Check your connection and try again.",
+  "updateNow": "Update now",
+  "updateInstall": "Install",
+  "backupSettings": "Settings"
 }

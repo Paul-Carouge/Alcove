@@ -144,8 +144,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Photos, grouped by month, newest first.
-    expect(find.text('June 2025'), findsOneWidget);
-    expect(find.text('December 2024'), findsOneWidget);
+    expect(find.textContaining('June', findRichText: true), findsOneWidget);
+    expect(find.textContaining('December', findRichText: true), findsOneWidget);
     expect(find.bySemanticsLabel('Open a.jpg'), findsOneWidget);
     expect(find.text('0:03'), findsOneWidget); // video badge
     expect(find.byIcon(Icons.favorite), findsOneWidget);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
 
@@ -6,6 +7,7 @@ import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/remote_image.dart';
 import 'media.dart';
 
 /// Full-screen photos and videos, swiped left and right, with details and favorites.
@@ -35,6 +37,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
   late final PageController _pages = PageController(initialPage: widget.initial);
   late int _index = widget.initial;
   String _token = '';
+  bool _chrome = true;
 
   MediaItem get _item => widget.items[_index];
 
@@ -48,6 +51,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _pages.dispose();
     super.dispose();
   }
@@ -126,21 +130,43 @@ class _PhotoViewerState extends State<PhotoViewer> {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(AlcoveSpace.s5, 0, AlcoveSpace.s5, AlcoveSpace.s5),
-          children: [
-            Text(l.details, style: Theme.of(context).textTheme.titleMedium),
-            for (final (label, value) in rows) ...[
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s5, 0, AlcoveSpace.s5, AlcoveSpace.s5),
+            children: [
+              Text(l.details, style: context.text.titleLarge),
               const SizedBox(height: AlcoveSpace.s3),
-              Text(
-                label,
-                style: TextStyle(color: context.colors.textMuted, fontSize: AlcoveFont.sizeXs),
-              ),
-              SelectableText(value),
+              for (final (label, value) in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AlcoveSpace.s2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 112,
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: context.colors.textMuted,
+                            fontSize: AlcoveFont.sizeSm,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: SelectableText(
+                          value,
+                          style: const TextStyle(fontWeight: AlcoveFont.medium),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -157,70 +183,196 @@ class _PhotoViewerState extends State<PhotoViewer> {
     return '${NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: u == 0 ? 0 : 1).format(v)} ${units[u]}';
   }
 
+  void _toggleChrome() {
+    setState(() => _chrome = !_chrome);
+    SystemChrome.setEnabledSystemUIMode(
+      _chrome ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final colors = context.colors;
     final item = _item;
-    return Scaffold(
-      backgroundColor: colors.stage,
-      appBar: AppBar(
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final taken = item.takenAt;
+    const fade = Duration(milliseconds: 180);
+    final scrim = [colors.stage.withValues(alpha: 0.85), colors.stage.withValues(alpha: 0)];
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
         backgroundColor: colors.stage,
-        foregroundColor: colors.onStage,
-        title: Text(item.name, overflow: TextOverflow.ellipsis),
-        actions: [
-          if (_mine(item))
-            IconButton(
-              tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
-              onPressed: _toggleFavorite,
-              icon: Icon(
-                item.favorite ? Icons.favorite : Icons.favorite_border,
-                color: item.favorite ? colors.favorite : null,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_token.isEmpty)
+              const Center(child: CircularProgressIndicator())
+            else
+              PageView.builder(
+                controller: _pages,
+                itemCount: widget.items.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (_, i) {
+                  final it = widget.items[i];
+                  final pb = widget.session.pb;
+                  if (it.isVideo) {
+                    return _VideoPage(
+                      key: ValueKey(it.id),
+                      url: it.originalUrl(pb, _token),
+                      active: i == _index,
+                    );
+                  }
+                  final url = it.previewUrl(pb, _token);
+                  return GestureDetector(
+                    onTap: _toggleChrome,
+                    child: InteractiveViewer(
+                      maxScale: 5,
+                      child: Center(
+                        child: url == null
+                            ? Icon(Icons.image_outlined, color: colors.onStageMuted, size: 48)
+                            : RemoteImage(
+                                url: url,
+                                fit: BoxFit.contain,
+                                semanticLabel: it.name,
+                                placeholder: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: colors.onStageMuted,
+                                  size: 48,
+                                ),
+                              ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            // Top bar: back, date and name over a soft gradient.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                ignoring: !_chrome,
+                child: AnimatedOpacity(
+                  opacity: _chrome ? 1 : 0,
+                  duration: fade,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: scrim,
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AlcoveSpace.s1,
+                          AlcoveSpace.s1,
+                          AlcoveSpace.s4,
+                          AlcoveSpace.s6,
+                        ),
+                        child: Row(
+                          children: [
+                            BackButton(color: colors.onStage),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    taken == null
+                                        ? item.name
+                                        : DateFormat.yMMMMd(locale).format(taken),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: colors.onStage,
+                                      fontWeight: AlcoveFont.semibold,
+                                      fontSize: AlcoveFont.sizeMd,
+                                    ),
+                                  ),
+                                  if (taken != null)
+                                    Text(
+                                      '${DateFormat.Hm(locale).format(taken)} · ${item.name}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: colors.onStageMuted,
+                                        fontSize: AlcoveFont.sizeXs,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          IconButton(tooltip: l.details, onPressed: _details, icon: const Icon(Icons.info_outline)),
-          if (widget.onTrashed != null && _mine(item))
-            IconButton(
-              tooltip: l.trashConfirm,
-              onPressed: _trash,
-              icon: const Icon(Icons.delete_outline),
-            ),
-        ],
-      ),
-      body: _token.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : PageView.builder(
-              controller: _pages,
-              itemCount: widget.items.length,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (_, i) {
-                final it = widget.items[i];
-                final pb = widget.session.pb;
-                if (it.isVideo) {
-                  return _VideoPage(
-                    key: ValueKey(it.id),
-                    url: it.originalUrl(pb, _token),
-                    active: i == _index,
-                  );
-                }
-                final url = it.previewUrl(pb, _token);
-                return InteractiveViewer(
-                  maxScale: 5,
-                  child: Center(
-                    child: url == null
-                        ? Icon(Icons.image_outlined, color: colors.onStageMuted, size: 48)
-                        : Image.network(
-                            url.toString(),
-                            fit: BoxFit.contain,
-                            semanticLabel: it.name,
-                            loadingBuilder: (_, child, progress) => progress == null
-                                ? child
-                                : const Center(child: CircularProgressIndicator()),
+            // Floating action bar.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                ignoring: !_chrome,
+                child: AnimatedOpacity(
+                  opacity: _chrome ? 1 : 0,
+                  duration: fade,
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: AlcoveSpace.s4),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s2),
+                          decoration: BoxDecoration(
+                            color: colors.stagePanel.withValues(alpha: 0.92),
+                            borderRadius: BorderRadius.circular(AlcoveRadius.full),
+                            border: Border.all(color: colors.stageBorder),
                           ),
+                          child: IconTheme(
+                            data: IconThemeData(color: colors.onStage),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_mine(item))
+                                  IconButton(
+                                    tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
+                                    onPressed: _toggleFavorite,
+                                    icon: Icon(
+                                      item.favorite ? Icons.favorite : Icons.favorite_border,
+                                      color: item.favorite ? colors.favorite : null,
+                                    ),
+                                  ),
+                                IconButton(
+                                  tooltip: l.details,
+                                  onPressed: _details,
+                                  icon: const Icon(Icons.info_outline),
+                                ),
+                                if (widget.onTrashed != null && _mine(item))
+                                  IconButton(
+                                    tooltip: l.trashConfirm,
+                                    onPressed: _trash,
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
+          ],
+        ),
+      ),
     );
   }
 }

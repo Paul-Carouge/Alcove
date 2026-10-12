@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../core/brand.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/kit.dart';
 
 /// Email and password, then the second factor when the account has one (authenticator app or
 /// email code), like the web login.
@@ -100,6 +102,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const BrandHeader(name: kProductName),
+                    const SizedBox(height: AlcoveSpace.s8),
                     Text(title, style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: AlcoveSpace.s2),
                     Text(body, style: TextStyle(color: colors.textMuted)),

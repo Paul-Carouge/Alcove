@@ -7,6 +7,20 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-12
+
+### Added
+- **Map** (Photos → Map): your photos where they were taken, grouped into thumbnails that split as you
+  zoom; click to open them in the viewer. "Show on map" from the viewer.
+- A world map built into Alcove (Natural Earth countries and cities): works offline, sends nothing outside.
+- Administrators can enable detailed OpenStreetMap tiles on the System page; the security policy allows
+  them only while enabled ([ADR 0020](docs/adr/0020-photo-map.md)).
+- API: `GET /api/v1/photos/locations`, `GET /api/v1/map/config`, `PUT /api/v1/admin/map`.
+- Third-party notices in `docs/THIRD-PARTY.md`.
+
+### Changed
+- Load errors say "this page" instead of "this folder" outside the drive.
+
 ## [0.13.0] - 2026-10-12
 
 ### Added
@@ -237,7 +251,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.11.0...v0.11.1

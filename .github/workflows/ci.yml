@@ -104,6 +104,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # tags give the binary its real version
       - uses: actions/setup-go@v6
         with:
           go-version-file: server/go.mod

@@ -112,11 +112,15 @@ func (c *Client) Latest(ctx context.Context) (*Release, error) {
 var describeSuffix = regexp.MustCompile(`-\d+-g[0-9a-f]+(-dirty)?$|-dirty$`)
 
 // Newer reports whether latest is a higher version than current. Development
-// builds ("0.9.0-3-gabc") compare as their base version.
+// builds ("0.9.0-3-gabc") compare as their base version; builds without a
+// usable version (e.g. a bare commit hash) count as 0.0.0.
 func Newer(current, latest string) bool {
 	cur := "v" + describeSuffix.ReplaceAllString(strings.TrimPrefix(current, "v"), "")
+	if !semver.IsValid(cur) {
+		cur = "v0.0.0"
+	}
 	lat := "v" + strings.TrimPrefix(latest, "v")
-	return semver.IsValid(cur) && semver.IsValid(lat) && semver.Compare(lat, cur) > 0
+	return semver.IsValid(lat) && semver.Compare(lat, cur) > 0
 }
 
 // ArchiveName is the release asset for a platform.

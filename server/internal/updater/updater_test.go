@@ -159,7 +159,8 @@ func TestNewer(t *testing.T) {
 		{"0.8.0-3-gabc123", "0.8.1", true},
 		{"0.8.0-3-gabc123-dirty", "0.8.0", false},
 		{"0.0.0-dev", "0.1.0", true},
-		{"garbage", "0.1.0", false},
+		{"f3cc7b2", "0.1.0", true}, // source build without tags
+		{"0.9.0", "not-a-version", false},
 	} {
 		if got := updater.Newer(c.cur, c.latest); got != c.want {
 			t.Errorf("Newer(%q, %q) = %v", c.cur, c.latest, got)

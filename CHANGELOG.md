@@ -7,6 +7,17 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-12
+
+### Added
+- Per-user storage quotas set by the administrator (`quota_bytes`, 0 = unlimited), trash included.
+- Storage meter in the sidebar with an "almost full" warning above 90%.
+- `GET /api/v1/me/usage` (used, trash, quota).
+- Uploads that do not fit are refused up front and shown as "Not enough space".
+
+### Security
+- Users cannot change their own quota (users update rule).
+
 ## [0.5.0] - 2026-10-12
 
 ### Added
@@ -79,7 +90,8 @@ The story behind each release is in the [devlog](docs/devlog/).
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.2.0...v0.3.0

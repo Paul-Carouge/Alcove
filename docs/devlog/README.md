@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.6.0](2026-10-12-v0.6.0.md) | 2026-10-12 | Knowing how full the shelf is |
 | [0.5.0](2026-10-12-v0.5.0.md) | 2026-10-12 | Sharing, carefully |
 | [0.4.0](2026-10-11-v0.4.0.md) | 2026-10-11 | Seeing your files |
 | [0.3.0](2026-10-11-v0.3.0.md) | 2026-10-11 | A drive that survives a bad connection |

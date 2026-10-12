@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 # From the latest tag (v0.5.0 -> 0.5.0, or 0.5.0-3-gabc123 between releases).
-VERSION ?= $(shell v=$$(git describe --tags --dirty 2>/dev/null) && echo $${v#v} || echo 0.0.0-dev)
+VERSION ?= $(shell v=$$(git describe --tags --dirty 2>/dev/null) && echo $$v | sed 's/^v//' || echo 0.0.0-dev)
 LDFLAGS := -s -w -X github.com/Paul-Carouge/Alcove/server/internal/buildinfo.Version=$(VERSION)
 WEBUI_DIST := server/internal/webui/dist
 

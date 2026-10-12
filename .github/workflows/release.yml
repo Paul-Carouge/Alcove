@@ -21,9 +21,12 @@ jobs:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
       - run: pnpm install --frozen-lockfile
+      # The Linux ffmpeg bundles are built from Alpine packages for each architecture.
+      - uses: docker/setup-qemu-action@v3
       - name: Build, checksum and sign archives for every platform
         env:
           ALCOVE_SIGNING_KEY: ${{ secrets.ALCOVE_SIGNING_KEY }}
+          FFMPEG_BUNDLES: "1"
         run: |
           test -n "$ALCOVE_SIGNING_KEY" || { echo "ALCOVE_SIGNING_KEY secret missing"; exit 1; }
           scripts/dist.sh "${GITHUB_REF_NAME#v}"

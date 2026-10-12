@@ -620,6 +620,41 @@ paths:
         "206": { description: Partial content (Range request). }
         "401": { description: Missing or invalid file token. }
         "404": { description: "Unknown item, in the trash, or not visible to this account." }
+  /api/v1/photos/facets:
+    get:
+      tags: [photos]
+      operationId: getPhotoFacets
+      summary: Years and cameras present in your photos, for the timeline filters.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: The facets (items in the trash are not counted).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [years, cameras, withLocation]
+                properties:
+                  years:
+                    type: array
+                    items:
+                      type: object
+                      required: [year, count]
+                      properties:
+                        year: { type: integer }
+                        count: { type: integer }
+                  cameras:
+                    type: array
+                    items:
+                      type: object
+                      required: [make, model, count]
+                      properties:
+                        make: { type: string }
+                        model: { type: string }
+                        count: { type: integer }
+                  withLocation: { type: integer }
+        "401": { description: Authentication required. }
   /api/v1/photos/duplicates:
     get:
       tags: [photos]

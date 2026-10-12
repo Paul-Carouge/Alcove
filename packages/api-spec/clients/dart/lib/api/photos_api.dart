@@ -183,6 +183,50 @@ class PhotosApi {
     return null;
   }
 
+  /// Years and cameras present in your photos, for the timeline filters.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> getPhotoFacetsWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/photos/facets';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Years and cameras present in your photos, for the timeline filters.
+  Future<GetPhotoFacets200Response?> getPhotoFacets() async {
+    final response = await getPhotoFacetsWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetPhotoFacets200Response',) as GetPhotoFacets200Response;
+    
+    }
+    return null;
+  }
+
   /// Stop taking part in an album shared with you (your photos are removed from it).
   ///
   /// Note: This method returns the HTTP [Response].

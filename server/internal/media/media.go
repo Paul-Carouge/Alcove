@@ -74,6 +74,7 @@ func Register(app core.App) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.PUT("/api/v1/media/{id}/favorite", setFavorite).Bind(apis.RequireAuth("users"))
 		se.Router.GET("/api/v1/media/{id}/original", original)
+		se.Router.GET("/api/v1/photos/facets", facets).Bind(apis.RequireAuth("users"))
 		w.start()
 		return se.Next()
 	})

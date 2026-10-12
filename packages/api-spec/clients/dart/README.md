@@ -83,6 +83,7 @@ Class | Method | HTTP request | Description
 *PhotosApi* | [**dismissDuplicates**](doc//PhotosApi.md#dismissduplicates) | **POST** /api/v1/photos/duplicates/dismiss | Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
 *PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
 *PhotosApi* | [**getMediaOriginal**](doc//PhotosApi.md#getmediaoriginal) | **GET** /api/v1/media/{mediaId}/original | The original file of a photo or video, for its owner and the people of albums it is in.
+*PhotosApi* | [**getPhotoFacets**](doc//PhotosApi.md#getphotofacets) | **GET** /api/v1/photos/facets | Years and cameras present in your photos, for the timeline filters.
 *PhotosApi* | [**leaveAlbum**](doc//PhotosApi.md#leavealbum) | **POST** /api/v1/albums/{albumId}/leave | Stop taking part in an album shared with you (your photos are removed from it).
 *PhotosApi* | [**listAlbumItems**](doc//PhotosApi.md#listalbumitems) | **GET** /api/v1/albums/{albumId}/items | Photos and videos of an album, newest first (items in the trash are left out).
 *PhotosApi* | [**listAlbums**](doc//PhotosApi.md#listalbums) | **GET** /api/v1/albums | Albums the caller owns or takes part in, most recently updated first.
@@ -121,6 +122,9 @@ Class | Method | HTTP request | Description
  - [Error](doc//Error.md)
  - [GetAlbumPeople200Response](doc//GetAlbumPeople200Response.md)
  - [GetAlbumPeople200ResponsePeopleInner](doc//GetAlbumPeople200ResponsePeopleInner.md)
+ - [GetPhotoFacets200Response](doc//GetPhotoFacets200Response.md)
+ - [GetPhotoFacets200ResponseCamerasInner](doc//GetPhotoFacets200ResponseCamerasInner.md)
+ - [GetPhotoFacets200ResponseYearsInner](doc//GetPhotoFacets200ResponseYearsInner.md)
  - [Health](doc//Health.md)
  - [ListAlbumItems200Response](doc//ListAlbumItems200Response.md)
  - [ListAlbums200Response](doc//ListAlbums200Response.md)

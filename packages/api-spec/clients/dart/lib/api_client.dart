@@ -214,6 +214,12 @@ class ApiClient {
           return GetAlbumPeople200Response.fromJson(value);
         case 'GetAlbumPeople200ResponsePeopleInner':
           return GetAlbumPeople200ResponsePeopleInner.fromJson(value);
+        case 'GetPhotoFacets200Response':
+          return GetPhotoFacets200Response.fromJson(value);
+        case 'GetPhotoFacets200ResponseCamerasInner':
+          return GetPhotoFacets200ResponseCamerasInner.fromJson(value);
+        case 'GetPhotoFacets200ResponseYearsInner':
+          return GetPhotoFacets200ResponseYearsInner.fromJson(value);
         case 'Health':
           return Health.fromJson(value);
         case 'ListAlbumItems200Response':

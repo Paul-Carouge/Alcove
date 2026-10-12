@@ -274,3 +274,29 @@ func TestPerceptualHashIsBackfilled(t *testing.T) {
 		t.Errorf("phash not backfilled: %q", got.GetString("phash"))
 	}
 }
+
+func TestFacets(t *testing.T) {
+	e := setup(t)
+	e.upload(t, "a.jpg", mediatest.JPEG(mediatest.Photo{Width: 10, Height: 10, Make: "Apple", Model: "iPhone 16",
+		Taken: time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC), Lat: 45, Lon: 4}))
+	e.upload(t, "b.jpg", mediatest.JPEG(mediatest.Photo{Width: 10, Height: 10, Make: "Apple", Model: "iPhone 16",
+		Taken: time.Date(2025, 8, 1, 0, 0, 0, 0, time.UTC)}))
+	e.upload(t, "c.jpg", mediatest.JPEG(mediatest.Photo{Width: 10, Height: 10, Make: "FUJIFILM", Model: "X-T5",
+		Taken: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)}))
+	scenario := tests.ApiScenario{
+		Name: "facets of alice's photos", Method: http.MethodGet, URL: "/api/v1/photos/facets",
+		Headers:        map[string]string{"Authorization": e.aliceTok},
+		TestAppFactory: func(testing.TB) *tests.TestApp { return e.app }, DisableTestAppCleanup: true,
+		ExpectedStatus: 200,
+		ExpectedContent: []string{`"years":[{"year":2025,"count":2},{"year":2023,"count":1}]`,
+			`{"make":"Apple","model":"iPhone 16","count":2}`, `"withLocation":1`},
+	}
+	scenario.Test(t)
+	empty := tests.ApiScenario{
+		Name: "bob has none", Method: http.MethodGet, URL: "/api/v1/photos/facets",
+		Headers:        map[string]string{"Authorization": e.bobTok},
+		TestAppFactory: func(testing.TB) *tests.TestApp { return e.app }, DisableTestAppCleanup: true,
+		ExpectedStatus: 200, ExpectedContent: []string{`"years":[]`, `"cameras":[]`, `"withLocation":0`},
+	}
+	empty.Test(t)
+}

@@ -428,6 +428,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/photos/facets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Years and cameras present in your photos, for the timeline filters. */
+    get: operations["getPhotoFacets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/photos/duplicates": {
     parameters: {
       query?: never;
@@ -1881,6 +1898,44 @@ export interface operations {
       };
       /** @description Unknown item, in the trash, or not visible to this account. */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getPhotoFacets: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The facets (items in the trash are not counted). */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            years: {
+              year: number;
+              count: number;
+            }[];
+            cameras: {
+              make: string;
+              model: string;
+              count: number;
+            }[];
+            withLocation: number;
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
         headers: {
           [name: string]: unknown;
         };

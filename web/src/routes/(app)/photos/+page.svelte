@@ -4,16 +4,27 @@
 	import { page as routePage } from '$app/state';
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { BookImage, CircleCheck, Image as ImageIcon, X } from '@lucide/svelte';
+	import {
+		BookImage,
+		CircleCheck,
+		Copy,
+		Image as ImageIcon,
+		SlidersHorizontal,
+		X
+	} from '@lucide/svelte';
 	import { onMediaChange } from '#lib/drive/live.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		fileToken,
+		getFacets,
 		getMedia,
+		isRefined,
 		listMedia,
 		setFavorite,
+		type Facets,
 		type Media,
-		type PhotoFilter
+		type PhotoFilter,
+		type Refine
 	} from '#lib/photos/api.js';
 	import { addToAlbum, getAlbum } from '#lib/photos/albums.js';
 	import AlbumPicker from '#lib/photos/AlbumPicker.svelte';
@@ -23,6 +34,10 @@
 	import Button from '#lib/ui/Button.svelte';
 
 	let filter = $state<PhotoFilter>('all');
+	let refine = $state<Refine>({});
+	let filtersOpen = $state(false);
+	let facets = $state<Facets | null>(null);
+	const refineCount = $derived([refine.year, refine.camera, refine.located].filter(Boolean).length);
 	let items = $state<Media[]>([]);
 	let total = $state(0);
 	let page = $state(0);
@@ -47,38 +62,69 @@
 	const sortTimeline = (list: Media[]) =>
 		list.toSorted((a, b) => b.taken_at.localeCompare(a.taken_at) || b.id.localeCompare(a.id));
 	const matches = (it: Media) =>
-		filter === 'all' ||
-		(filter === 'videos' && it.kind === 'video') ||
-		(filter === 'favorites' && it.favorite);
+		!isRefined(refine) &&
+		(filter === 'all' ||
+			(filter === 'videos' && it.kind === 'video') ||
+			(filter === 'favorites' && it.favorite));
 
-	async function loadMore() {
-		if (loading) return;
+	// Each view (filter, refinements) is a generation: answers for an older one are dropped.
+	let generation = 0;
+
+	async function loadMore(force = false) {
+		if (loading && !force) return;
+		const gen = generation;
 		loading = true;
 		try {
-			const res = await listMedia(page + 1, filter);
+			const res = await listMedia(page + 1, filter, refine);
+			if (gen !== generation) return;
 			items = page === 0 ? res.items : [...items, ...res.items];
 			total = res.totalItems;
 			page = res.page;
 			failed = false;
 		} catch {
-			failed = true;
+			if (gen === generation) failed = true;
 		} finally {
-			loading = false;
+			if (gen === generation) loading = false;
 		}
+	}
+
+	function reload() {
+		generation++;
+		items = [];
+		total = 0;
+		page = 0;
+		loadMore(true);
 	}
 
 	function setFilter(f: PhotoFilter) {
 		if (f === filter) return;
 		filter = f;
-		items = [];
-		total = 0;
-		page = 0;
-		loadMore();
+		reload();
 	}
+
+	function setRefine(next: Refine) {
+		refine = next;
+		reload();
+	}
+
+	// Facets change as new photos are processed: reload them while the panel is open.
+	let facetsTimer: ReturnType<typeof setTimeout> | undefined;
+	function refreshFacets() {
+		clearTimeout(facetsTimer);
+		facetsTimer = setTimeout(() => getFacets().then((f) => (facets = f)), 300);
+	}
+
+	function toggleFilters() {
+		filtersOpen = !filtersOpen;
+		if (filtersOpen) refreshFacets();
+	}
+
+	const cameraKey = (c?: { make: string; model: string }) =>
+		c ? JSON.stringify([c.make, c.model]) : '';
 
 	$effect(() => {
 		fileToken().then((t) => (token = t));
-		untrack(loadMore);
+		untrack(() => loadMore());
 		const addTo = routePage.url.searchParams.get('addTo');
 		if (addTo) {
 			getAlbum(addTo)
@@ -91,6 +137,7 @@
 		// Tokens expire: refresh them so lazily loaded thumbnails keep working.
 		const refresh = setInterval(() => fileToken().then((t) => (token = t)), 60_000);
 		const stop = onMediaChange<Media>(async ({ action, record }) => {
+			if (filtersOpen) refreshFacets();
 			const full = action === 'delete' ? null : await getMedia(record.id).catch(() => null);
 			const i = items.findIndex((x) => x.id === record.id);
 			if (!full || full.expand?.node?.trashed_at) {
@@ -108,6 +155,7 @@
 		});
 		return () => {
 			clearInterval(refresh);
+			clearTimeout(facetsTimer);
 			stop();
 		};
 	});
@@ -190,13 +238,72 @@
 				</button>
 			{/each}
 		</div>
+		<Button
+			variant="secondary"
+			aria-expanded={filtersOpen}
+			aria-controls="photo-filters"
+			onclick={toggleFilters}
+		>
+			<SlidersHorizontal size={16} aria-hidden="true" />{m.photos_filters()}
+			{#if refineCount}<span class="badge">{refineCount}</span>{/if}
+		</Button>
 		{#if !selected && items.length}
 			<Button variant="secondary" onclick={() => (selected = new SvelteSet())}>
 				<CircleCheck size={16} aria-hidden="true" />{m.photos_select()}
 			</Button>
 		{/if}
+		{#if !target}
+			<a class="link-btn" href={resolve('/(app)/photos/duplicates')}>
+				<Copy size={16} aria-hidden="true" />{m.duplicates_title()}
+			</a>
+		{/if}
 	</div>
 </div>
+
+{#if filtersOpen}
+	<div class="filters" id="photo-filters" role="group" aria-label={m.photos_filters()}>
+		<label>
+			<span>{m.photos_filter_year()}</span>
+			<select
+				value={refine.year ?? ''}
+				onchange={(e) => setRefine({ ...refine, year: Number(e.currentTarget.value) || undefined })}
+			>
+				<option value="">{m.photos_filter_any()}</option>
+				{#each facets?.years ?? [] as y (y.year)}
+					<option value={y.year}>{y.year} ({y.count})</option>
+				{/each}
+			</select>
+		</label>
+		<label>
+			<span>{m.photos_filter_camera()}</span>
+			<select
+				value={cameraKey(refine.camera)}
+				onchange={(e) => {
+					const c = facets?.cameras.find((x) => cameraKey(x) === e.currentTarget.value);
+					setRefine({ ...refine, camera: c ? { make: c.make, model: c.model } : undefined });
+				}}
+			>
+				<option value="">{m.photos_filter_any()}</option>
+				{#each facets?.cameras ?? [] as c (cameraKey(c))}
+					<option value={cameraKey(c)}
+						>{[c.make, c.model].filter(Boolean).join(' ')} ({c.count})</option
+					>
+				{/each}
+			</select>
+		</label>
+		<label class="check">
+			<input
+				type="checkbox"
+				checked={!!refine.located}
+				onchange={(e) => setRefine({ ...refine, located: e.currentTarget.checked || undefined })}
+			/>
+			{m.photos_filter_located({ count: facets?.withLocation ?? 0 })}
+		</label>
+		{#if refineCount}
+			<Button variant="ghost" onclick={() => setRefine({})}>{m.photos_filter_reset()}</Button>
+		{/if}
+	</div>
+{/if}
 
 {#if selected}
 	<div class="selection-bar" role="region" aria-label={m.photos_selection()}>
@@ -221,8 +328,14 @@
 	<section class="empty" aria-labelledby="empty-title">
 		<span class="art" aria-hidden="true"><ImageIcon size={26} /></span>
 		<h2 id="empty-title">{m.photos_empty_title()}</h2>
-		<p>{filter === 'favorites' ? m.photos_favorites_empty() : m.photos_empty_body()}</p>
-		{#if filter === 'all'}<a href={resolve('/(app)')}>{m.nav_files()}</a>{/if}
+		<p>
+			{isRefined(refine)
+				? m.photos_filter_none()
+				: filter === 'favorites'
+					? m.photos_favorites_empty()
+					: m.photos_empty_body()}
+		</p>
+		{#if filter === 'all' && !isRefined(refine)}<a href={resolve('/(app)')}>{m.nav_files()}</a>{/if}
 	</section>
 {:else}
 	<PhotoGrid
@@ -289,6 +402,71 @@
 		color: var(--color-text);
 		font-weight: var(--weight-medium);
 		box-shadow: var(--shadow-sm);
+	}
+	.badge {
+		display: inline-grid;
+		place-items: center;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		padding: 0 var(--space-1);
+		border-radius: var(--radius-full);
+		background: var(--color-accent);
+		color: var(--color-accent-contrast);
+		font-size: var(--text-xs);
+	}
+	.link-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.75rem;
+		padding: 0 var(--space-3);
+		border-radius: var(--radius-md);
+		color: var(--color-text);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		text-decoration: none;
+	}
+	.link-btn:hover {
+		background: var(--color-surface-sunken);
+	}
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--space-3) var(--space-5);
+		margin-bottom: var(--space-3);
+		padding: var(--space-4);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+	}
+	.filters label {
+		display: grid;
+		gap: var(--space-1);
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+	.filters label.check {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.75rem;
+		color: var(--color-text);
+	}
+	.filters input[type='checkbox'] {
+		width: 1.25rem;
+		height: 1.25rem;
+		accent-color: var(--color-accent);
+	}
+	.filters select {
+		min-width: 11rem;
+		min-height: 2.75rem;
+		padding: 0 var(--space-3);
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-md);
+		background: var(--color-surface);
+		color: var(--color-text);
+		font: inherit;
 	}
 	.status {
 		min-height: var(--space-5);

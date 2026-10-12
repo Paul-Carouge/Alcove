@@ -431,5 +431,67 @@
 	"photo_select": "Select {name}",
 	"photo_more": "More actions for {name}",
 	"album_public_link": "Public link",
-	"share_album_note": "Anyone with the link sees the album as it is now, without signing in. Photos are shown as previews, without their location or camera details; videos play from the original file, which may contain its own metadata."
+	"share_album_note": "Anyone with the link sees the album as it is now, without signing in. Photos are shown as previews, without their location or camera details; videos play from the original file, which may contain its own metadata.",
+	"photos_filters": "Filters",
+	"photos_filter_year": "Year",
+	"photos_filter_camera": "Camera",
+	"photos_filter_any": "Any",
+	"photos_filter_located": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "With a location ({count})",
+				"countPlural=other": "With a location ({count})"
+			}
+		}
+	],
+	"photos_filter_reset": "Reset filters",
+	"photos_filter_none": "No photo matches these filters.",
+	"duplicates_title": "Duplicates",
+	"duplicates_intro": "Identical copies and visually similar photos (resized, recompressed, bursts). Choose what to keep; the rest goes to the trash, where you can restore it.",
+	"duplicates_none_title": "No duplicates found",
+	"duplicates_none_body": "Your library has no identical or very similar photos.",
+	"duplicates_identical": "Identical copies",
+	"duplicates_similar": "Similar photos",
+	"duplicates_not_duplicates": "Not duplicates",
+	"duplicates_trash_some": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Move {count} to trash",
+				"countPlural=other": "Move {count} to trash"
+			}
+		}
+	],
+	"duplicates_marked": "{name}, will be moved to the trash",
+	"duplicates_kept": "{name}, kept",
+	"duplicates_tag_keep": "Keep",
+	"duplicates_tag_trash": "Trash",
+	"duplicates_best": "Best copy",
+	"duplicates_trashed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item moved to the trash ({size} freed once it is emptied).",
+				"countPlural=other": "{count} items moved to the trash ({size} freed once it is emptied)."
+			}
+		}
+	],
+	"duplicates_dismissed": "Marked as not duplicates.",
+	"duplicates_clean_all": "Clean up all ({size})",
+	"duplicates_clean_all_title": "Clean up all duplicates?",
+	"duplicates_clean_all_body": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item will be moved to the trash, keeping your choices for each group ({size}). You can restore it from the trash.",
+				"countPlural=other": "{count} items will be moved to the trash, keeping your choices for each group ({size}). You can restore them from the trash."
+			}
+		}
+	],
+	"duplicates_clean_all_confirm": "Move to trash"
 }

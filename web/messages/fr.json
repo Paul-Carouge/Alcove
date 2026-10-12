@@ -431,5 +431,67 @@
 	"photo_select": "Sélectionner {name}",
 	"photo_more": "Plus d’actions pour {name}",
 	"album_public_link": "Lien public",
-	"share_album_note": "Toute personne ayant le lien voit l’album tel qu’il est, sans se connecter. Les photos sont affichées en aperçu, sans leur lieu ni les détails de l’appareil ; les vidéos sont lues depuis le fichier d’origine, qui peut contenir ses propres métadonnées."
+	"share_album_note": "Toute personne ayant le lien voit l’album tel qu’il est, sans se connecter. Les photos sont affichées en aperçu, sans leur lieu ni les détails de l’appareil ; les vidéos sont lues depuis le fichier d’origine, qui peut contenir ses propres métadonnées.",
+	"photos_filters": "Filtres",
+	"photos_filter_year": "Année",
+	"photos_filter_camera": "Appareil",
+	"photos_filter_any": "Tous",
+	"photos_filter_located": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Avec un lieu ({count})",
+				"countPlural=other": "Avec un lieu ({count})"
+			}
+		}
+	],
+	"photos_filter_reset": "Réinitialiser",
+	"photos_filter_none": "Aucune photo ne correspond à ces filtres.",
+	"duplicates_title": "Doublons",
+	"duplicates_intro": "Copies identiques et photos visuellement proches (redimensionnées, recompressées, rafales). Choisissez quoi garder ; le reste va dans la corbeille, d’où vous pouvez le restaurer.",
+	"duplicates_none_title": "Aucun doublon trouvé",
+	"duplicates_none_body": "Votre bibliothèque ne contient pas de photos identiques ou très proches.",
+	"duplicates_identical": "Copies identiques",
+	"duplicates_similar": "Photos similaires",
+	"duplicates_not_duplicates": "Pas des doublons",
+	"duplicates_trash_some": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Mettre {count} à la corbeille",
+				"countPlural=other": "Mettre {count} à la corbeille"
+			}
+		}
+	],
+	"duplicates_marked": "{name}, ira à la corbeille",
+	"duplicates_kept": "{name}, conservé",
+	"duplicates_tag_keep": "Garder",
+	"duplicates_tag_trash": "Corbeille",
+	"duplicates_best": "Meilleure copie",
+	"duplicates_trashed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément mis à la corbeille ({size} libérés une fois vidée).",
+				"countPlural=other": "{count} éléments mis à la corbeille ({size} libérés une fois vidée)."
+			}
+		}
+	],
+	"duplicates_dismissed": "Marqué comme pas des doublons.",
+	"duplicates_clean_all": "Tout nettoyer ({size})",
+	"duplicates_clean_all_title": "Nettoyer tous les doublons ?",
+	"duplicates_clean_all_body": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément ira à la corbeille, selon vos choix dans chaque groupe ({size}). Vous pourrez le restaurer depuis la corbeille.",
+				"countPlural=other": "{count} éléments iront à la corbeille, selon vos choix dans chaque groupe ({size}). Vous pourrez les restaurer depuis la corbeille."
+			}
+		}
+	],
+	"duplicates_clean_all_confirm": "Mettre à la corbeille"
 }

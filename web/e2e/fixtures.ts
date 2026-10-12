@@ -13,4 +13,6 @@ export const PHOTO_USER = { email: 'photos@e2e.test', password: 'e2e-photos-pass
 /** Album sharing: an owner and a friend with accounts on the same server. */
 export const ALBUM_USER = { email: 'albums@e2e.test', password: 'e2e-albums-password-123' };
 export const FRIEND_USER = { email: 'friend@e2e.test', password: 'e2e-friend-password-123' };
+/** Duplicates and filters. */
+export const DUP_USER = { email: 'dups@e2e.test', password: 'e2e-dups-password-123' };
 export const FAKE_RELEASES_PORT = 8099;

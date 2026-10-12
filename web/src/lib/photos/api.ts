@@ -1,4 +1,4 @@
-import { createApiClient } from '@alcove/api-spec';
+import { createApiClient, type components, type paths } from '@alcove/api-spec';
 import type { RecordModel } from 'pocketbase';
 import { contentUrl, fileToken } from '#lib/drive/files.js';
 import type { DriveNode } from '#lib/drive/types.js';
@@ -29,13 +29,44 @@ export interface Media extends RecordModel {
 export type PhotoFilter = 'all' | 'favorites' | 'videos';
 export const PAGE_SIZE = 120;
 
-/** One page of the timeline (newest first), trashed files excluded. */
-export function listMedia(page: number, filter: PhotoFilter) {
+/** Narrowing filters of the timeline (the panel next to All / Favorites / Videos). */
+export interface Refine {
+	year?: number;
+	camera?: { make: string; model: string };
+	located?: boolean;
+}
+
+export const isRefined = (r: Refine) => !!(r.year || r.camera || r.located);
+
+/** The PocketBase filter for a timeline view. */
+export function timelineFilter(filter: PhotoFilter, refine: Refine = {}) {
 	const parts = ['node.trashed_at = ""'];
 	if (filter === 'favorites') parts.push('favorite = true');
 	if (filter === 'videos') parts.push('kind = "video"');
+	if (refine.year) {
+		parts.push(
+			pb.filter('taken_at >= {:from} && taken_at < {:to}', {
+				from: `${refine.year}-01-01 00:00:00.000Z`,
+				to: `${refine.year + 1}-01-01 00:00:00.000Z`
+			})
+		);
+	}
+	if (refine.camera) {
+		parts.push(
+			pb.filter('camera_make = {:make} && camera_model = {:model}', {
+				make: refine.camera.make,
+				model: refine.camera.model
+			})
+		);
+	}
+	if (refine.located) parts.push('has_location = true');
+	return parts.join(' && ');
+}
+
+/** One page of the timeline (newest first), trashed files excluded. */
+export function listMedia(page: number, filter: PhotoFilter, refine: Refine = {}) {
 	return pb.collection<Media>('media').getList(page, PAGE_SIZE, {
-		filter: parts.join(' && '),
+		filter: timelineFilter(filter, refine),
 		sort: '-taken_at,-id',
 		expand: 'node'
 	});
@@ -119,4 +150,32 @@ export function formatDuration(seconds: number) {
 	const mm = Math.floor((s % 3600) / 60);
 	const ss = String(s % 60).padStart(2, '0');
 	return h ? `${h}:${String(mm).padStart(2, '0')}:${ss}` : `${mm}:${ss}`;
+}
+
+export type Facets =
+	paths['/api/v1/photos/facets']['get']['responses']['200']['content']['application/json'];
+export type DuplicateGroup = components['schemas']['DuplicateGroup'];
+export type DuplicateItem = components['schemas']['DuplicateItem'];
+
+const api = () => createApiClient(window.location.origin);
+const auth = () => ({ Authorization: pb.authStore.token });
+
+export async function getFacets(): Promise<Facets> {
+	const { data, response } = await api().GET('/api/v1/photos/facets', { headers: auth() });
+	if (!data) throw new Error(`facets failed: ${response.status}`);
+	return data;
+}
+
+export async function listDuplicates(): Promise<DuplicateGroup[]> {
+	const { data, response } = await api().GET('/api/v1/photos/duplicates', { headers: auth() });
+	if (!data) throw new Error(`duplicates failed: ${response.status}`);
+	return data.groups;
+}
+
+export async function dismissDuplicates(items: string[]) {
+	const { response } = await api().POST('/api/v1/photos/duplicates/dismiss', {
+		headers: auth(),
+		body: { items }
+	});
+	if (!response.ok) throw new Error(`dismiss failed: ${response.status}`);
 }

@@ -7,6 +7,12 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-12
+
+### Fixed
+- Builds made from a clone without tags reported a commit hash as their version, so updates were
+  never offered; they now report `0.0.0-dev` and are offered every release.
+
 ## [0.9.0] - 2026-10-12
 
 ### Added
@@ -139,7 +145,8 @@ Phase 1 (server, accounts, drive) is complete.
 - Blank web page caused by conflicting Content Security Policies.
 - The server no longer opens a browser tab on first launch.
 
-[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/Paul-Carouge/Alcove/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Paul-Carouge/Alcove/compare/v0.6.0...v0.7.0

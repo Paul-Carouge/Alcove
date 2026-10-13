@@ -121,3 +121,31 @@ a {
 		transition: none;
 	}
 }
+
+/* <input type="checkbox" role="switch">: a toggle switch. */
+:where(input[type='checkbox'][role='switch']) {
+	width: 2.5rem;
+	height: 1.5rem;
+	padding: 2px;
+	place-content: center start;
+	border: 0;
+	border-radius: var(--radius-full);
+	background: var(--color-border-strong);
+}
+:where(input[type='checkbox'][role='switch'])::after {
+	width: 1.25rem;
+	height: 1.25rem;
+	margin: 0;
+	border: 0;
+	border-radius: var(--radius-full);
+	background: var(--color-surface);
+	box-shadow: var(--shadow-sm);
+	transform: none;
+	transition: transform var(--duration-fast) var(--ease-emphasized);
+}
+:where(input[type='checkbox'][role='switch']:checked) {
+	background: var(--color-accent);
+}
+:where(input[type='checkbox'][role='switch']:checked)::after {
+	transform: translateX(1rem);
+}

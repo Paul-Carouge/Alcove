@@ -6,41 +6,39 @@
 	import FileIcon from '#lib/drive/FileIcon.svelte';
 	import { formatDate, formatSize } from '#lib/drive/format.js';
 	import type { DriveNode } from '#lib/drive/types.js';
+	import { search, type SearchHit } from '#lib/documents/api.js';
+	import Snippet from '#lib/documents/Snippet.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { pb } from '#lib/pb.js';
 	import Alert from '#lib/ui/Alert.svelte';
 
 	const locale = getLocale();
-	const LIMIT = 200;
 	const q = $derived(page.url.searchParams.get('q')?.trim() ?? '');
-	let results = $state<DriveNode[] | null>(null);
-	let total = $state(0);
+	let results = $state<SearchHit[] | null>(null);
 	let failed = $state(false);
 	let input = $state('');
 
+	// Names first, then documents whose text matches (ADR 0025).
 	$effect(() => {
-		const query = q;
-		input = query;
+		const query = q.slice(0, 200);
+		input = q;
 		if (!query) {
 			results = [];
 			return;
 		}
 		results = null;
-		pb.collection('nodes')
-			.getList<DriveNode>(1, LIMIT, {
-				filter: pb.filter('name ~ {:q} && trashed_at = ""', { q: query }),
-				sort: '-kind,name',
-				expand: 'parent'
-			})
-			.then((res) => {
-				if (query !== q) return;
-				results = res.items;
-				total = res.totalItems;
+		const ctrl = new AbortController();
+		search(query, ctrl.signal)
+			.then((hits) => {
+				results = hits;
 				failed = false;
 			})
-			.catch(() => (failed = true));
+			.catch((err) => {
+				if (!ctrl.signal.aborted) failed = !!err;
+			});
+		return () => ctrl.abort();
 	});
+	const inText = $derived(results?.filter((h) => h.match === 'content').length ?? 0);
 
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -81,10 +79,12 @@
 	<p class="muted">{m.search_none({ q })}</p>
 {:else if q}
 	<p class="muted" role="status">
-		{total > LIMIT ? m.search_many({ count: LIMIT, total }) : m.search_count({ count: total })}
+		{m.search_count({ count: results.length })}{#if inText}<span class="sep" aria-hidden="true"
+				>·</span
+			>{m.search_in_text_count({ count: inText })}{/if}
 	</p>
 	<ul class="results">
-		{#each results as n (n.id)}
+		{#each results as { node: n, match, snippet } (n.id)}
 			<li>
 				<FileIcon kind={n.kind} mime={n.mime} />
 				<div class="text">
@@ -93,7 +93,11 @@
 					{:else}
 						<a class="name" href={folderOf(n)}>{n.name}</a>
 					{/if}
+					{#if match === 'content' && snippet?.length}
+						<Snippet segments={snippet} />
+					{/if}
 					<span class="muted small">
+						{#if match === 'content'}<span class="badge">{m.search_found_in_text()}</span>{/if}
 						{m.search_in({ folder: parentName(n) })}
 						{#if n.kind === 'file'}· {formatSize(n.size, locale)} · {formatDate(
 								n.updated,
@@ -177,5 +181,21 @@
 	}
 	.small {
 		font-size: var(--text-xs);
+	}
+	.text {
+		gap: 2px;
+		padding: var(--space-1) 0;
+	}
+	.sep {
+		margin: 0 var(--space-1);
+	}
+	.badge {
+		display: inline-block;
+		margin-right: var(--space-1);
+		padding: 0 var(--space-2);
+		border-radius: var(--radius-full);
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
+		font-weight: var(--weight-medium);
 	}
 </style>

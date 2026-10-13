@@ -19,6 +19,8 @@ export const FRIEND_USER = { email: 'friend@e2e.test', password: 'e2e-friend-pas
 export const DUP_USER = { email: 'dups@e2e.test', password: 'e2e-dups-password-123' };
 /** Photo map. */
 export const MAP_USER = { email: 'map@e2e.test', password: 'e2e-map-password-123' };
+/** Documents: text of PDFs, text files and scans. */
+export const DOC_USER = { email: 'docs@e2e.test', password: 'e2e-docs-password-123' };
 export const FAKE_RELEASES_PORT = 8099;
 
 /** Picks an option in a Select (#lib/ui/Select.svelte) the way a pointer user would. */

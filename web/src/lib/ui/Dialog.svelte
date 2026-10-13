@@ -5,8 +5,16 @@
 		open = $bindable(false),
 		title,
 		children,
-		onclose
-	}: { open?: boolean; title: string; children: Snippet; onclose?: () => void } = $props();
+		onclose,
+		wide = false
+	}: {
+		open?: boolean;
+		title: string;
+		children: Snippet;
+		onclose?: () => void;
+		/** For reading content (e.g. a document's text) rather than a short form. */
+		wide?: boolean;
+	} = $props();
 
 	let dialog: HTMLDialogElement;
 	const uid = $props.id();
@@ -20,6 +28,7 @@
 
 <dialog
 	bind:this={dialog}
+	class:wide
 	aria-labelledby="dialog-title-{uid}"
 	onclose={() => {
 		open = false;
@@ -42,6 +51,9 @@
 		background: var(--color-surface-raised);
 		color: var(--color-text);
 		box-shadow: var(--shadow-lg);
+	}
+	dialog.wide {
+		width: min(100% - 2 * var(--space-4), 46rem);
 	}
 	dialog[open] {
 		animation: enter var(--duration-base) var(--ease-emphasized);

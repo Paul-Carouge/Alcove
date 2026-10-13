@@ -580,7 +580,7 @@
 	],
 	"search_title": "Recherche",
 	"search_title_query": "Recherche : {q}",
-	"search_placeholder": "Rechercher des fichiers",
+	"search_placeholder": "Rechercher fichiers et documents",
 	"search_none": "Aucun résultat pour « {q} ».",
 	"search_count": [
 		{
@@ -598,5 +598,70 @@
 	"account_mobile_body": "Parcourez vos photos et fichiers, et sauvegardez automatiquement les photos du téléphone. Après l’installation, saisissez l’adresse de ce serveur.",
 	"account_mobile_android": "Télécharger pour Android",
 	"account_mobile_ios": "L’app iPhone viendra plus tard. Android peut vous demander d’autoriser l’installation d’apps depuis le navigateur.",
-	"account_mobile_update": "L’app se met à jour depuis votre serveur : après une mise à jour du serveur, ouvrez Compte dans l’app."
+	"account_mobile_update": "L’app se met à jour depuis votre serveur : après une mise à jour du serveur, ouvrez Compte dans l’app.",
+	"documents_all": "Tous",
+	"documents_pdf": "PDF",
+	"documents_scans": "Scans et captures",
+	"documents_text": "Fichiers texte",
+	"documents_filter": "Afficher",
+	"documents_search": "Rechercher dans vos documents",
+	"documents_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} document",
+				"countPlural=other": "{count} documents"
+			}
+		}
+	],
+	"documents_empty_title": "Aucun document pour l’instant",
+	"documents_empty": "Les PDF, scans et fichiers texte que vous ajoutez dans Fichiers apparaissent ici, et vous pouvez rechercher les mots qu’ils contiennent.",
+	"documents_open": "Ouvrir {name}",
+	"documents_reading": "Lecture du texte…",
+	"documents_failed": "Le texte n’a pas pu être lu",
+	"documents_ocr_off": "Texte non lu : l’OCR est désactivé",
+	"documents_no_tools": "Texte non lu : les outils OCR ne sont pas installés",
+	"documents_not_read": "Texte non lu",
+	"documents_pages": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} page",
+				"countPlural=other": "{count} pages"
+			}
+		}
+	],
+	"documents_read_ocr": "lu par OCR",
+	"documents_show_text": "Texte",
+	"documents_text_title": "Texte",
+	"documents_copy": "Copier le texte",
+	"copied": "Copié",
+	"close": "Fermer",
+	"load_more": "Afficher plus",
+	"search_in_text_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} dans un document",
+				"countPlural=other": "{count} dans des documents"
+			}
+		}
+	],
+	"search_found_in_text": "Dans le texte",
+	"language_french": "français",
+	"language_english": "anglais",
+	"ocr_title": "Documents et OCR",
+	"ocr_body": "Alcove lit le texte de vos PDF et fichiers texte et, avec l’OCR, celui des scans et des captures d’écran, pour que vous puissiez les rechercher. Tout reste sur ce serveur.",
+	"ocr_pdf_text": "Texte des PDF",
+	"ocr_engine": "OCR",
+	"ocr_documents": "Documents",
+	"ocr_counts": "{ready} lus · {pending} en attente · {failed} en échec",
+	"ocr_enable": "Lire le texte des scans et des captures (OCR)",
+	"ocr_install": "Installer les outils OCR",
+	"ocr_install_body": "Environ 25 Mo, vérifiés comme une mise à jour. Français et anglais.",
+	"ocr_install_failed": "Les outils OCR n’ont pas pu être installés. Vérifiez que le serveur peut joindre GitHub, puis réessayez.",
+	"ocr_hint": "Installez les outils OCR sur cette machine, puis rechargez cette page :"
 }

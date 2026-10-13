@@ -580,7 +580,7 @@
 	],
 	"search_title": "Search",
 	"search_title_query": "Search: {q}",
-	"search_placeholder": "Search files",
+	"search_placeholder": "Search files and documents",
 	"search_none": "Nothing matches “{q}”.",
 	"search_count": [
 		{
@@ -598,5 +598,70 @@
 	"account_mobile_body": "Browse your photos and files, and back up your phone's photos automatically. After installing, enter this server's address.",
 	"account_mobile_android": "Download for Android",
 	"account_mobile_ios": "The iPhone app comes later. Android may ask you to allow installing apps from your browser.",
-	"account_mobile_update": "The app updates itself from your server: after a server update, open Account in the app."
+	"account_mobile_update": "The app updates itself from your server: after a server update, open Account in the app.",
+	"documents_all": "All",
+	"documents_pdf": "PDF",
+	"documents_scans": "Scans and screenshots",
+	"documents_text": "Text files",
+	"documents_filter": "Show",
+	"documents_search": "Search inside your documents",
+	"documents_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} document",
+				"countPlural=other": "{count} documents"
+			}
+		}
+	],
+	"documents_empty_title": "No documents yet",
+	"documents_empty": "PDFs, scans and text files you add to Files appear here, and you can search the words inside them.",
+	"documents_open": "Open {name}",
+	"documents_reading": "Reading the text…",
+	"documents_failed": "The text could not be read",
+	"documents_ocr_off": "Text not read: OCR is turned off",
+	"documents_no_tools": "Text not read: OCR tools are not installed",
+	"documents_not_read": "Text not read",
+	"documents_pages": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} page",
+				"countPlural=other": "{count} pages"
+			}
+		}
+	],
+	"documents_read_ocr": "read by OCR",
+	"documents_show_text": "Text",
+	"documents_text_title": "Text",
+	"documents_copy": "Copy the text",
+	"copied": "Copied",
+	"close": "Close",
+	"load_more": "Show more",
+	"search_in_text_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} inside a document",
+				"countPlural=other": "{count} inside documents"
+			}
+		}
+	],
+	"search_found_in_text": "In the text",
+	"language_french": "French",
+	"language_english": "English",
+	"ocr_title": "Documents and OCR",
+	"ocr_body": "Alcove reads the text of your PDFs and text files, and with OCR the text of scans and screenshots, so you can search them. Everything stays on this server.",
+	"ocr_pdf_text": "PDF text",
+	"ocr_engine": "OCR",
+	"ocr_documents": "Documents",
+	"ocr_counts": "{ready} read · {pending} waiting · {failed} failed",
+	"ocr_enable": "Read the text of scans and screenshots (OCR)",
+	"ocr_install": "Install the OCR tools",
+	"ocr_install_body": "About 25 MB, verified like an update. French and English.",
+	"ocr_install_failed": "The OCR tools could not be installed. Check that the server can reach GitHub, then try again.",
+	"ocr_hint": "Install the OCR tools on this machine, then reload this page:"
 }

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Check, Copy, Map as MapIcon, RefreshCw, Server } from '@lucide/svelte';
+	import { Check, Copy, Map as MapIcon, RefreshCw, ScanText, Server } from '@lucide/svelte';
 	import { AdminError, applyUpdate, checkUpdates, waitForVersion } from '#lib/admin/api.js';
 	import { renderNotes } from '#lib/admin/markdown.js';
 	import { system } from '#lib/admin/system.svelte.js';
 	import { session } from '#lib/auth/session.svelte.js';
+	import { getOCR, installOCR, setOCR, type OCRStatus } from '#lib/documents/api.js';
 	import { formatDateTime } from '#lib/drive/format.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
@@ -47,6 +48,50 @@
 		} finally {
 			osmSaving = false;
 		}
+	}
+
+	// Documents and OCR (ADR 0025).
+	let ocr = $state<OCRStatus | null>(null);
+	let ocrBusy = $state<'saving' | 'installing' | null>(null);
+	let ocrError = $state('');
+	let hintCopied = $state(false);
+	const canOCR = $derived(!!ocr?.tools.tesseract && (ocr?.tools.languages.length ?? 0) > 0);
+	const languageNames: Record<string, () => string> = {
+		fra: m.language_french,
+		eng: m.language_english
+	};
+	$effect(() => {
+		if (session.isAdmin)
+			getOCR()
+				.then((s) => (ocr = s))
+				.catch(() => {});
+	});
+	async function toggleOCR(on: boolean) {
+		ocrBusy = 'saving';
+		ocrError = '';
+		try {
+			ocr = await setOCR(on);
+		} catch {
+			ocrError = m.error_unexpected();
+		} finally {
+			ocrBusy = null;
+		}
+	}
+	async function installTools() {
+		ocrBusy = 'installing';
+		ocrError = '';
+		try {
+			ocr = await installOCR();
+		} catch {
+			ocrError = m.ocr_install_failed();
+		} finally {
+			ocrBusy = null;
+		}
+	}
+	async function copyHint() {
+		if (!ocr?.hint) return;
+		await navigator.clipboard.writeText(ocr.hint);
+		hintCopied = true;
 	}
 
 	async function check() {
@@ -126,6 +171,76 @@
 				{m.admin_map_osm()}
 			</label>
 			<p class="hint">{m.admin_map_body()}</p>
+		</div>
+	</section>
+
+	<section class="card" aria-labelledby="ocr-title">
+		<div class="icon" class:accent={canOCR && ocr?.enabled} aria-hidden="true">
+			<ScanText size={22} />
+		</div>
+		<div class="body">
+			<h2 id="ocr-title">{m.ocr_title()}</h2>
+			{#if !ocr}
+				<p class="muted small">{m.loading()}</p>
+			{:else}
+				<p class="hint">{m.ocr_body()}</p>
+				<dl>
+					<dt>{m.ocr_pdf_text()}</dt>
+					<dd class:warn={!ocr.tools.pdfText}>
+						{ocr.tools.pdfText ? m.system_available() : m.system_missing()}
+					</dd>
+					<dt>{m.ocr_engine()}</dt>
+					<dd class:warn={!canOCR}>
+						{#if canOCR}
+							Tesseract {ocr.tools.tesseract} ({ocr.tools.languages
+								.map((l) => languageNames[l]?.() ?? l)
+								.join(', ')})
+						{:else}
+							{m.system_missing()}
+						{/if}
+					</dd>
+					<dt>{m.ocr_documents()}</dt>
+					<dd>
+						{m.ocr_counts({
+							ready: ocr.counts.ready,
+							pending: ocr.counts.pending,
+							failed: ocr.counts.failed
+						})}
+					</dd>
+				</dl>
+				{#if canOCR}
+					<label class="switch">
+						<input
+							type="checkbox"
+							role="switch"
+							checked={ocr.enabled}
+							disabled={ocrBusy !== null}
+							onchange={(e) => toggleOCR(e.currentTarget.checked)}
+						/>
+						{m.ocr_enable()}
+					</label>
+				{:else if ocr.canInstall}
+					<div>
+						<Button onclick={installTools} loading={ocrBusy === 'installing'}>
+							{m.ocr_install()}
+						</Button>
+					</div>
+					<p class="muted small">{m.ocr_install_body()}</p>
+				{:else if ocr.hint}
+					<p class="muted small">{m.ocr_hint()}</p>
+					<div class="command">
+						<code>{ocr.hint}</code>
+						<Button variant="secondary" onclick={copyHint}>
+							{#if hintCopied}<Check size={16} aria-hidden="true" />{:else}<Copy
+									size={16}
+									aria-hidden="true"
+								/>{/if}
+							{m.system_copy()}
+						</Button>
+					</div>
+				{/if}
+				{#if ocrError}<Alert>{ocrError}</Alert>{/if}
+			{/if}
 		</div>
 	</section>
 
@@ -218,11 +333,6 @@
 		gap: var(--space-2);
 		min-height: 2.75rem;
 		font-weight: var(--weight-medium);
-	}
-	.switch input {
-		width: 1.25rem;
-		height: 1.25rem;
-		accent-color: var(--color-accent);
 	}
 	.hint {
 		margin: var(--space-1) 0 0;

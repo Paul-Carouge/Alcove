@@ -7,6 +7,26 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-10-13
+
+### Added
+- **Documents**: Alcove reads the text of your PDFs and text files and, with OCR, of scanned PDFs and
+  screenshots (images without camera information), so you can search them. A **Documents** page lists them
+  with an excerpt, filters, a live reading status and the full text ready to copy
+  ([ADR 0025](docs/adr/0025-documents-and-ocr.md)).
+- **Search inside documents**, on the web and in the mobile app (new search screen in Files): file and
+  folder names first, then documents whose text matches, with the matching words highlighted. Accents and
+  case are ignored; words match as prefixes. `GET /api/v1/search`.
+- **OCR tools shipped like ffmpeg**: Tesseract (French and English) and poppler. `alcove install` offers a
+  signed bundle on Linux (about 25 MB, `--no-ocr` to skip), updates keep it current, administrators can
+  install it from the System page, and the Docker image includes it. Homebrew or winget on macOS and Windows.
+- System page: a Documents and OCR card (tools, progress, turn OCR off). `alcove status` shows the OCR tools.
+
+### Changed
+- Web: dropdowns (language, photo filters, album roles) are drawn by Alcove instead of the browser, with
+  full keyboard support; checkboxes, radio buttons and switches use the design tokens.
+- The ffmpeg bundle installer became a generic tool-bundle installer (no change for existing installs).
+
 ## [0.19.0] - 2026-10-12
 
 ### Added

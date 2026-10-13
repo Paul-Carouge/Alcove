@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.20.0](2026-10-13-v0.20.0.md) | 2026-10-13 | Finding the words |
 | [0.19.0](2026-10-12-v0.19.0.md) | 2026-10-12 | An app that keeps up |
 | [0.18.1](2026-10-12-v0.18.1.md) | 2026-10-12 | Real photos, real bugs |
 | [0.18.0](2026-10-12-v0.18.0.md) | 2026-10-12 | An app you can just install |

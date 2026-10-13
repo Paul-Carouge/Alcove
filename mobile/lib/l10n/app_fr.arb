@@ -110,5 +110,12 @@
   "updateFailed": "Le téléchargement a échoué. Vérifiez votre connexion et réessayez.",
   "updateNow": "Mettre à jour",
   "updateInstall": "Installer",
-  "backupSettings": "Réglages"
+  "backupSettings": "Réglages",
+  "searchTitle": "Recherche",
+  "searchHint": "Fichiers et documents",
+  "searchClear": "Effacer",
+  "searchPrompt": "Cherchez un nom de fichier ou un mot dans vos PDF, scans et notes.",
+  "searchNone": "Aucun résultat pour « {q} ».",
+  "searchByName": "Fichiers et dossiers",
+  "searchInText": "Dans les documents"
 }

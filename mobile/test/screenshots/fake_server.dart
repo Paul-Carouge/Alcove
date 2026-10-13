@@ -103,6 +103,41 @@ http.Response fakeAlcove(http.Request req) {
       ],
     });
   }
+  if (path == '/api/v1/search') {
+    Map<String, dynamic> node(String id, String name, String kind, String mime) => {
+      'id': id,
+      'collectionId': 'nodes',
+      'collectionName': 'nodes',
+      'name': name,
+      'kind': kind,
+      'mime': mime,
+      'size': 384000,
+      'updated': '2026-10-03 10:00:00.000Z',
+    };
+    return _json({
+      'items': [
+        {'node': node('d9', 'Factures', 'folder', ''), 'match': 'name'},
+        {
+          'node': node('f1', 'Contrat de location.pdf', 'file', 'application/pdf'),
+          'match': 'content',
+          'snippet': [
+            {'text': '…Le montant de la '},
+            {'text': 'facture', 'hit': true},
+            {'text': ' d’électricité est inclus dans les charges…'},
+          ],
+        },
+        {
+          'node': node('f7', 'Capture 2026-03-02.png', 'file', 'image/png'),
+          'match': 'content',
+          'snippet': [
+            {'text': '…'},
+            {'text': 'Facture', 'hit': true},
+            {'text': ' numéro 2024-117 · Montant total : 84,20 euros…'},
+          ],
+        },
+      ],
+    });
+  }
   if (path == '/api/collections/nodes/records') {
     return _json({
       'page': 1,

@@ -14,6 +14,7 @@ import 'package:alcove/features/home/home_screen.dart';
 import 'package:alcove/features/login/login_screen.dart';
 import 'package:alcove/features/photos/media.dart';
 import 'package:alcove/features/photos/photo_viewer.dart';
+import 'package:alcove/features/search/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -133,6 +134,14 @@ void main() {
         ),
       );
       await shoot(tester, 'viewer-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('search $suffix', (tester) async {
+      await pump(tester, (s) => SearchScreen(session: s));
+      await tester.enterText(find.byType(TextField), 'facture');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await shoot(tester, 'search-$suffix');
     }, skip: skipShots != false);
 
     testWidgets('login $suffix', (tester) async {

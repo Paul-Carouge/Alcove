@@ -258,5 +258,19 @@
   "updateFailed": "The download failed. Check your connection and try again.",
   "updateNow": "Update now",
   "updateInstall": "Install",
-  "backupSettings": "Settings"
+  "backupSettings": "Settings",
+  "searchTitle": "Search",
+  "searchHint": "Files and documents",
+  "searchClear": "Clear",
+  "searchPrompt": "Search a file name, or a word inside your PDFs, scans and notes.",
+  "searchNone": "Nothing matches “{q}”.",
+  "@searchNone": {
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "searchByName": "Files and folders",
+  "searchInText": "Inside documents"
 }

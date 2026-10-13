@@ -9,6 +9,7 @@ import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
+import '../search/search_screen.dart';
 
 /// Browses the drive: folders first, then files, by name. Files open in the system browser,
 /// which downloads or shows them.
@@ -65,28 +66,7 @@ class _FilesScreenState extends State<FilesScreen> {
     }
   }
 
-  Future<void> _open(RecordModel node) async {
-    if (node.getStringValue('kind') == 'folder') {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => FilesScreen(session: widget.session, folder: node),
-        ),
-      );
-      return;
-    }
-    final l = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      final token = await widget.session.fileToken();
-      final url = widget.session.pb.buildURL(
-        '/api/v1/nodes/${Uri.encodeComponent(node.id)}/download',
-        {'token': token, 'inline': '1'},
-      );
-      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) throw StateError('launch');
-    } catch (_) {
-      messenger.showSnackBar(SnackBar(content: Text(l.fileCannotOpen)));
-    }
-  }
+  Future<void> _open(RecordModel node) => openNode(context, widget.session, node);
 
   String _token = '';
 
@@ -133,7 +113,7 @@ class _FilesScreenState extends State<FilesScreen> {
           child: InsetGroup(
             children: [
               for (final n in nodes)
-                _NodeRow(
+                NodeRow(
                   node: n,
                   locale: locale,
                   thumb: _thumb(n),
@@ -150,7 +130,18 @@ class _FilesScreenState extends State<FilesScreen> {
         edgeOffset: 120,
         child: CustomScrollView(
           slivers: [
-            LargeTitleAppBar(title: title),
+            LargeTitleAppBar(
+              title: title,
+              actions: [
+                IconButton(
+                  tooltip: AppLocalizations.of(context).searchTitle,
+                  icon: const Icon(Icons.search),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => SearchScreen(session: widget.session)),
+                  ),
+                ),
+              ],
+            ),
             ...content,
             const SliverToBoxAdapter(child: SizedBox(height: AlcoveSpace.s6)),
           ],
@@ -160,40 +151,72 @@ class _FilesScreenState extends State<FilesScreen> {
     );
   }
 
-  Uri? _thumb(RecordModel n) {
-    final mime = n.getStringValue('mime');
-    final blob = n.getStringValue('blob');
-    if (_token.isEmpty || blob.isEmpty) return null;
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].contains(mime.split(';').first)) {
-      return null;
-    }
-    return widget.session.pb.files.getURL(n, blob, thumb: '96x96', token: _token);
-  }
+  Uri? _thumb(RecordModel n) => nodeThumb(widget.session, n, _token);
+}
 
-  static String _size(int bytes, String locale) {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    var v = bytes.toDouble();
-    var u = 0;
-    while (v >= 1000 && u < units.length - 1) {
-      v /= 1000;
-      u++;
-    }
-    return '${NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: u == 0 ? 0 : 1).format(v)} ${units[u]}';
+/// A small thumbnail URL for images the server can resize, or null.
+Uri? nodeThumb(Session session, RecordModel n, String token) {
+  final mime = n.getStringValue('mime');
+  final blob = n.getStringValue('blob');
+  if (token.isEmpty || blob.isEmpty) return null;
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].contains(mime.split(';').first)) {
+    return null;
+  }
+  return session.pb.files.getURL(n, blob, thumb: '96x96', token: token);
+}
+
+/// A file size for people: 1.2 MB.
+String formatSize(int bytes, String locale) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  var v = bytes.toDouble();
+  var u = 0;
+  while (v >= 1000 && u < units.length - 1) {
+    v /= 1000;
+    u++;
+  }
+  return '${NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: u == 0 ? 0 : 1).format(v)} ${units[u]}';
+}
+
+/// Opens a folder in a new Files screen, or a file in the system browser (which shows or downloads it).
+Future<void> openNode(BuildContext context, Session session, RecordModel node) async {
+  if (node.getStringValue('kind') == 'folder') {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FilesScreen(session: session, folder: node),
+      ),
+    );
+    return;
+  }
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final token = await session.fileToken();
+    final url = session.pb.buildURL('/api/v1/nodes/${Uri.encodeComponent(node.id)}/download', {
+      'token': token,
+      'inline': '1',
+    });
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) throw StateError('launch');
+  } catch (_) {
+    messenger.showSnackBar(SnackBar(content: Text(l.fileCannotOpen)));
   }
 }
 
-class _NodeRow extends StatelessWidget {
-  const _NodeRow({
+/// One file or folder in a grouped list; [below] replaces the size and date line (search snippets).
+class NodeRow extends StatelessWidget {
+  const NodeRow({
+    super.key,
     required this.node,
     required this.locale,
     required this.thumb,
     required this.onTap,
+    this.below,
   });
 
   final RecordModel node;
   final String locale;
   final Uri? thumb;
   final VoidCallback onTap;
+  final Widget? below;
 
   @override
   Widget build(BuildContext context) {
@@ -241,11 +264,14 @@ class _NodeRow extends StatelessWidget {
                       fontWeight: AlcoveFont.medium,
                     ),
                   ),
-                  if (!folder) ...[
+                  if (below != null) ...[
+                    const SizedBox(height: 2),
+                    below!,
+                  ] else if (!folder) ...[
                     const SizedBox(height: 2),
                     Text(
                       [
-                        _FilesScreenState._size(node.getIntValue('size'), locale),
+                        formatSize(node.getIntValue('size'), locale),
                         if (updated != null) DateFormat.yMMMd(locale).format(updated.toLocal()),
                       ].join(' · '),
                       style: TextStyle(fontSize: AlcoveFont.sizeSm, color: c.textMuted),

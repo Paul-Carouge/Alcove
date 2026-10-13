@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/drive.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
@@ -10,16 +15,21 @@ import '../../theme/tokens.g.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import '../search/search_screen.dart';
+import 'file_actions.dart';
 
 /// Browses the drive: folders first, then files, by name. Files open in the system browser,
-/// which downloads or shows them.
+/// which downloads or shows them. With an [uploads] queue, files can be added, renamed, moved and
+/// moved to the trash.
 class FilesScreen extends StatefulWidget {
-  const FilesScreen({super.key, required this.session, this.folder});
+  const FilesScreen({super.key, required this.session, this.folder, this.uploads});
 
   final Session session;
 
   /// null for the root ("My files").
   final RecordModel? folder;
+
+  /// The app's upload queue; null for a read-only browser.
+  final UploadQueue? uploads;
 
   @override
   State<FilesScreen> createState() => _FilesScreenState();
@@ -28,11 +38,102 @@ class FilesScreen extends StatefulWidget {
 class _FilesScreenState extends State<FilesScreen> {
   List<RecordModel>? _nodes;
   bool _failed = false;
+  late final Drive _drive = Drive(widget.session);
+  StreamSubscription<String>? _arrivals;
+
+  String get _here => widget.folder?.id ?? '';
 
   @override
   void initState() {
     super.initState();
     _load();
+    // A file sent to this folder: show it.
+    _arrivals = widget.uploads?.completed.listen((parent) {
+      if (parent == _here) _load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _arrivals?.cancel();
+    super.dispose();
+  }
+
+  void _snack(String text, {SnackBarAction? action}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text), action: action));
+  }
+
+  Future<void> _add() async {
+    final l = AppLocalizations.of(context);
+    final uploads = widget.uploads!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final action = await showAddSheet(context, canScan: Platform.isAndroid);
+    if (!mounted || action == null) return;
+    try {
+      switch (action) {
+        case AddAction.folder:
+          final name = await askName(context, title: l.newFolder, action: l.create);
+          if (name == null) return;
+          await _drive.createFolder(_here, name);
+          await _load();
+        case AddAction.upload:
+          final items = await pickUploads(_here);
+          if (items.isNotEmpty) uploads.add(items);
+        case AddAction.scan:
+          final item = await scanDocument(_here, locale);
+          if (item != null) uploads.add([item]);
+      }
+    } on PlatformException {
+      if (mounted) _snack(action == AddAction.scan ? l.scanUnavailable : l.errorUnexpected);
+    } catch (e) {
+      if (mounted) _snack(errorMessage(context, e));
+    }
+  }
+
+  Future<void> _actions(RecordModel node) async {
+    final l = AppLocalizations.of(context);
+    final action = await showNodeSheet(context, node);
+    if (!mounted || action == null) return;
+    final name = node.getStringValue('name');
+    try {
+      switch (action) {
+        case NodeAction.rename:
+          final next = await askName(context, title: l.rename, action: l.save, initial: name);
+          if (next == null || next == name) return;
+          await _drive.rename(node.id, next);
+          await _load();
+        case NodeAction.move:
+          final to = await pickFolder(context, _drive, node);
+          if (to == null) return;
+          await _drive.move(node.id, to);
+          final folder = to.isEmpty
+              ? l.myFiles
+              : (await widget.session.pb.collection('nodes').getOne(to)).getStringValue('name');
+          await _load();
+          if (mounted) _snack(l.movedTo(folder));
+        case NodeAction.trash:
+          await _drive.trash(node.id);
+          setState(() => _nodes = _nodes?.where((n) => n.id != node.id).toList());
+          if (!mounted) return;
+          _snack(
+            l.trashed(name),
+            action: SnackBarAction(
+              label: l.undo,
+              onPressed: () async {
+                try {
+                  await _drive.restore(node.id);
+                } finally {
+                  await _load();
+                }
+              },
+            ),
+          );
+      }
+    } catch (e) {
+      if (mounted) _snack(errorMessage(context, e));
+    }
   }
 
   Future<void> _load() async {
@@ -66,7 +167,8 @@ class _FilesScreenState extends State<FilesScreen> {
     }
   }
 
-  Future<void> _open(RecordModel node) => openNode(context, widget.session, node);
+  Future<void> _open(RecordModel node) =>
+      openNode(context, widget.session, node, uploads: widget.uploads);
 
   String _token = '';
 
@@ -118,6 +220,7 @@ class _FilesScreenState extends State<FilesScreen> {
                   locale: locale,
                   thumb: _thumb(n),
                   onTap: () => _open(n),
+                  onMore: widget.uploads == null ? null : () => _actions(n),
                 ),
             ],
           ),
@@ -148,6 +251,15 @@ class _FilesScreenState extends State<FilesScreen> {
         ),
       ),
       backgroundColor: colors.bg,
+      floatingActionButton: widget.uploads == null
+          ? null
+          : FloatingActionButton(
+              key: const Key('addButton'),
+              tooltip: l.addTooltip,
+              onPressed: _add,
+              child: const Icon(Icons.add),
+            ),
+      bottomNavigationBar: widget.uploads == null ? null : UploadBanner(queue: widget.uploads!),
     );
   }
 
@@ -178,11 +290,16 @@ String formatSize(int bytes, String locale) {
 }
 
 /// Opens a folder in a new Files screen, or a file in the system browser (which shows or downloads it).
-Future<void> openNode(BuildContext context, Session session, RecordModel node) async {
+Future<void> openNode(
+  BuildContext context,
+  Session session,
+  RecordModel node, {
+  UploadQueue? uploads,
+}) async {
   if (node.getStringValue('kind') == 'folder') {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => FilesScreen(session: session, folder: node),
+        builder: (_) => FilesScreen(session: session, folder: node, uploads: uploads),
       ),
     );
     return;
@@ -210,6 +327,7 @@ class NodeRow extends StatelessWidget {
     required this.thumb,
     required this.onTap,
     this.below,
+    this.onMore,
   });
 
   final RecordModel node;
@@ -217,6 +335,9 @@ class NodeRow extends StatelessWidget {
   final Uri? thumb;
   final VoidCallback onTap;
   final Widget? below;
+
+  /// Opens the actions of this file or folder (also on long press).
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +356,7 @@ class NodeRow extends StatelessWidget {
           };
     return InkWell(
       onTap: onTap,
+      onLongPress: onMore,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s4, vertical: AlcoveSpace.s3),
         child: Row(
@@ -280,7 +402,14 @@ class NodeRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (folder) Icon(Icons.chevron_right, color: c.textMuted),
+            if (onMore != null)
+              IconButton(
+                tooltip: AppLocalizations.of(context).moreActions(node.getStringValue('name')),
+                icon: Icon(Icons.more_vert, color: c.textMuted),
+                onPressed: onMore,
+              )
+            else if (folder)
+              Icon(Icons.chevron_right, color: c.textMuted),
           ],
         ),
       ),

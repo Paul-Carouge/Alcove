@@ -272,5 +272,75 @@
     }
   },
   "searchByName": "Files and folders",
-  "searchInText": "Inside documents"
+  "searchInText": "Inside documents",
+  "addTooltip": "Add",
+  "newFolder": "New folder",
+  "create": "Create",
+  "save": "Save",
+  "nameLabel": "Name",
+  "nameInvalid": "A name cannot contain “/” or be only dots.",
+  "nameTooLong": "This name is too long (255 characters at most).",
+  "uploadFiles": "Send files",
+  "uploadFilesHint": "From this phone: documents, music, anything",
+  "scanDocument": "Scan a document",
+  "scanDocumentHint": "Pages become one PDF; its text is read on your server",
+  "scanUnavailable": "Scanning needs Google Play services on this phone.",
+  "rename": "Rename",
+  "move": "Move",
+  "moveHere": "Move here",
+  "alreadyHere": "Already in this folder",
+  "noSubfolders": "No folders here",
+  "movedTo": "Moved to “{folder}”",
+  "@movedTo": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "trashed": "“{name}” moved to the trash",
+  "@trashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "undo": "Undo",
+  "uploading": "Sending {current} of {total}",
+  "@uploading": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploaded": "{count, plural, =1{1 file sent} other{{count} files sent}}",
+  "@uploaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadsFailed": "{count, plural, =1{1 file could not be sent} other{{count} files could not be sent}}",
+  "@uploadsFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadsDoneHint": "They are in this folder",
+  "moreActions": "More actions for {name}",
+  "@moreActions": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

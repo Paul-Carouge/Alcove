@@ -61,6 +61,7 @@ import from the mobile camera.
 - **v0.15** ✅ sign-in with two-factor, photo timeline and viewer (videos, favorites, details), file browser.
 - **v0.16** ✅ automatic photo/video backup (originals, deduplicated, resumable; background on Android).
 - **v0.18** ✅ signed Android APK in every release, albums on mobile, trash from the mobile viewer.
+- **v0.19–0.21** ✅ redesign, in-app updates, search, file management, sending files and scanning documents.
 - Next: iPhone (TestFlight, background backup) when an Apple Developer account exists; Play Store.
 
 Full scope: mobile login, drive browser, viewer, offline favorites, **automatic photo/video backup** (background

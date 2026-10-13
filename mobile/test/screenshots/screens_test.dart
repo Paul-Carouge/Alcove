@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:alcove/core/app_update.dart';
+import 'package:alcove/core/drive.dart';
 import 'package:alcove/core/secure_store.dart';
 import 'package:alcove/core/server_checker.dart';
 import 'package:alcove/core/session.dart';
@@ -10,6 +11,7 @@ import 'package:alcove/features/backup/backup_screen.dart';
 import 'package:alcove/features/backup/backup_state.dart';
 import 'package:alcove/features/backup/library.dart';
 import 'package:alcove/features/connect/connect_screen.dart';
+import 'package:alcove/features/files/files_screen.dart';
 import 'package:alcove/features/home/home_screen.dart';
 import 'package:alcove/features/login/login_screen.dart';
 import 'package:alcove/features/photos/media.dart';
@@ -134,6 +136,39 @@ void main() {
         ),
       );
       await shoot(tester, 'viewer-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('uploads $suffix', (tester) async {
+      await pump(tester, (s) {
+        final queue = UploadQueue(s);
+        queue.items.addAll([
+          UploadItem(
+            name: 'Relevé de compte.pdf',
+            parent: '',
+            open: () => throw UnimplementedError(),
+          )..status = UploadStatus.done,
+          UploadItem(
+              name: 'Scan 2026-10-13 14.32.pdf',
+              parent: '',
+              open: () => throw UnimplementedError(),
+            )
+            ..status = UploadStatus.uploading
+            ..sent = 620000
+            ..total = 1000000,
+          UploadItem(name: 'Notes.txt', parent: '', open: () => throw UnimplementedError()),
+        ]);
+        return FilesScreen(session: s, uploads: queue);
+      });
+      await shoot(tester, 'uploads-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('add $suffix', (tester) async {
+      await pump(tester, (s) => FilesScreen(session: s, uploads: UploadQueue(s)));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('addButton')));
+      await shoot(tester, 'add-$suffix');
     }, skip: skipShots != false);
 
     testWidgets('search $suffix', (tester) async {

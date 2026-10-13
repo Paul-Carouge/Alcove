@@ -30,5 +30,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0023](0023-android-distribution.md) | Android app: signed APK in every release, http on private networks | Accepted |
 | [0024](0024-in-app-updates.md) | Mobile app updates itself from its server | Accepted |
 | [0025](0025-documents-and-ocr.md) | Documents: text extraction and OCR shipped like ffmpeg | Accepted |
+| [0026](0026-mobile-files-and-scanning.md) | Mobile: sending files with the system picker, scanning with ML Kit | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

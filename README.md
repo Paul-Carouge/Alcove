@@ -46,7 +46,9 @@ every option, backups, Tailscale and reverse proxies.
 
 Android and iOS (Flutter). On first launch you enter your server's address; the app checks that it is
 compatible, then you sign in (two-factor included), browse your photos, videos and files, and turn on
-**automatic photo backup** (original quality, no duplicates, Wi-Fi only if you want).
+**automatic photo backup** (original quality, no duplicates, Wi-Fi only if you want). In Files you can send
+files from the phone, **scan documents** into PDFs (read by OCR on your server), create folders, rename,
+move, trash and search inside documents.
 
 **Android:** download `alcove-android.apk` from the [latest release](https://github.com/Paul-Carouge/Alcove/releases/latest)
 (or from the web app: Account → Alcove on your phone). It then **updates itself from your server**: update
@@ -61,7 +63,7 @@ Alcove and phones offer the matching version at their next launch. The iPhone ap
 | – | One-command install and signed updates | ✅ v0.9 |
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters and map done |
 | 3 | Documents (OCR, full-text search) | 🚧 PDF text, OCR of scans and screenshots, full-text search done |
-| 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, albums, files, automatic backup and in-app updates done |
+| 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, albums, file management, scanning, automatic backup and in-app updates done |
 | 5 | Notes, calendar (CalDAV), contacts (CardDAV) | |
 | 6 | Desktop app with folder sync | |
 

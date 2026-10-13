@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/app_update.dart';
+import '../../core/drive.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../account/account_screen.dart';
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _tab = 0;
   BackupController? _backup;
   late final AppUpdater _updater = AppUpdater(session: widget.session);
+  late final UploadQueue _uploads = UploadQueue(widget.session);
 
   @override
   void initState() {
@@ -70,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _backup?.cancel();
     _updater.dispose();
+    _uploads.dispose();
     super.dispose();
   }
 
@@ -95,8 +98,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           // Each tab keeps its own navigation stack (folders, albums).
           Navigator(
-            onGenerateRoute: (_) =>
-                MaterialPageRoute<void>(builder: (_) => FilesScreen(session: widget.session)),
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (_) => FilesScreen(session: widget.session, uploads: _uploads),
+            ),
           ),
           AccountScreen(
             session: widget.session,

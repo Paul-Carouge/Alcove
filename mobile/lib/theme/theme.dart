@@ -162,6 +162,15 @@ ThemeData buildTheme(Brightness brightness) {
       linearTrackColor: c.accentSubtle,
       circularTrackColor: c.accentSubtle,
     ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: c.accent,
+      foregroundColor: c.accentContrast,
+      elevation: 2,
+      focusElevation: 3,
+      hoverElevation: 3,
+      highlightElevation: 4,
+      shape: const RoundedRectangleBorder(borderRadius: radiusLg),
+    ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: c.text,

@@ -11,6 +11,14 @@
 	const items = $derived(uploads.items);
 	const done = $derived(items.filter((i) => i.status === 'done').length);
 	const finished = $derived(items.some((i) => i.status !== 'queued' && i.status !== 'uploading'));
+	const allDone = $derived(items.length > 0 && done === items.length);
+
+	// Everything arrived: fold the panel after a moment so it stops covering the page.
+	$effect(() => {
+		if (!allDone) return;
+		const t = setTimeout(() => (collapsed = true), 2500);
+		return () => clearTimeout(t);
+	});
 
 	const statusText = (i: UploadItem) =>
 		({
@@ -41,6 +49,15 @@
 						aria-hidden="true"
 					/>{/if}
 			</button>
+			{#if collapsed && finished}
+				<button
+					class="icon-btn"
+					aria-label={m.uploads_clear()}
+					onclick={() => uploads.clearFinished()}
+				>
+					<X size={18} aria-hidden="true" />
+				</button>
+			{/if}
 		</header>
 
 		{#if !collapsed}

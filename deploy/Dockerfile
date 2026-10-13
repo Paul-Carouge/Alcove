@@ -31,9 +31,10 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
       -o /out/alcove . \
  && mkdir -p /out/data
 
-# --- 3. Runtime: small Alpine with ffmpeg (ADR 0016), non-root ---
+# --- 3. Runtime: small Alpine with ffmpeg (ADR 0016) and the OCR tools (ADR 0025), non-root ---
 FROM alpine:3.24
-RUN apk add --no-cache ffmpeg ca-certificates tzdata \
+RUN apk add --no-cache ffmpeg tesseract-ocr tesseract-ocr-data-fra tesseract-ocr-data-eng poppler-utils \
+    ca-certificates tzdata \
  && addgroup -S -g 65532 nonroot && adduser -S -D -H -u 65532 -G nonroot nonroot
 COPY --from=server /out/alcove /alcove
 COPY --from=server --chown=nonroot:nonroot /out/data /data

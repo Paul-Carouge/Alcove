@@ -21,7 +21,7 @@ jobs:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
       - run: pnpm install --frozen-lockfile
-      # The Linux ffmpeg bundles are built from Alpine packages for each architecture.
+      # The Linux ffmpeg and OCR bundles are built from Alpine packages for each architecture.
       - uses: docker/setup-qemu-action@v3
       - name: Build, checksum and sign archives for every platform
         env:

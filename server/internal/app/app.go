@@ -3,6 +3,9 @@
 package app
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/pocketbase/pocketbase/core"
 
 	"github.com/Paul-Carouge/Alcove/server/internal/accounts"
@@ -10,6 +13,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/appdist"
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
+	"github.com/Paul-Carouge/Alcove/server/internal/docs"
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
 	"github.com/Paul-Carouge/Alcove/server/internal/duplicates"
 	"github.com/Paul-Carouge/Alcove/server/internal/health"
@@ -17,6 +21,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/media"
 	"github.com/Paul-Carouge/Alcove/server/internal/secrets"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
+	"github.com/Paul-Carouge/Alcove/server/internal/service"
 	"github.com/Paul-Carouge/Alcove/server/internal/setup"
 	"github.com/Paul-Carouge/Alcove/server/internal/shares"
 	"github.com/Paul-Carouge/Alcove/server/internal/totp"
@@ -42,11 +47,33 @@ func Wire(app core.App, cfg config.Config) {
 	totp.Register(app, secrets.New(app, cfg.SecretKey))
 	updateOpts := updates.FromConfig(cfg)
 	updates.Register(app, updateOpts)
-	if releases, err := updater.New(updateOpts.APIBase, buildinfo.Repo, buildinfo.ReleasePublicKey); err == nil {
+	releases, err := updater.New(updateOpts.APIBase, buildinfo.Repo, buildinfo.ReleasePublicKey)
+	if err == nil {
 		appdist.Register(app, releases, buildinfo.Version)
 	}
+	documents := docs.Register(app, docs.Options{
+		Releases: releases,
+		Version:  buildinfo.Version,
+		Binary:   executable(),
+		Docker:   updateOpts.Mode == "docker",
+		CanInstall: func() bool {
+			return updateOpts.Mode == "native" && os.Getenv(service.EnvInstalled) != ""
+		},
+	})
 	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
-	// Optional modules from ALCOVE_MODULES (ocr, faces) are not implemented yet.
-	health.Register(app, []string{drive.Module, media.Module})
+	// Face recognition (ALCOVE_MODULES=faces) is not implemented yet.
+	health.Register(app, []string{drive.Module, media.Module}, documents.Modules)
 	webui.Register(app)
+}
+
+// executable is the running binary with symlinks resolved, or "" when unknown.
+func executable() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	if exe, err = filepath.EvalSymlinks(exe); err != nil {
+		return ""
+	}
+	return exe
 }

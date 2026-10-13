@@ -252,6 +252,12 @@ class ApiClient {
           return MediaFiles.fromJson(value);
         case 'Module':
           return ModuleTypeTransformer().decode(value);
+        case 'OCRStatus':
+          return OCRStatus.fromJson(value);
+        case 'OCRStatusCounts':
+          return OCRStatusCounts.fromJson(value);
+        case 'OCRStatusTools':
+          return OCRStatusTools.fromJson(value);
         case 'Person':
           return Person.fromJson(value);
         case 'PublicMedia':
@@ -264,10 +270,18 @@ class ApiClient {
           return PublicShareAlbum.fromJson(value);
         case 'RecoveryCodes':
           return RecoveryCodes.fromJson(value);
+        case 'Search200Response':
+          return Search200Response.fromJson(value);
+        case 'SearchHit':
+          return SearchHit.fromJson(value);
+        case 'SearchHitSnippetInner':
+          return SearchHitSnippetInner.fromJson(value);
         case 'SetFavoriteRequest':
           return SetFavoriteRequest.fromJson(value);
         case 'SetMapTilesRequest':
           return SetMapTilesRequest.fromJson(value);
+        case 'SetOCRRequest':
+          return SetOCRRequest.fromJson(value);
         case 'SetupStatus':
           return SetupStatus.fromJson(value);
         case 'SetupStatusStorage':

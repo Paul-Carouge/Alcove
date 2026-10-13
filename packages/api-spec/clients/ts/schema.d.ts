@@ -749,6 +749,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Find your files and folders by name, then documents by their text.
+     * @description Name matches (substring, folders first) come first, then documents whose text contains every
+     *     word as a prefix, accents and case ignored, best matches first. Trashed items are left out.
+     */
+    get: operations["search"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/ocr": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** OCR status, installed tools and document counts. */
+    get: operations["getOCR"];
+    /** Turn OCR of scans and images on or off (on by default when the tools are installed). */
+    put: operations["setOCR"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/ocr/install": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Install the OCR tools of this server's release (native Linux installs).
+     * @description Downloads `ocr_linux_<arch>.tar.gz`, verifies it against the signed checksums like an update and
+     *     activates it without a restart. Only when `canInstall` is true.
+     */
+    post: operations["installOCR"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -800,6 +860,46 @@ export interface components {
       /** @description Uses an authenticator app. */
       twoFactor: boolean;
       created: string;
+    };
+    SearchHit: {
+      /** @description The `nodes` record, with `expand.parent` when it is in a folder. */
+      node: {
+        [key: string]: unknown;
+      };
+      /** @enum {string} */
+      match: "name" | "content";
+      /** @description Text around the matching words (content matches only). */
+      snippet?: {
+        text: string;
+        hit?: boolean;
+      }[];
+    };
+    OCRStatus: {
+      enabled: boolean;
+      tools: {
+        /** @description Version, empty when not installed. */
+        tesseract: string;
+        /**
+         * @example [
+         *       "fra",
+         *       "eng"
+         *     ]
+         */
+        languages: string[];
+        pdfText: boolean;
+        pdfRender: boolean;
+      };
+      /** @description Directory of Alcove's own OCR tools, empty when not used. */
+      bundle: string;
+      canInstall: boolean;
+      /** @description Command installing the tools (macOS, Windows), or empty. */
+      hint: string;
+      counts: {
+        pending: number;
+        ready: number;
+        skipped: number;
+        failed: number;
+      };
     };
     MapConfig: {
       tiles: null | {
@@ -2844,6 +2944,180 @@ export interface operations {
       };
       /** @description Not a file, or not owned by the token's user. */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  search: {
+    parameters: {
+      query: {
+        q: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Up to 50 name matches and 50 content matches. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items: components["schemas"]["SearchHit"][];
+          };
+        };
+      };
+      /** @description q is missing or too long. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getOCR: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OCRStatus"];
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setOCR: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          enabled: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OCRStatus"];
+        };
+      };
+      /** @description Invalid body. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  installOCR: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Installed. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OCRStatus"];
+        };
+      };
+      /** @description Not possible on this server. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description An installation is already running. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The release could not be reached or verified. */
+      502: {
         headers: {
           [name: string]: unknown;
         };

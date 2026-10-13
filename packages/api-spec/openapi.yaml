@@ -49,6 +49,12 @@ tags:
       contributors (ADR 0018); participants read shared items through the `media` view rule.
   - name: admin
     description: Server administration, for accounts with `role = admin` (ADR 0015).
+  - name: documents
+    description: |
+      Text of documents (ADR 0025): the text layer of PDFs, text files and, with OCR, scanned PDFs and
+      images without camera metadata (screenshots, scans). Every such file gets a record in the PocketBase
+      `documents` collection (`kind`, `status`, `method`, `text`, `pages`), filled in by a background
+      worker; read it with `GET /api/collections/documents/records` (owner only).
   - name: uploads
     description: |
       Resumable uploads using the [tus 1.0 protocol](https://tus.io/protocols/resumable-upload)
@@ -1112,6 +1118,95 @@ paths:
               schema: { type: string, format: binary }
         "401": { description: "Missing, expired or non-file token." }
         "404": { description: "Not a file, or not owned by the token's user." }
+  /api/v1/search:
+    get:
+      tags: [documents]
+      operationId: search
+      summary: Find your files and folders by name, then documents by their text.
+      description: |
+        Name matches (substring, folders first) come first, then documents whose text contains every
+        word as a prefix, accents and case ignored, best matches first. Trashed items are left out.
+      security:
+        - userToken: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        "200":
+          description: Up to 50 name matches and 50 content matches.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/SearchHit" }
+        "400": { description: q is missing or too long. }
+        "401": { description: Authentication required. }
+  /api/v1/admin/ocr:
+    get:
+      tags: [admin]
+      operationId: getOCR
+      summary: OCR status, installed tools and document counts.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Status.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OCRStatus" }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+    put:
+      tags: [admin]
+      operationId: setOCR
+      summary: Turn OCR of scans and images on or off (on by default when the tools are installed).
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OCRStatus" }
+        "400": { description: Invalid body. }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+  /api/v1/admin/ocr/install:
+    post:
+      tags: [admin]
+      operationId: installOCR
+      summary: Install the OCR tools of this server's release (native Linux installs).
+      description: |
+        Downloads `ocr_linux_<arch>.tar.gz`, verifies it against the signed checksums like an update and
+        activates it without a restart. Only when `canInstall` is true.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Installed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OCRStatus" }
+        "400": { description: Not possible on this server. }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+        "409": { description: An installation is already running. }
+        "502": { description: The release could not be reached or verified. }
 components:
   securitySchemes:
     userToken:
@@ -1204,6 +1299,48 @@ components:
         usedBytes: { type: integer, description: "Files, trash included." }
         twoFactor: { type: boolean, description: Uses an authenticator app. }
         created: { type: string }
+    SearchHit:
+      type: object
+      required: [node, match]
+      properties:
+        node:
+          type: object
+          description: The `nodes` record, with `expand.parent` when it is in a folder.
+          additionalProperties: true
+        match: { type: string, enum: [name, content] }
+        snippet:
+          type: array
+          description: Text around the matching words (content matches only).
+          items:
+            type: object
+            required: [text]
+            properties:
+              text: { type: string }
+              hit: { type: boolean }
+    OCRStatus:
+      type: object
+      required: [enabled, tools, bundle, canInstall, hint, counts]
+      properties:
+        enabled: { type: boolean }
+        tools:
+          type: object
+          required: [tesseract, languages, pdfText, pdfRender]
+          properties:
+            tesseract: { type: string, description: "Version, empty when not installed." }
+            languages: { type: array, items: { type: string }, example: [fra, eng] }
+            pdfText: { type: boolean }
+            pdfRender: { type: boolean }
+        bundle: { type: string, description: "Directory of Alcove's own OCR tools, empty when not used." }
+        canInstall: { type: boolean }
+        hint: { type: string, description: "Command installing the tools (macOS, Windows), or empty." }
+        counts:
+          type: object
+          required: [pending, ready, skipped, failed]
+          properties:
+            pending: { type: integer }
+            ready: { type: integer }
+            skipped: { type: integer }
+            failed: { type: integer }
     MapConfig:
       type: object
       required: [tiles]

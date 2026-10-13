@@ -2,7 +2,7 @@
 # Builds release archives for every platform into dist/, plus SHA256SUMS
 # (and SHA256SUMS.sig when ALCOVE_SIGNING_KEY is set).
 #   scripts/dist.sh 0.9.0
-# FFMPEG_BUNDLES=1 also builds the Linux ffmpeg bundles (needs Docker with QEMU, ADR 0017).
+# FFMPEG_BUNDLES=1 also builds the Linux ffmpeg and OCR bundles (needs Docker with QEMU, ADR 0017, 0025).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VERSION="${1:?usage: scripts/dist.sh X.Y.Z}"
@@ -38,10 +38,13 @@ for target in $TARGETS; do
 done
 
 if [ -n "${FFMPEG_BUNDLES:-}" ]; then
-	for arch in amd64 arm64 armv7; do scripts/ffmpeg-bundle.sh "$arch" dist; done
+	for arch in amd64 arm64 armv7; do
+		scripts/ffmpeg-bundle.sh "$arch" dist
+		scripts/ocr-bundle.sh "$arch" dist
+	done
 fi
 
-(cd dist && shopt -s nullglob && files=(alcove_* ffmpeg_*) &&
+(cd dist && shopt -s nullglob && files=(alcove_* ffmpeg_* ocr_*) &&
 	{ command -v sha256sum >/dev/null && sha256sum "${files[@]}" || shasum -a 256 "${files[@]}"; } > SHA256SUMS)
 if [ -n "${ALCOVE_SIGNING_KEY:-}" ]; then
 	(cd server && go run ./tools/sign ../dist/SHA256SUMS)

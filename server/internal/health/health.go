@@ -27,12 +27,17 @@ type Response struct {
 }
 
 // Register binds the route. activeModules must not include "core".
-func Register(app core.App, activeModules []string) {
-	modules := append([]string{"core"}, activeModules...)
+// dynamic modules are asked on every request (e.g. documents, active once its tools are installed).
+func Register(app core.App, activeModules []string, dynamic ...func() []string) {
+	static := append([]string{"core"}, activeModules...)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET(Path, func(e *core.RequestEvent) error {
 			e.Response.Header().Set("Cache-Control", "no-store")
+			modules := append([]string{}, static...)
+			for _, f := range dynamic {
+				modules = append(modules, f()...)
+			}
 			return e.JSON(http.StatusOK, Response{
 				Status:        "ok",
 				Name:          buildinfo.Name,

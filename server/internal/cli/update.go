@@ -108,6 +108,10 @@ func update(check, yes bool) error {
 		if _, err := syncFFmpeg(ctx, u, spec, client, rel); err != nil {
 			u.say("  ! ffmpeg was not updated: %v", err)
 		}
+		// The OCR tools are kept current when installed (offered on the System page otherwise).
+		if _, err := syncOCR(ctx, u, spec, client, rel, false); err != nil {
+			u.say("  ! the OCR tools were not updated: %v", err)
+		}
 	}
 	u.say("Restarting…")
 	if err := mgr.Restart(); err != nil {

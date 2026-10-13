@@ -33,6 +33,13 @@ changed; [ADR 0017](adr/0017-ffmpeg-bundle-for-native-linux.md)). Updates keep i
 Windows it uses Homebrew or winget. Without ffmpeg, JPEG, PNG and WebP photos still work; videos and HEIC
 files show without a thumbnail until it is installed (they are retried daily).
 
+**OCR** (searching the text of scans and screenshots) uses Tesseract and poppler. On Linux the installer
+offers Alcove's own copy (about 25 MB in `<bin dir>/ocr`, French and English;
+[ADR 0025](adr/0025-documents-and-ocr.md)); the Docker image includes them; on macOS and Windows the
+installer offers Homebrew or winget. Already installed? An administrator can install them from the
+**System** page (native Linux), or run the command shown there. Without them, PDFs that contain text and
+text files are still searchable.
+
 Installed before v0.10.2? Run `sudo alcove update` once: it adds the recent ffmpeg even when Alcove is
 up to date. `alcove status` shows which ffmpeg is used.
 
@@ -198,6 +205,11 @@ Alcove, phones show a badge on the Account tab and an **Update now** button at t
 server downloads the matching APK from the GitHub release once (kept in `pb_data/app`), and Android only
 installs it if it carries the same signature as the installed app. The first time, Android asks to allow
 installing apps from Alcove.
+
+**Documents.** Alcove reads the text of PDFs and text files and, with OCR, of scanned PDFs and
+screenshots (images without camera information), so they can be searched from the **Documents** page or
+the search box. Everything happens on your server, one document at a time. Administrators see the tools
+and progress on the System page, and can turn OCR off there.
 
 **Map tiles.** The photo map uses a world map built into Alcove: no request leaves your server. An
 administrator can enable detailed OpenStreetMap tiles on the System page; browsers then load them from

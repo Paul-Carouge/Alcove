@@ -11,7 +11,7 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0004](0004-mobile-flutter-user-server-url.md) | Mobile: Flutter, user enters their own server URL | Accepted |
 | [0005](0005-openapi-contract.md) | OpenAPI is the API contract; clients are generated | Accepted |
 | [0006](0006-storage-local-default-s3-optional.md) | Storage: local disk by default, S3 optional | Accepted |
-| [0007](0007-optional-module-containers.md) | OCR and face recognition as optional containers | Accepted |
+| [0007](0007-optional-module-containers.md) | OCR and face recognition as optional containers | Accepted (OCR superseded by 0025) |
 | [0008](0008-docker-compose-caddy.md) | Deployment: docker compose with Caddy | Accepted |
 | [0009](0009-no-e2ee-in-v1.md) | No end-to-end encryption in v1 | Accepted |
 | [0010](0010-no-firebase-unifiedpush.md) | No Firebase; sync on open and periodically, UnifiedPush optional | Accepted |
@@ -29,5 +29,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0022](0022-mobile-photo-backup.md) | Mobile photo backup | Accepted |
 | [0023](0023-android-distribution.md) | Android app: signed APK in every release, http on private networks | Accepted |
 | [0024](0024-in-app-updates.md) | Mobile app updates itself from its server | Accepted |
+| [0025](0025-documents-and-ocr.md) | Documents: text extraction and OCR shipped like ffmpeg | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

@@ -62,8 +62,10 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
-      - name: ffmpeg (media tests)
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+      - name: ffmpeg, Tesseract and poppler (media and documents tests)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg tesseract-ocr tesseract-ocr-fra poppler-utils >/dev/null
       - uses: golangci/golangci-lint-action@v8
         with:
           working-directory: server
@@ -117,8 +119,8 @@ jobs:
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @alcove/web exec playwright install --with-deps chromium
-      - name: ffmpeg (photo and video thumbnails)
-        run: sudo apt-get install -y -qq ffmpeg >/dev/null
+      - name: ffmpeg, Tesseract and poppler (thumbnails, document text)
+        run: sudo apt-get install -y -qq ffmpeg tesseract-ocr tesseract-ocr-fra poppler-utils >/dev/null
       - run: make test-e2e
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -28,6 +28,7 @@ type installOpts struct {
 	port     int
 	yes      bool
 	noFFmpeg bool
+	noOCR    bool
 	noStart  bool
 }
 
@@ -44,6 +45,7 @@ func installCmd() *cobra.Command {
 	f.IntVar(&o.port, "port", 8090, "HTTP port (modes local and proxy)")
 	f.BoolVarP(&o.yes, "yes", "y", false, "accept defaults, no questions")
 	f.BoolVar(&o.noFFmpeg, "no-ffmpeg", false, "do not install ffmpeg")
+	f.BoolVar(&o.noOCR, "no-ocr", false, "do not install the OCR tools")
 	f.BoolVar(&o.noStart, "no-start", false, "write files but do not register/start the service")
 	return cmd
 }
@@ -160,6 +162,10 @@ func install(o installOpts) error {
 	// 4. ffmpeg (photos and videos).
 	if !o.noFFmpeg {
 		ensureFFmpeg(u, spec)
+	}
+	// 4b. OCR tools (searching scanned documents).
+	if !o.noOCR {
+		ensureOCR(u, spec)
 	}
 
 	if o.noStart {

@@ -46,10 +46,15 @@ thumbnails and previews, video transcoding (ffmpeg, optional container), Live Ph
 HEIC/RAW support, duplicate detection. Originals are never modified. Optional face recognition module
 (local, opt-in, separate container).
 
-## Phase 3: Documents
+## Phase 3: Documents (in progress)
 
-OCR worker container (Tesseract or similar, FR + EN), full-text search (SQLite FTS5) across documents
-and file names, PDF text layer, tags, scan import from the mobile camera.
+- **v0.20** ✅ text of PDFs and text files, OCR of scanned PDFs and screenshots (Tesseract FR + EN, shipped
+  like ffmpeg, [ADR 0025](adr/0025-documents-and-ocr.md)), full-text search (SQLite FTS5) with highlighted
+  snippets, Documents page.
+- Next: tags, scan import from the mobile camera, searchable PDF export.
+
+Full scope: OCR (FR + EN), full-text search across documents and file names, PDF text layer, tags, scan
+import from the mobile camera.
 
 ## Phase 4: Mobile app and automatic backup (in progress)
 

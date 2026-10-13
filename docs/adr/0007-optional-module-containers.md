@@ -1,6 +1,7 @@
 # 0007. OCR and face recognition as optional containers
 
-- Status: Accepted (2026-10-11), implementation in phases 2–3
+- Status: Accepted (2026-10-11). OCR superseded by [0025](0025-documents-and-ocr.md) (shipped like ffmpeg);
+  still the plan for face recognition.
 
 ## Context
 

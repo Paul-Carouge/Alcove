@@ -13,6 +13,7 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
+	"github.com/Paul-Carouge/Alcove/server/internal/ocr"
 	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 )
 
@@ -37,6 +38,7 @@ func statusCmd() *cobra.Command {
 			} else {
 				fmt.Printf("  ffmpeg:   %s\n", v)
 			}
+			fmt.Printf("  OCR:      %s\n", ocrStatus(spec))
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			if rel, _, err := latestRelease(ctx); err == nil {
@@ -78,7 +80,8 @@ func uninstallCmd() *cobra.Command {
 			}
 			_ = os.Remove(spec.Binary)
 			_ = os.Remove(spec.Binary + ".old")
-			_ = os.RemoveAll(ffbundle.Dir(spec.Binary)) // #nosec G703 -- fixed install path
+			_ = os.RemoveAll(ffbundle.Dir(spec.Binary))   // #nosec G703 -- fixed install path
+			_ = os.RemoveAll(ocr.Bundle.Dir(spec.Binary)) // #nosec G703 -- fixed install path
 			if purge && u.confirm("Delete ALL data in "+spec.DataDir+" and the configuration? This cannot be undone.", false) {
 				_ = os.Remove(spec.EnvFile)
 				return os.RemoveAll(spec.DataDir) // #nosec G703 -- fixed install path, double confirmation

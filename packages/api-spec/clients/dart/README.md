@@ -79,10 +79,14 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**checkUpdates**](doc//AdminApi.md#checkupdates) | **POST** /api/v1/admin/updates/check | Check for a new release now.
 *AdminApi* | [**createUser**](doc//AdminApi.md#createuser) | **POST** /api/v1/admin/users | Create an account (verified, ready to sign in).
 *AdminApi* | [**deleteUser**](doc//AdminApi.md#deleteuser) | **DELETE** /api/v1/admin/users/{userId} | Delete an account and everything it owns (files, photos, albums, links).
+*AdminApi* | [**getOCR**](doc//AdminApi.md#getocr) | **GET** /api/v1/admin/ocr | OCR status, installed tools and document counts.
 *AdminApi* | [**getSystem**](doc//AdminApi.md#getsystem) | **GET** /api/v1/admin/system | Version, installation and update status.
+*AdminApi* | [**installOCR**](doc//AdminApi.md#installocr) | **POST** /api/v1/admin/ocr/install | Install the OCR tools of this server's release (native Linux installs).
 *AdminApi* | [**listUsers**](doc//AdminApi.md#listusers) | **GET** /api/v1/admin/users | Every account of this server, with its storage use.
 *AdminApi* | [**setMapTiles**](doc//AdminApi.md#setmaptiles) | **PUT** /api/v1/admin/map | Enable or disable OpenStreetMap tiles for every user's map.
+*AdminApi* | [**setOCR**](doc//AdminApi.md#setocr) | **PUT** /api/v1/admin/ocr | Turn OCR of scans and images on or off (on by default when the tools are installed).
 *AdminApi* | [**updateUser**](doc//AdminApi.md#updateuser) | **PATCH** /api/v1/admin/users/{userId} | Change an account's name, quota, role or password.
+*DocumentsApi* | [**search**](doc//DocumentsApi.md#search) | **GET** /api/v1/search | Find your files and folders by name, then documents by their text.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *DriveApi* | [**knownHashes**](doc//DriveApi.md#knownhashes) | **POST** /api/v1/backup/known | Which of these file fingerprints you already have (phone backup deduplication).
@@ -151,14 +155,21 @@ Class | Method | HTTP request | Description
  - [MapConfigTiles](doc//MapConfigTiles.md)
  - [MediaFiles](doc//MediaFiles.md)
  - [Module](doc//Module.md)
+ - [OCRStatus](doc//OCRStatus.md)
+ - [OCRStatusCounts](doc//OCRStatusCounts.md)
+ - [OCRStatusTools](doc//OCRStatusTools.md)
  - [Person](doc//Person.md)
  - [PublicMedia](doc//PublicMedia.md)
  - [PublicNode](doc//PublicNode.md)
  - [PublicShare](doc//PublicShare.md)
  - [PublicShareAlbum](doc//PublicShareAlbum.md)
  - [RecoveryCodes](doc//RecoveryCodes.md)
+ - [Search200Response](doc//Search200Response.md)
+ - [SearchHit](doc//SearchHit.md)
+ - [SearchHitSnippetInner](doc//SearchHitSnippetInner.md)
  - [SetFavoriteRequest](doc//SetFavoriteRequest.md)
  - [SetMapTilesRequest](doc//SetMapTilesRequest.md)
+ - [SetOCRRequest](doc//SetOCRRequest.md)
  - [SetupStatus](doc//SetupStatus.md)
  - [SetupStatusStorage](doc//SetupStatusStorage.md)
  - [SetupToken](doc//SetupToken.md)

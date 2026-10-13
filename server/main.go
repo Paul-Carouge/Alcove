@@ -17,6 +17,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/envfile"
 	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/healthcheck"
+	"github.com/Paul-Carouge/Alcove/server/internal/ocr"
 	_ "github.com/Paul-Carouge/Alcove/server/migrations"
 )
 
@@ -46,10 +47,12 @@ func main() {
 
 	cfg := config.MustFromOSEnv()
 
-	// Native Linux installs may carry their own ffmpeg next to the binary (ADR 0017).
+	// Native Linux installs may carry their own ffmpeg (ADR 0017) and OCR tools (ADR 0025) next to
+	// the binary.
 	if exe, err := os.Executable(); err == nil {
 		if exe, err = filepath.EvalSymlinks(exe); err == nil {
 			ffbundle.Activate(exe)
+			ocr.Bundle.Activate(exe)
 		}
 	}
 

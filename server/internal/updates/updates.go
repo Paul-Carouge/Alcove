@@ -20,7 +20,9 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
 	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
+	"github.com/Paul-Carouge/Alcove/server/internal/ocr"
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
+	"github.com/Paul-Carouge/Alcove/server/internal/toolbundle"
 	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 )
 
@@ -224,6 +226,11 @@ func (c *checker) apply(e *core.RequestEvent) error {
 	if ffbundle.Wanted(self) {
 		if _, err := ffbundle.Install(ctx, c.client, rel, ffbundle.Dir(self)); err != nil {
 			e.App.Logger().Warn("ffmpeg was not updated", "error", err)
+		}
+	}
+	if dir := ocr.Bundle.Dir(self); toolbundle.Supported() && toolbundle.Installed(dir) != "" {
+		if _, err := ocr.Bundle.Install(ctx, c.client, rel, dir); err != nil {
+			e.App.Logger().Warn("the OCR tools were not updated", "error", err)
 		}
 	}
 	e.App.Logger().Info("update installed, restarting", "from", buildinfo.Version, "to", rel.Version, "by", e.Auth.Email())

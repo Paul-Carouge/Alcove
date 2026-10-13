@@ -205,6 +205,50 @@ class AdminApi {
     }
   }
 
+  /// OCR status, installed tools and document counts.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> getOCRWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/admin/ocr';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// OCR status, installed tools and document counts.
+  Future<OCRStatus?> getOCR() async {
+    final response = await getOCRWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'OCRStatus',) as OCRStatus;
+    
+    }
+    return null;
+  }
+
   /// Version, installation and update status.
   ///
   /// Note: This method returns the HTTP [Response].
@@ -244,6 +288,54 @@ class AdminApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SystemInfo',) as SystemInfo;
+    
+    }
+    return null;
+  }
+
+  /// Install the OCR tools of this server's release (native Linux installs).
+  ///
+  /// Downloads `ocr_linux_<arch>.tar.gz`, verifies it against the signed checksums like an update and activates it without a restart. Only when `canInstall` is true. 
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> installOCRWithHttpInfo() async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/admin/ocr/install';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Install the OCR tools of this server's release (native Linux installs).
+  ///
+  /// Downloads `ocr_linux_<arch>.tar.gz`, verifies it against the signed checksums like an update and activates it without a restart. Only when `canInstall` is true. 
+  Future<OCRStatus?> installOCR() async {
+    final response = await installOCRWithHttpInfo();
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'OCRStatus',) as OCRStatus;
     
     }
     return null;
@@ -340,6 +432,58 @@ class AdminApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'MapConfig',) as MapConfig;
+    
+    }
+    return null;
+  }
+
+  /// Turn OCR of scans and images on or off (on by default when the tools are installed).
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [SetOCRRequest] setOCRRequest (required):
+  Future<Response> setOCRWithHttpInfo(SetOCRRequest setOCRRequest,) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/admin/ocr';
+
+    // ignore: prefer_final_locals
+    Object? postBody = setOCRRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'PUT',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Turn OCR of scans and images on or off (on by default when the tools are installed).
+  ///
+  /// Parameters:
+  ///
+  /// * [SetOCRRequest] setOCRRequest (required):
+  Future<OCRStatus?> setOCR(SetOCRRequest setOCRRequest,) async {
+    final response = await setOCRWithHttpInfo(setOCRRequest,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'OCRStatus',) as OCRStatus;
     
     }
     return null;

@@ -60,7 +60,7 @@ Alcove and phones offer the matching version at their next launch. The iPhone ap
 | 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | ✅ v0.2–v0.8 |
 | – | One-command install and signed updates | ✅ v0.9 |
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters and map done |
-| 3 | Documents (OCR, full-text search) | |
+| 3 | Documents (OCR, full-text search) | 🚧 PDF text, OCR of scans and screenshots, full-text search done |
 | 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, albums, files, automatic backup and in-app updates done |
 | 5 | Notes, calendar (CalDAV), contacts (CardDAV) | |
 | 6 | Desktop app with folder sync | |

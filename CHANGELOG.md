@@ -7,6 +7,18 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-13
+
+### Added
+- **Mobile file management**: a + button in Files to create a folder, **send files** from the phone and
+  **scan a document** (edge detection and cropping, several pages, one PDF whose text your server reads by
+  OCR); rename, move and move to the trash (with Undo) from the ⋯ button or a long press. Uploads show their
+  progress at the bottom of Files ([ADR 0026](docs/adr/0026-mobile-files-and-scanning.md)).
+
+### Fixed
+- Web: the upload panel no longer stays open over the page once everything is uploaded; it folds after a
+  moment and can be closed from its header.
+
 ## [0.20.0] - 2026-10-13
 
 ### Added

@@ -742,5 +742,8 @@
 	"zip_preparing": "Préparation du téléchargement…",
 	"zip_failed": "Le téléchargement n’a pas pu être préparé.",
 	"action_download_zip": "Télécharger (ZIP)",
-	"album_download": "Télécharger l’album"
+	"album_download": "Télécharger l’album",
+	"nav_group_library": "Bibliothèque",
+	"nav_group_more": "Partage",
+	"search_everywhere": "Rechercher fichiers, photos, documents…"
 }

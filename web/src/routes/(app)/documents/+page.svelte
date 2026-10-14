@@ -1,15 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import {
-		Check,
-		Copy,
-		FileSearch,
-		FileText,
-		Search as SearchIcon,
-		ScanText,
-		Tag as TagIcon
-	} from '@lucide/svelte';
+	import { Check, Copy, FileSearch, FileText, ScanText, Tag as TagIcon } from '@lucide/svelte';
 	import {
 		documentText,
 		listDocuments,
@@ -47,7 +37,6 @@
 	let page = $state(1);
 	let failed = $state(false);
 	let loadingMore = $state(false);
-	let query = $state('');
 	let viewerIndex = $state(-1);
 
 	let textOpen = $state(false);
@@ -112,14 +101,6 @@
 		loadingMore = false;
 	}
 
-	function submit(event: SubmitEvent) {
-		event.preventDefault();
-		const q = query.trim();
-		if (!q) return;
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query
-		goto(`${resolve('/(app)/search')}?q=${encodeURIComponent(q)}`);
-	}
-
 	async function searchable(node: DriveNode) {
 		making[node.id] = 'running';
 		try {
@@ -182,16 +163,6 @@
 
 <div class="head">
 	<h1>{m.nav_documents()}</h1>
-	<form class="search" role="search" onsubmit={submit}>
-		<SearchIcon size={16} aria-hidden="true" />
-		<input
-			type="search"
-			bind:value={query}
-			placeholder={m.documents_search()}
-			aria-label={m.documents_search()}
-			autocomplete="off"
-		/>
-	</form>
 </div>
 
 <div class="chips" role="radiogroup" aria-label={m.documents_filter()}>
@@ -277,33 +248,35 @@
 							{/if}
 						</p>
 					</div>
-					{#if doc.method === 'ocr'}
+					<div class="row-actions">
+						{#if doc.method === 'ocr'}
+							<button
+								class="icon-btn"
+								aria-label={m.searchable_make({ name: node.name })}
+								title={m.searchable_hint()}
+								disabled={making[node.id] === 'running'}
+								onclick={() => searchable(node)}
+							>
+								<FileSearch size={18} aria-hidden="true" />
+							</button>
+						{/if}
 						<button
 							class="icon-btn"
-							aria-label={m.searchable_make({ name: node.name })}
-							title={m.searchable_hint()}
-							disabled={making[node.id] === 'running'}
-							onclick={() => searchable(node)}
+							aria-label={m.tags_edit_for({ name: node.name })}
+							onclick={() => {
+								tagging = node;
+								taggingOpen = true;
+							}}
 						>
-							<FileSearch size={18} aria-hidden="true" />
+							<TagIcon size={18} aria-hidden="true" />
 						</button>
-					{/if}
-					<button
-						class="icon-btn"
-						aria-label={m.tags_edit_for({ name: node.name })}
-						onclick={() => {
-							tagging = node;
-							taggingOpen = true;
-						}}
-					>
-						<TagIcon size={18} aria-hidden="true" />
-					</button>
-					{#if doc.status === 'ready' && doc.text}
-						<Button variant="secondary" onclick={() => showText(doc)}>
-							<ScanText size={16} aria-hidden="true" />
-							<span class="text-label">{m.documents_show_text()}</span>
-						</Button>
-					{/if}
+						{#if doc.status === 'ready' && doc.text}
+							<Button variant="secondary" onclick={() => showText(doc)}>
+								<ScanText size={16} aria-hidden="true" />
+								<span class="text-label">{m.documents_show_text()}</span>
+							</Button>
+						{/if}
+					</div>
 				</li>
 			{/if}
 		{/each}
@@ -359,31 +332,6 @@
 	h1 {
 		font-size: var(--text-2xl);
 		letter-spacing: -0.02em;
-	}
-	.search {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: 2.75rem;
-		padding: 0 var(--space-3);
-		border: 1px solid var(--color-border-strong);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-		color: var(--color-text-muted);
-	}
-	.search:focus-within {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 1px;
-	}
-	.search input {
-		width: 16rem;
-		min-width: 0;
-		border: 0;
-		background: transparent;
-		color: var(--color-text);
-		font: inherit;
-		font-size: var(--text-sm);
-		outline: none;
 	}
 	.chips {
 		display: inline-flex;
@@ -500,6 +448,12 @@
 		align-items: center;
 		gap: var(--space-4);
 		padding: var(--space-3) var(--space-4);
+	}
+	.row-actions {
+		display: flex;
+		flex: none;
+		align-items: center;
+		gap: var(--space-1);
 	}
 	.row + .row {
 		border-top: 1px solid var(--color-border);
@@ -635,12 +589,20 @@
 		gap: var(--space-2);
 	}
 	@media (max-width: 600px) {
+		/* Phones: the buttons go on their own line so names stay readable. */
+		.row {
+			flex-wrap: wrap;
+		}
+		.main {
+			flex-basis: calc(100% - 3.5rem - var(--space-4));
+		}
+		.row-actions {
+			width: 100%;
+			justify-content: flex-end;
+		}
 		.head {
 			flex-direction: column;
 			align-items: stretch;
-		}
-		.search input {
-			width: 100%;
 		}
 		/* Icon only on phones; the label stays for screen readers. */
 		.row .text-label {

@@ -56,7 +56,9 @@ test('the text of PDFs, text files and scans can be searched', async ({ page }) 
 	await expect(page.getByRole('button', { name: 'invoice.png', exact: true })).toBeVisible();
 
 	// Search inside documents: accents and case ignored, words as prefixes.
-	await page.getByRole('searchbox', { name: 'Search inside your documents' }).fill('DEPOT garant');
+	await page
+		.getByRole('searchbox', { name: 'Search files, photos, documents…' })
+		.fill('DEPOT garant');
 	await page.keyboard.press('Enter');
 	await expect(page.getByRole('heading', { name: 'Search', level: 1 })).toBeVisible();
 	await expect(page.getByText('1 inside a document')).toBeVisible();
@@ -112,7 +114,7 @@ test('tags label files and filter documents', async ({ page }) => {
 	await expect(page.getByRole('button', { name: 'invoice.png', exact: true })).toHaveCount(0);
 
 	// Searching the tag's name finds the tagged file.
-	await page.getByRole('searchbox', { name: 'Search inside your documents' }).fill('contr');
+	await page.getByRole('searchbox', { name: 'Search files, photos, documents…' }).fill('contr');
 	await page.keyboard.press('Enter');
 	const hit = page.getByRole('listitem').filter({ hasText: 'lease.pdf' });
 	await expect(hit.getByText('Tag', { exact: true })).toBeVisible();

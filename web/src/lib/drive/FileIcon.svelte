@@ -13,6 +13,19 @@
 
 	let { kind, mime = '', size = 20 }: { kind: string; mime?: string; size?: number } = $props();
 
+	// A colour per family, from the tag palette (contrast checked in the design tokens).
+	const tone = $derived.by(() => {
+		if (kind === 'folder') return 'folder';
+		if (mime.startsWith('image/')) return 'green';
+		if (mime.startsWith('video/')) return 'pink';
+		if (mime.startsWith('audio/')) return 'violet';
+		if (/zip|tar|gzip|7z|rar|compressed/.test(mime)) return 'yellow';
+		if (/spreadsheet|excel|csv/.test(mime)) return 'teal';
+		if (/pdf/.test(mime)) return 'red';
+		if (mime.startsWith('text/') || /document|msword|rtf/.test(mime)) return 'blue';
+		return 'gray';
+	});
+
 	const Icon = $derived.by(() => {
 		if (kind === 'folder') return Folder;
 		if (mime.startsWith('image/')) return FileImage;
@@ -26,7 +39,7 @@
 	});
 </script>
 
-<span class="icon" class:folder={kind === 'folder'} aria-hidden="true"><Icon {size} /></span>
+<span class="icon {tone}" aria-hidden="true"><Icon {size} /></span>
 
 <style>
 	.icon {
@@ -42,5 +55,33 @@
 	.folder {
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
+	}
+	.green {
+		background: var(--color-tag-green-bg);
+		color: var(--color-tag-green);
+	}
+	.pink {
+		background: var(--color-tag-pink-bg);
+		color: var(--color-tag-pink);
+	}
+	.violet {
+		background: var(--color-tag-violet-bg);
+		color: var(--color-tag-violet);
+	}
+	.yellow {
+		background: var(--color-tag-yellow-bg);
+		color: var(--color-tag-yellow);
+	}
+	.teal {
+		background: var(--color-tag-teal-bg);
+		color: var(--color-tag-teal);
+	}
+	.red {
+		background: var(--color-tag-red-bg);
+		color: var(--color-tag-red);
+	}
+	.blue {
+		background: var(--color-tag-blue-bg);
+		color: var(--color-tag-blue);
 	}
 </style>

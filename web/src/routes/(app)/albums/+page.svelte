@@ -134,7 +134,7 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(10rem, 40vw), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(14rem, 42vw), 1fr));
 		gap: var(--space-5) var(--space-4);
 		margin: 0;
 		padding: 0;
@@ -156,6 +156,22 @@
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 		box-shadow: var(--shadow-sm);
+		transition:
+			box-shadow var(--duration-base) var(--ease-standard),
+			transform var(--duration-base) var(--ease-standard);
+	}
+	.card:hover .cover {
+		box-shadow: var(--shadow-md);
+		transform: translateY(-2px);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.cover,
+		.cover img {
+			transition: none;
+		}
+		.card:hover .cover {
+			transform: none;
+		}
 	}
 	.cover img {
 		width: 100%;

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
 		ChevronRight,
@@ -10,7 +9,6 @@
 		Link,
 		List,
 		Pencil,
-		Search as SearchIcon,
 		Trash2,
 		Upload as UploadIcon,
 		X,
@@ -41,13 +39,6 @@
 	import type { DriveNode } from './types.js';
 	import { uploads } from './uploads.svelte.js';
 
-	function search(event: SubmitEvent) {
-		event.preventDefault();
-		const q = String(new FormData(event.currentTarget as HTMLFormElement).get('q') ?? '').trim();
-		if (!q) return;
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query
-		goto(`${resolve('/(app)/search')}?q=${encodeURIComponent(q)}`);
-	}
 	let { folderId }: { folderId: string } = $props();
 
 	let children = $state<DriveNode[]>([]);
@@ -332,16 +323,6 @@
 			</div>
 		{:else}
 			<div class="actions">
-				<form class="search" role="search" onsubmit={search}>
-					<SearchIcon size={16} aria-hidden="true" />
-					<input
-						type="search"
-						name="q"
-						placeholder={m.search_placeholder()}
-						aria-label={m.search_placeholder()}
-						autocomplete="off"
-					/>
-				</form>
 				<div class="segmented" role="radiogroup" aria-label={m.view_mode()}>
 					<button
 						role="radio"
@@ -482,13 +463,21 @@
 							<td>
 								<div class="name-cell">
 									<span class="thumb"><Thumb {node} /></span>
-									{#if node.kind === 'folder'}
-										<a class="name" href={resolve('/(app)/folders/[id]', { id: node.id })}
-											>{node.name}</a
+									<span class="name-text">
+										{#if node.kind === 'folder'}
+											<a class="name" href={resolve('/(app)/folders/[id]', { id: node.id })}
+												>{node.name}</a
+											>
+										{:else}
+											<button class="name as-link" onclick={() => open(node)}>{node.name}</button>
+										{/if}
+										<span class="sub muted"
+											>{node.kind === 'folder' ? m.kind_folder() : formatSize(node.size, locale)} · {formatDate(
+												node.updated,
+												locale
+											)}</span
 										>
-									{:else}
-										<button class="name as-link" onclick={() => open(node)}>{node.name}</button>
-									{/if}
+									</span>
 									{#each tagsOf(node) as t (t.id)}<TagChip tag={t} />{/each}
 								</div>
 							</td>
@@ -567,30 +556,6 @@
 	.crumbs a[aria-current='page'] {
 		color: var(--color-text);
 		font-weight: var(--weight-medium);
-	}
-	.search {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: 2.75rem;
-		padding: 0 var(--space-3);
-		border: 1px solid var(--color-border-strong);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-		color: var(--color-text-muted);
-	}
-	.search:focus-within {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 1px;
-	}
-	.search input {
-		width: 12rem;
-		border: 0;
-		background: transparent;
-		color: var(--color-text);
-		font: inherit;
-		font-size: var(--text-sm);
-		outline: none;
 	}
 	.head {
 		display: flex;
@@ -865,24 +830,38 @@
 	.action-error {
 		margin-bottom: var(--space-4);
 	}
+	.name-text {
+		display: grid;
+		min-width: 0;
+	}
+	.sub {
+		display: none;
+		font-size: var(--text-xs);
+	}
 	@media (max-width: 600px) {
 		.actions,
 		.selbar {
 			flex-wrap: wrap;
 			width: 100%;
 		}
-		.search {
-			flex: 1 1 100%;
-		}
-		.search input {
-			width: 100%;
-			min-width: 0;
-		}
-		.date {
+		/* Phones: size and date move under the name, which keeps the width. */
+		.date,
+		.num {
 			display: none;
 		}
-		.num {
-			width: 5.5rem;
+		.sub {
+			display: block;
+		}
+		.name {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.list {
+			table-layout: fixed;
+		}
+		.list :global(.chip) {
+			display: none;
 		}
 	}
 	.empty {

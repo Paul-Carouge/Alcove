@@ -742,5 +742,8 @@
 	"zip_preparing": "Preparing the download…",
 	"zip_failed": "The download could not be prepared.",
 	"action_download_zip": "Download (ZIP)",
-	"album_download": "Download the album"
+	"album_download": "Download the album",
+	"nav_group_library": "Library",
+	"nav_group_more": "Sharing",
+	"search_everywhere": "Search files, photos, documents…"
 }

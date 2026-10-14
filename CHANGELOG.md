@@ -7,6 +7,16 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-10-14
+
+### Added
+- **Tags** on files and folders ("Invoices", "Taxes"…), each with a colour: set them from the Tags action
+  on the web or the ⋯ menu in the app, create, rename, recolour or delete them on the spot. They show as
+  chips in Files and Documents, and the Documents page filters by tag. Deleting a tag keeps the files.
+
+### Fixed
+- Mobile: the file action sheets scroll instead of overflowing on small screens.
+
 ## [0.21.0] - 2026-10-13
 
 ### Added

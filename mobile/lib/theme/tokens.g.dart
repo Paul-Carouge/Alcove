@@ -108,33 +108,33 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
   final List<BoxShadow> shadowLG;
 
   static const light = AlcoveColors(
-    bg: Color(0xFFF7F8FA),
+    bg: Color(0xFFF7F5F0),
     surface: Color(0xFFFFFFFF),
     surfaceRaised: Color(0xFFFFFFFF),
-    surfaceSunken: Color(0xFFEEF0F3),
-    border: Color(0xFFDCE0E5),
-    borderStrong: Color(0xFFB9C0C9),
-    text: Color(0xFF1A1D21),
-    textMuted: Color(0xFF535C68),
-    accent: Color(0xFF3E5C8A),
-    accentHover: Color(0xFF334D75),
-    accentSubtle: Color(0xFFE6ECF5),
+    surfaceSunken: Color(0xFFEFEBE3),
+    border: Color(0xFFE6E1D7),
+    borderStrong: Color(0xFFADA697),
+    text: Color(0xFF1F1E1B),
+    textMuted: Color(0xFF635F57),
+    accent: Color(0xFF3F6B5A),
+    accentHover: Color(0xFF34594B),
+    accentSubtle: Color(0xFFE4EDE7),
     accentContrast: Color(0xFFFFFFFF),
-    success: Color(0xFF1E7146),
-    warning: Color(0xFF9A3F06),
-    danger: Color(0xFFB42318),
+    success: Color(0xFF2E6B45),
+    warning: Color(0xFF8A4A0B),
+    danger: Color(0xFFA9322A),
     dangerContrast: Color(0xFFFFFFFF),
-    focus: Color(0xFF3E5C8A),
-    overlay: Color(0x661A1D21),
-    stage: Color(0xFF0B0C0E),
-    stagePanel: Color(0xFF15171A),
-    stageBorder: Color(0xFF2E333A),
-    onStage: Color(0xFFE8EAED),
-    onStageMuted: Color(0xFFA0A8B3),
-    onStageLink: Color(0xFF93B2E0),
+    focus: Color(0xFF3F6B5A),
+    overlay: Color(0x661F1E1B),
+    stage: Color(0xFF0E0D0B),
+    stagePanel: Color(0xFF1A1916),
+    stageBorder: Color(0xFF34322D),
+    onStage: Color(0xFFEDEAE3),
+    onStageMuted: Color(0xFFA9A398),
+    onStageLink: Color(0xFFA6CDBA),
     stageControl: Color(0x1FFFFFFF),
     stageScrim: Color(0x99000000),
-    favorite: Color(0xFFFF6B81),
+    favorite: Color(0xFFE86A7A),
     tagGray: Color(0xFF3F4651),
     tagGrayBg: Color(0xFFEEF0F3),
     tagRed: Color(0xFFA3221A),
@@ -154,44 +154,44 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
     tagPink: Color(0xFFA3245F),
     tagPinkBg: Color(0xFFFCE6F1),
     shadowSM: [
-      BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x0F1A1D21)),
+      BoxShadow(offset: Offset(0, 1), blurRadius: 2, spreadRadius: 0, color: Color(0x122A2214)),
     ],
     shadowMD: [
-      BoxShadow(offset: Offset(0, 4), blurRadius: 12, spreadRadius: -2, color: Color(0x1A1A1D21)),
+      BoxShadow(offset: Offset(0, 6), blurRadius: 18, spreadRadius: -6, color: Color(0x1F2A2214)),
     ],
     shadowLG: [
-      BoxShadow(offset: Offset(0, 12), blurRadius: 32, spreadRadius: -4, color: Color(0x241A1D21)),
+      BoxShadow(offset: Offset(0, 18), blurRadius: 44, spreadRadius: -10, color: Color(0x2B2A2214)),
     ],
   );
 
   static const dark = AlcoveColors(
-    bg: Color(0xFF121417),
-    surface: Color(0xFF1A1D21),
-    surfaceRaised: Color(0xFF22262B),
-    surfaceSunken: Color(0xFF0D0F11),
-    border: Color(0xFF2E333A),
-    borderStrong: Color(0xFF454C55),
-    text: Color(0xFFE8EAED),
-    textMuted: Color(0xFFA0A8B3),
-    accent: Color(0xFF93B2E0),
-    accentHover: Color(0xFFAFC6EA),
-    accentSubtle: Color(0xFF22324A),
-    accentContrast: Color(0xFF0F1A2B),
-    success: Color(0xFF5BD394),
-    warning: Color(0xFFFDB022),
-    danger: Color(0xFFF97066),
-    dangerContrast: Color(0xFF1A0B09),
-    focus: Color(0xFF93B2E0),
+    bg: Color(0xFF161512),
+    surface: Color(0xFF1E1C19),
+    surfaceRaised: Color(0xFF26241F),
+    surfaceSunken: Color(0xFF11100E),
+    border: Color(0xFF2F2C27),
+    borderStrong: Color(0xFF5C574E),
+    text: Color(0xFFEDEAE3),
+    textMuted: Color(0xFFA9A398),
+    accent: Color(0xFF8FBFA8),
+    accentHover: Color(0xFFA6CDBA),
+    accentSubtle: Color(0xFF22302A),
+    accentContrast: Color(0xFF0F1F18),
+    success: Color(0xFF7FD3A0),
+    warning: Color(0xFFF2B35C),
+    danger: Color(0xFFF08A7E),
+    dangerContrast: Color(0xFF1F0D0A),
+    focus: Color(0xFF8FBFA8),
     overlay: Color(0xA3000000),
-    stage: Color(0xFF0B0C0E),
-    stagePanel: Color(0xFF15171A),
-    stageBorder: Color(0xFF2E333A),
-    onStage: Color(0xFFE8EAED),
-    onStageMuted: Color(0xFFA0A8B3),
-    onStageLink: Color(0xFF93B2E0),
+    stage: Color(0xFF0E0D0B),
+    stagePanel: Color(0xFF1A1916),
+    stageBorder: Color(0xFF34322D),
+    onStage: Color(0xFFEDEAE3),
+    onStageMuted: Color(0xFFA9A398),
+    onStageLink: Color(0xFFA6CDBA),
     stageControl: Color(0x1FFFFFFF),
     stageScrim: Color(0x99000000),
-    favorite: Color(0xFFFF6B81),
+    favorite: Color(0xFFE86A7A),
     tagGray: Color(0xFFC9CFD6),
     tagGrayBg: Color(0xFF2A2F36),
     tagRed: Color(0xFFFFA59E),
@@ -381,7 +381,8 @@ class AlcoveColors extends ThemeExtension<AlcoveColors> {
 }
 
 abstract final class AlcoveFont {
-  static const String sans = 'Inter';
+  static const String sans = 'Inter Variable';
+  static const String display = 'Fraunces Variable';
   static const String mono = 'JetBrains Mono';
   static const double sizeXs = 12;
   static const double sizeSm = 14;
@@ -410,9 +411,10 @@ abstract final class AlcoveSpace {
 }
 
 abstract final class AlcoveRadius {
-  static const double sm = 6;
-  static const double md = 10;
-  static const double lg = 16;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 18;
+  static const double xl = 24;
   static const double full = 9999;
 }
 

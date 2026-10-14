@@ -62,6 +62,7 @@ lint-packages:
 
 lint-mobile:
 	cd mobile && flutter gen-l10n && dart format --output=none --set-exit-if-changed lib test && flutter analyze
+	cd packages/api-spec/clients/dart && dart pub get >/dev/null && dart analyze --no-fatal-warnings lib
 
 ## --- Test --------------------------------------------------------------
 .PHONY: test test-server test-web test-packages test-mobile test-e2e

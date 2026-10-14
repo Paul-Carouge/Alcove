@@ -145,6 +145,10 @@ jobs:
       - run: flutter gen-l10n
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
+      # The generated API client must compile even where the app does not use it yet.
+      - name: Generated Dart client compiles
+        working-directory: packages/api-spec/clients/dart
+        run: dart pub get && dart analyze --no-fatal-warnings lib
       - run: flutter test
 
   docker:

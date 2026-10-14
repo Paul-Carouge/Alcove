@@ -11,7 +11,7 @@ goal. The user chose to ship the tools the way ffmpeg is shipped (ADR 0016, 0017
 
 ## Decision
 
-- **Tools**: poppler (`pdftotext`, `pdfinfo`, `pdftoppm`) for PDFs and **Tesseract** with the French and
+- **Tools**: poppler (`pdftotext`, `pdfinfo`, `pdftoppm`, `pdfunite`) for PDFs and **Tesseract** with the French and
   English models for OCR, run as external programs with timeouts, one thread each and bounded output.
 - **Distribution**: each release publishes `ocr_linux_{amd64,arm64,armv7}.tar.gz`, built by
   `scripts/ocr-bundle.sh` from unmodified Alpine packages with their libraries and musl loader (about 25 MB,
@@ -29,6 +29,10 @@ goal. The user chose to ship the tools the way ffmpeg is shipped (ADR 0016, 0017
   read-only, written by one background worker. A SQLite **FTS5** table (`unicode61 remove_diacritics 2`)
   indexes name and text; `GET /api/v1/search` returns name matches (substring) then content matches (every
   word as a prefix, best first) with highlighted snippets, never interpreting user input as FTS syntax.
+
+- **Searchable copies** (v0.23): on request, a scan becomes `<name> (OCR).pdf` next to it: each page
+  rendered as JPEG and laid out by Tesseract's PDF renderer with invisible text, pages joined by
+  `pdfunite`. One job at a time, progress kept in memory (`/api/v1/documents/{id}/searchable`).
 
 ## Consequences
 

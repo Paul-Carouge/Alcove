@@ -86,6 +86,7 @@ part 'model/recovery_codes.dart';
 part 'model/search200_response.dart';
 part 'model/search_hit.dart';
 part 'model/search_hit_snippet_inner.dart';
+part 'model/searchable_job.dart';
 part 'model/set_favorite_request.dart';
 part 'model/set_map_tiles_request.dart';
 part 'model/set_ocr_request.dart';

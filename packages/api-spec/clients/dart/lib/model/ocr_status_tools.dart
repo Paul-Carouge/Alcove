@@ -17,6 +17,7 @@ class OCRStatusTools {
     this.languages = const [],
     required this.pdfText,
     required this.pdfRender,
+    required this.pdfUnite,
   });
 
   /// Version, empty when not installed.
@@ -28,12 +29,15 @@ class OCRStatusTools {
 
   bool pdfRender;
 
+  bool pdfUnite;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is OCRStatusTools &&
     other.tesseract == tesseract &&
     _deepEquality.equals(other.languages, languages) &&
     other.pdfText == pdfText &&
-    other.pdfRender == pdfRender;
+    other.pdfRender == pdfRender &&
+    other.pdfUnite == pdfUnite;
 
   @override
   int get hashCode =>
@@ -41,10 +45,11 @@ class OCRStatusTools {
     (tesseract.hashCode) +
     (languages.hashCode) +
     (pdfText.hashCode) +
-    (pdfRender.hashCode);
+    (pdfRender.hashCode) +
+    (pdfUnite.hashCode);
 
   @override
-  String toString() => 'OCRStatusTools[tesseract=$tesseract, languages=$languages, pdfText=$pdfText, pdfRender=$pdfRender]';
+  String toString() => 'OCRStatusTools[tesseract=$tesseract, languages=$languages, pdfText=$pdfText, pdfRender=$pdfRender, pdfUnite=$pdfUnite]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -52,6 +57,7 @@ class OCRStatusTools {
       json[r'languages'] = this.languages;
       json[r'pdfText'] = this.pdfText;
       json[r'pdfRender'] = this.pdfRender;
+      json[r'pdfUnite'] = this.pdfUnite;
     return json;
   }
 
@@ -80,6 +86,7 @@ class OCRStatusTools {
             : const [],
         pdfText: mapValueOfType<bool>(json, r'pdfText')!,
         pdfRender: mapValueOfType<bool>(json, r'pdfRender')!,
+        pdfUnite: mapValueOfType<bool>(json, r'pdfUnite')!,
       );
     }
     return null;
@@ -131,6 +138,7 @@ class OCRStatusTools {
     'languages',
     'pdfText',
     'pdfRender',
+    'pdfUnite',
   };
 }
 

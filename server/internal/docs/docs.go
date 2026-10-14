@@ -94,6 +94,7 @@ type Docs struct {
 	scan   sync.WaitGroup
 	once   sync.Once
 	instMu sync.Mutex // one bundle installation at a time
+	jobs   *jobs      // searchable PDFs
 }
 
 // Register binds hooks, routes and the background worker.
@@ -132,6 +133,8 @@ func Register(app core.App, opts Options) *Docs {
 		se.Router.GET("/api/v1/admin/ocr", d.adminGet).Bind(apis.RequireAuth("users"))
 		se.Router.PUT("/api/v1/admin/ocr", d.adminSet).Bind(apis.RequireAuth("users"))
 		se.Router.POST("/api/v1/admin/ocr/install", d.adminInstall).Bind(apis.RequireAuth("users"))
+		se.Router.GET("/api/v1/documents/{id}/searchable", d.searchableGet).Bind(apis.RequireAuth("users"))
+		se.Router.POST("/api/v1/documents/{id}/searchable", d.searchableStart).Bind(apis.RequireAuth("users"))
 		d.start()
 		return se.Next()
 	})
@@ -149,7 +152,7 @@ func Register(app core.App, opts Options) *Docs {
 }
 
 func newDocs(app core.App, opts Options) *Docs {
-	d := &Docs{app: app, opts: opts, queue: make(chan string, queueSize), done: make(chan struct{})}
+	d := &Docs{app: app, opts: opts, queue: make(chan string, queueSize), done: make(chan struct{}), jobs: newJobs()}
 	d.refreshTools()
 	return d
 }
@@ -240,8 +243,9 @@ func (d *Docs) enqueue(id string) {
 func (d *Docs) start() {
 	d.once.Do(func() {
 		// One worker: OCR is CPU-heavy and photos are processed at the same time.
-		d.wg.Add(1)
+		d.wg.Add(2)
 		go d.loop()
+		go d.jobLoop()
 		d.scan.Add(1)
 		go func() {
 			defer d.scan.Done()
@@ -261,6 +265,10 @@ func (d *Docs) stop() {
 	d.scan.Wait()
 	d.once.Do(func() {})
 	close(d.queue)
+	// Under the jobs lock: a request queuing a searchable PDF never sends on a closed channel.
+	d.jobs.mu.Lock()
+	close(d.jobs.queue)
+	d.jobs.mu.Unlock()
 	d.wg.Wait()
 }
 

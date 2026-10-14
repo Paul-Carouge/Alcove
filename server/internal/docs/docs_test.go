@@ -412,3 +412,72 @@ func TestSearchByTag(t *testing.T) {
 		t.Errorf("bob sees %+v", hits)
 	}
 }
+
+func TestSearchablePDF(t *testing.T) {
+	needTools(t, true)
+	if !ocr.Detect().PDFUnite {
+		t.Skip("pdfunite not installed")
+	}
+	e := setup(t)
+	scan, _ := e.upload(t, e.alice, "facture.pdf", fixture(t, "scan.pdf"))
+	notes, _ := e.upload(t, e.alice, "notes.txt", []byte("hello"))
+	srv := testutil.Server(t, e.app)
+	call := func(method, token, nodeID string) (int, map[string]any) {
+		t.Helper()
+		req, _ := http.NewRequest(method, srv.URL+"/api/v1/documents/"+nodeID+"/searchable", nil)
+		req.Header.Set("Authorization", token)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = res.Body.Close() }()
+		var body map[string]any
+		_ = json.NewDecoder(res.Body).Decode(&body)
+		return res.StatusCode, body
+	}
+
+	if code, _ := call(http.MethodPost, e.bobTok, scan.Id); code != http.StatusNotFound {
+		t.Errorf("someone else's file: HTTP %d", code)
+	}
+	if code, _ := call(http.MethodPost, e.aliceTok, notes.Id); code != http.StatusBadRequest {
+		t.Errorf("text file: HTTP %d", code)
+	}
+	if code, body := call(http.MethodGet, e.aliceTok, scan.Id); code != 200 || body["status"] != "idle" {
+		t.Errorf("before: %d %v", code, body)
+	}
+	if code, body := call(http.MethodPost, e.aliceTok, scan.Id); code != http.StatusAccepted || body["status"] != "running" {
+		t.Fatalf("start: %d %v", code, body)
+	}
+	var body map[string]any
+	for i := 0; i < 300; i++ {
+		_, body = call(http.MethodGet, e.aliceTok, scan.Id)
+		if body["status"] != "running" {
+			break
+		}
+		testutil.Sleep(100)
+	}
+	if body["status"] != "done" {
+		t.Fatalf("job: %v", body)
+	}
+	made, err := e.app.FindRecordById(drive.Collection, body["node"].(string))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if made.GetString("name") != "facture (OCR).pdf" || made.GetString("mime") != "application/pdf" ||
+		made.GetString("parent") != scan.GetString("parent") {
+		t.Errorf("new file = %s %s", made.GetString("name"), made.GetString("mime"))
+	}
+	// Its text layer carries the words of the scan.
+	doc, err := e.app.FindFirstRecordByData(docs.Collection, "node", made.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.ocrOn = false // the text layer alone must be enough
+	if err := docs.Process(e.app, doc.Id, false); err != nil {
+		t.Fatal(err)
+	}
+	doc, _ = e.app.FindRecordById(docs.Collection, doc.Id)
+	if doc.GetString("method") != "pdf" || !strings.Contains(doc.GetString("text"), "84,20") {
+		t.Errorf("text layer: %s %q", doc.GetString("method"), doc.GetString("text"))
+	}
+}

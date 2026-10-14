@@ -44,6 +44,7 @@ type Tools struct {
 	Languages []string `json:"languages"` // installed among Languages
 	PDFText   bool     `json:"pdfText"`   // pdftotext and pdfinfo
 	PDFRender bool     `json:"pdfRender"` // pdftoppm
+	PDFUnite  bool     `json:"pdfUnite"`  // pdfunite (searchable PDFs of several pages)
 }
 
 // CanReadPDF reports whether PDFs with a text layer can be read.
@@ -82,6 +83,8 @@ func Detect() Tools {
 	t.PDFText = e1 == nil && e2 == nil
 	_, e3 := exec.LookPath("pdftoppm")
 	t.PDFRender = e3 == nil
+	_, e4 := exec.LookPath("pdfunite")
+	t.PDFUnite = e4 == nil
 	return t
 }
 
@@ -201,6 +204,52 @@ func OCRImage(ctx context.Context, path string, langs []string) (string, error) 
 		return "", err
 	}
 	return Clean(string(out)), nil
+}
+
+// SearchablePDF writes to out a PDF of the scan src whose text can be selected and searched: each
+// page is rendered (PDF) or taken as is (image), recognised, and laid out by Tesseract as the picture
+// with invisible text over it. pages is the number of pages of a PDF, 0 for an image.
+func SearchablePDF(ctx context.Context, src, tmp, out string, pages int, langs []string) error {
+	if len(langs) == 0 {
+		return fmt.Errorf("tesseract: no language model: %w", ErrMissing)
+	}
+	lang := strings.Join(langs, "+")
+	page := func(img, base string) error {
+		pctx, cancel := context.WithTimeout(ctx, pageTimeout)
+		defer cancel()
+		_, err := run(pctx, "tesseract", img, base, "-l", lang, "pdf")
+		return err
+	}
+	if pages == 0 {
+		return page(src, strings.TrimSuffix(out, ".pdf"))
+	}
+	parts := make([]string, 0, pages)
+	for p := 1; p <= pages; p++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		base := filepath.Join(tmp, fmt.Sprintf("p%04d", p))
+		pctx, cancel := context.WithTimeout(ctx, pageTimeout)
+		// JPEG keeps the result small (a PNG page at 200 dpi is several megabytes).
+		_, err := run(pctx, "pdftoppm", "-q", "-r", strconv.Itoa(dpi), "-jpeg", "-jpegopt", "quality=80",
+			"-f", strconv.Itoa(p), "-l", strconv.Itoa(p), "-singlefile", src, base)
+		cancel()
+		if err != nil {
+			return err
+		}
+		if err := page(base+".jpg", base); err != nil {
+			return err
+		}
+		_ = os.Remove(base + ".jpg")
+		parts = append(parts, base+".pdf")
+	}
+	if len(parts) == 1 {
+		return os.Rename(parts[0], out)
+	}
+	uctx, cancel := context.WithTimeout(ctx, pageTimeout)
+	defer cancel()
+	_, err := run(uctx, "pdfunite", append(parts, out)...)
+	return err
 }
 
 var (

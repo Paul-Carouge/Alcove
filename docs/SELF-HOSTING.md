@@ -209,7 +209,8 @@ installing apps from Alcove.
 **Documents.** Alcove reads the text of PDFs and text files and, with OCR, of scanned PDFs and
 screenshots (images without camera information), so they can be searched from the **Documents** page or
 the search box. Everything happens on your server, one document at a time. Administrators see the tools
-and progress on the System page, and can turn OCR off there.
+and progress on the System page, and can turn OCR off there. A scan can also be turned into a
+**searchable PDF** (its text selectable in any PDF reader), saved next to it as `<name> (OCR).pdf`.
 
 **Map tiles.** The photo map uses a world map built into Alcove: no request leaves your server. An
 administrator can enable detailed OpenStreetMap tiles on the System page; browsers then load them from

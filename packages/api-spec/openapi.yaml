@@ -1148,6 +1148,48 @@ paths:
                     items: { $ref: "#/components/schemas/SearchHit" }
         "400": { description: q is missing or too long. }
         "401": { description: Authentication required. }
+  /api/v1/documents/{nodeId}/searchable:
+    parameters:
+      - name: nodeId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [documents]
+      operationId: getSearchablePDF
+      summary: Progress of the searchable copy of a scan.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: The job, or `idle` when none was asked recently.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchableJob" }
+        "400": { description: Not a PDF or image document. }
+        "401": { description: Authentication required. }
+        "404": { description: Unknown file. }
+    post:
+      tags: [documents]
+      operationId: makeSearchablePDF
+      summary: Make a copy of a scan whose text can be selected and searched.
+      description: |
+        Runs in the background: each page is recognised and saved as a PDF with an invisible text layer
+        over the picture, next to the original as `<name> (OCR).pdf` (first 100 pages). Poll the GET
+        operation; the new file also arrives through the `nodes` realtime subscription.
+      security:
+        - userToken: []
+      responses:
+        "202":
+          description: Started (or already running).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchableJob" }
+        "400": { description: Not a PDF or image document. }
+        "401": { description: Authentication required. }
+        "404": { description: Unknown file. }
+        "409": { description: The OCR tools are not installed. }
+        "429": { description: Too many jobs queued. }
   /api/v1/admin/ocr:
     get:
       tags: [admin]
@@ -1319,6 +1361,13 @@ components:
             properties:
               text: { type: string }
               hit: { type: boolean }
+    SearchableJob:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [idle, running, done, failed] }
+        node: { type: string, description: Id of the new file (done). }
+        error: { type: string, description: Why it failed (failed). }
     OCRStatus:
       type: object
       required: [enabled, tools, bundle, canInstall, hint, counts]
@@ -1326,12 +1375,13 @@ components:
         enabled: { type: boolean }
         tools:
           type: object
-          required: [tesseract, languages, pdfText, pdfRender]
+          required: [tesseract, languages, pdfText, pdfRender, pdfUnite]
           properties:
             tesseract: { type: string, description: "Version, empty when not installed." }
             languages: { type: array, items: { type: string }, example: [fra, eng] }
             pdfText: { type: boolean }
             pdfRender: { type: boolean }
+            pdfUnite: { type: boolean }
         bundle: { type: string, description: "Directory of Alcove's own OCR tools, empty when not used." }
         canInstall: { type: boolean }
         hint: { type: string, description: "Command installing the tools (macOS, Windows), or empty." }

@@ -771,6 +771,31 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/documents/{nodeId}/searchable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: string;
+      };
+      cookie?: never;
+    };
+    /** Progress of the searchable copy of a scan. */
+    get: operations["getSearchablePDF"];
+    put?: never;
+    /**
+     * Make a copy of a scan whose text can be selected and searched.
+     * @description Runs in the background: each page is recognised and saved as a PDF with an invisible text layer
+     *     over the picture, next to the original as `<name> (OCR).pdf` (first 100 pages). Poll the GET
+     *     operation; the new file also arrives through the `nodes` realtime subscription.
+     */
+    post: operations["makeSearchablePDF"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/admin/ocr": {
     parameters: {
       query?: never;
@@ -877,6 +902,14 @@ export interface components {
         hit?: boolean;
       }[];
     };
+    SearchableJob: {
+      /** @enum {string} */
+      status: "idle" | "running" | "done" | "failed";
+      /** @description Id of the new file (done). */
+      node?: string;
+      /** @description Why it failed (failed). */
+      error?: string;
+    };
     OCRStatus: {
       enabled: boolean;
       tools: {
@@ -891,6 +924,7 @@ export interface components {
         languages: string[];
         pdfText: boolean;
         pdfRender: boolean;
+        pdfUnite: boolean;
       };
       /** @description Directory of Alcove's own OCR tools, empty when not used. */
       bundle: string;
@@ -2985,6 +3019,106 @@ export interface operations {
       };
       /** @description Authentication required. */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getSearchablePDF: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The job, or `idle` when none was asked recently. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SearchableJob"];
+        };
+      };
+      /** @description Not a PDF or image document. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown file. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  makeSearchablePDF: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Started (or already running). */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SearchableJob"];
+        };
+      };
+      /** @description Not a PDF or image document. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown file. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The OCR tools are not installed. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many jobs queued. */
+      429: {
         headers: {
           [name: string]: unknown;
         };

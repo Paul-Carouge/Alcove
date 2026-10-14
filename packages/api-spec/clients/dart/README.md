@@ -86,6 +86,8 @@ Class | Method | HTTP request | Description
 *AdminApi* | [**setMapTiles**](doc//AdminApi.md#setmaptiles) | **PUT** /api/v1/admin/map | Enable or disable OpenStreetMap tiles for every user's map.
 *AdminApi* | [**setOCR**](doc//AdminApi.md#setocr) | **PUT** /api/v1/admin/ocr | Turn OCR of scans and images on or off (on by default when the tools are installed).
 *AdminApi* | [**updateUser**](doc//AdminApi.md#updateuser) | **PATCH** /api/v1/admin/users/{userId} | Change an account's name, quota, role or password.
+*DocumentsApi* | [**getSearchablePDF**](doc//DocumentsApi.md#getsearchablepdf) | **GET** /api/v1/documents/{nodeId}/searchable | Progress of the searchable copy of a scan.
+*DocumentsApi* | [**makeSearchablePDF**](doc//DocumentsApi.md#makesearchablepdf) | **POST** /api/v1/documents/{nodeId}/searchable | Make a copy of a scan whose text can be selected and searched.
 *DocumentsApi* | [**search**](doc//DocumentsApi.md#search) | **GET** /api/v1/search | Find your files and folders by name, then documents by their text.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
@@ -167,6 +169,7 @@ Class | Method | HTTP request | Description
  - [Search200Response](doc//Search200Response.md)
  - [SearchHit](doc//SearchHit.md)
  - [SearchHitSnippetInner](doc//SearchHitSnippetInner.md)
+ - [SearchableJob](doc//SearchableJob.md)
  - [SetFavoriteRequest](doc//SetFavoriteRequest.md)
  - [SetMapTilesRequest](doc//SetMapTilesRequest.md)
  - [SetOCRRequest](doc//SetOCRRequest.md)

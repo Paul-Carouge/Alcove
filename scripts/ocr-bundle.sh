@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds a self-contained OCR toolkit for native Linux installs (ADR 0025) from Alpine's packages,
 # the same tools as the Docker image: Tesseract with its French and English models, and poppler's
-# pdftotext/pdftoppm/pdfinfo. Like the ffmpeg bundle it carries its own libraries and musl loader.
+# pdftotext/pdftoppm/pdfinfo/pdfunite. Like the ffmpeg bundle it carries its own libraries and musl loader.
 #   scripts/ocr-bundle.sh amd64|arm64|armv7 [outdir]   → <outdir>/ocr_linux_<arch>.tar.gz
 # Needs Docker (with QEMU/binfmt for foreign architectures).
 set -euo pipefail
@@ -19,7 +19,7 @@ ALPINE=alpine:3.24
 docker run --rm --platform "$PLATFORM" -v "$OUT":/out -e ARCH="$ARCH" "$ALPINE" sh -euc '
 	apk add --no-cache tesseract-ocr tesseract-ocr-data-fra tesseract-ocr-data-eng poppler-utils >/dev/null
 	B=/tmp/ocr && mkdir -p $B/bin $B/lib $B/libexec $B/share
-	EXES="tesseract pdftotext pdftoppm pdfinfo"
+	EXES="tesseract pdftotext pdftoppm pdfinfo pdfunite"
 	for exe in $EXES; do cp /usr/bin/$exe $B/libexec/; done
 	cp -r /usr/share/tessdata $B/share/
 	loader=$(basename /lib/ld-musl-*.so.1)

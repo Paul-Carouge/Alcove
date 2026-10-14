@@ -276,6 +276,8 @@ class ApiClient {
           return SearchHit.fromJson(value);
         case 'SearchHitSnippetInner':
           return SearchHitSnippetInner.fromJson(value);
+        case 'SearchableJob':
+          return SearchableJob.fromJson(value);
         case 'SetFavoriteRequest':
           return SetFavoriteRequest.fromJson(value);
         case 'SetMapTilesRequest':

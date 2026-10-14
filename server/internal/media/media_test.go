@@ -2,6 +2,8 @@ package media_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"image"
 	"image/png"
 	"math"
@@ -329,5 +331,53 @@ func TestTiledHEIC(t *testing.T) {
 	}
 	if rec.GetInt("width") != 1536 || rec.GetInt("height") != 1024 {
 		t.Errorf("size = %dx%d", rec.GetInt("width"), rec.GetInt("height"))
+	}
+}
+
+func TestMemories(t *testing.T) {
+	e := setup(t)
+	day := func(y, m, d int) time.Time { return time.Date(y, time.Month(m), d, 10, 0, 0, 0, time.UTC) }
+	for i, taken := range []time.Time{
+		day(2025, 10, 14), // 1 year ago today
+		day(2025, 10, 13), // the day before counts
+		day(2023, 10, 15), // 3 years ago, the day after
+		day(2025, 10, 20), // too far
+		day(2026, 10, 14), // this year: not a memory
+	} {
+		e.upload(t, fmt.Sprintf("p%d.jpg", i), mediatest.JPEG(mediatest.Photo{Width: 32, Height: 24, Taken: taken}))
+	}
+	srv := testutil.Server(t, e.app)
+	get := func(token, query string) (int, map[string]any) {
+		req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/v1/photos/memories"+query, nil)
+		req.Header.Set("Authorization", token)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = res.Body.Close() }()
+		var body map[string]any
+		_ = json.NewDecoder(res.Body).Decode(&body)
+		return res.StatusCode, body
+	}
+	code, body := get(e.aliceTok, "?date=2026-10-14")
+	if code != 200 {
+		t.Fatalf("HTTP %d", code)
+	}
+	groups := body["memories"].([]any)
+	if len(groups) != 2 {
+		t.Fatalf("groups = %v", groups)
+	}
+	first := groups[0].(map[string]any)
+	if first["yearsAgo"].(float64) != 1 || len(first["items"].([]any)) != 2 {
+		t.Errorf("1 year ago = %v", first)
+	}
+	if groups[1].(map[string]any)["yearsAgo"].(float64) != 3 {
+		t.Errorf("second group = %v", groups[1])
+	}
+	if code, _ := get(e.aliceTok, "?date=yesterday"); code != 400 {
+		t.Errorf("bad date: %d", code)
+	}
+	if _, body := get(e.bobTok, "?date=2026-10-14"); len(body["memories"].([]any)) != 0 {
+		t.Errorf("bob sees alice's memories")
 	}
 }

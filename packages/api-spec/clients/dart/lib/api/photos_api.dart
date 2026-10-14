@@ -227,6 +227,64 @@ class PhotosApi {
     return null;
   }
 
+  /// Photos and videos taken around today's date in previous years (\"1 year ago today\").
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [DateTime] date:
+  ///   The client's today (its time zone decides the day). Defaults to the server's date.
+  Future<Response> getMemoriesWithHttpInfo({ DateTime? date, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/v1/photos/memories';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (date != null) {
+      queryParams.addAll(_queryParams('', 'date', date));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Photos and videos taken around today's date in previous years (\"1 year ago today\").
+  ///
+  /// Parameters:
+  ///
+  /// * [DateTime] date:
+  ///   The client's today (its time zone decides the day). Defaults to the server's date.
+  Future<GetMemories200Response?> getMemories({ DateTime? date, }) async {
+    final response = await getMemoriesWithHttpInfo( date: date, );
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMemories200Response',) as GetMemories200Response;
+    
+    }
+    return null;
+  }
+
   /// Years and cameras present in your photos, for the timeline filters.
   ///
   /// Note: This method returns the HTTP [Response].

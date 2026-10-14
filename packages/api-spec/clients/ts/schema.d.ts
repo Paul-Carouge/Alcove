@@ -798,6 +798,62 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/photos/memories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Photos and videos taken around today's date in previous years ("1 year ago today"). */
+    get: operations["getMemories"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/zip": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Prepare a ZIP of files and folders (with their content) or of an album.
+     * @description Checks access and resolves the files now, then returns a link valid 10 minutes that streams the
+     *     archive without authentication (browsers download it like any file). Photos, videos and other
+     *     compressed formats are stored as they are; text is deflated. Names are made unique per folder.
+     */
+    post: operations["createZip"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/zip/{ticket}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Stream a prepared ZIP. */
+    get: operations["downloadZip"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/admin/ocr": {
     parameters: {
       query?: never;
@@ -888,6 +944,16 @@ export interface components {
       /** @description Uses an authenticator app. */
       twoFactor: boolean;
       created: string;
+    };
+    /** @description A record of the PocketBase `media` collection, with `expand.node`. */
+    MediaRecord: {
+      id: string;
+      node: string;
+      /** @enum {string} */
+      kind?: "image" | "video";
+      taken_at?: string;
+    } & {
+      [key: string]: unknown;
     };
     SearchHit: {
       /** @description The `nodes` record, with `expand.parent` when it is in a folder. */
@@ -3123,6 +3189,143 @@ export interface operations {
       };
       /** @description Too many jobs queued. */
       429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getMemories: {
+    parameters: {
+      query?: {
+        /** @description The client's today (its time zone decides the day). Defaults to the server's date. */
+        date?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Groups by year, most recent first; up to 24 items each (media records with `expand.node`). */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            memories: {
+              yearsAgo: number;
+              year: number;
+              items: components["schemas"]["MediaRecord"][];
+            }[];
+          };
+        };
+      };
+      /** @description Invalid date. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createZip: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Your files or folders. */
+          nodes?: string[];
+          /** @description An album you own or are part of (instead of nodes). */
+          album?: string;
+          /** @description Archive name without .zip. */
+          name?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ready. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example /api/v1/zip/Q2xhdWRl */
+            url: string;
+            files: number;
+            /** Format: date-time */
+            expiresAt: string;
+          };
+        };
+      };
+      /** @description Nothing to download, both or neither of nodes and album, or more than 20,000 files. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description An item is not yours, is in the trash, or the album is not shared with you. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many archives being prepared. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  downloadZip: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticket: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The archive. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/zip": string;
+        };
+      };
+      /** @description Unknown or expired link. */
+      404: {
         headers: {
           [name: string]: unknown;
         };

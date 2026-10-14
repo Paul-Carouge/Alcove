@@ -89,13 +89,16 @@ Class | Method | HTTP request | Description
 *DocumentsApi* | [**getSearchablePDF**](doc//DocumentsApi.md#getsearchablepdf) | **GET** /api/v1/documents/{nodeId}/searchable | Progress of the searchable copy of a scan.
 *DocumentsApi* | [**makeSearchablePDF**](doc//DocumentsApi.md#makesearchablepdf) | **POST** /api/v1/documents/{nodeId}/searchable | Make a copy of a scan whose text can be selected and searched.
 *DocumentsApi* | [**search**](doc//DocumentsApi.md#search) | **GET** /api/v1/search | Find your files and folders by name, then documents by their text.
+*DriveApi* | [**createZip**](doc//DriveApi.md#createzip) | **POST** /api/v1/zip | Prepare a ZIP of files and folders (with their content) or of an album.
 *DriveApi* | [**downloadNode**](doc//DriveApi.md#downloadnode) | **GET** /api/v1/nodes/{nodeId}/download | Download a file under its drive name.
+*DriveApi* | [**downloadZip**](doc//DriveApi.md#downloadzip) | **GET** /api/v1/zip/{ticket} | Stream a prepared ZIP.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *DriveApi* | [**knownHashes**](doc//DriveApi.md#knownhashes) | **POST** /api/v1/backup/known | Which of these file fingerprints you already have (phone backup deduplication).
 *PhotosApi* | [**dismissDuplicates**](doc//PhotosApi.md#dismissduplicates) | **POST** /api/v1/photos/duplicates/dismiss | Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
 *PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
 *PhotosApi* | [**getMapConfig**](doc//PhotosApi.md#getmapconfig) | **GET** /api/v1/map/config | How the web app draws maps (ADR 0020).
 *PhotosApi* | [**getMediaOriginal**](doc//PhotosApi.md#getmediaoriginal) | **GET** /api/v1/media/{mediaId}/original | The original file of a photo or video, for its owner and the people of albums it is in.
+*PhotosApi* | [**getMemories**](doc//PhotosApi.md#getmemories) | **GET** /api/v1/photos/memories | Photos and videos taken around today's date in previous years (\"1 year ago today\").
 *PhotosApi* | [**getPhotoFacets**](doc//PhotosApi.md#getphotofacets) | **GET** /api/v1/photos/facets | Years and cameras present in your photos, for the timeline filters.
 *PhotosApi* | [**leaveAlbum**](doc//PhotosApi.md#leavealbum) | **POST** /api/v1/albums/{albumId}/leave | Stop taking part in an album shared with you (your photos are removed from it).
 *PhotosApi* | [**listAlbumItems**](doc//PhotosApi.md#listalbumitems) | **GET** /api/v1/albums/{albumId}/items | Photos and videos of an album, newest first (items in the trash are left out).
@@ -132,6 +135,8 @@ Class | Method | HTTP request | Description
  - [CompleteSetupRequestAllOfAdmin](doc//CompleteSetupRequestAllOfAdmin.md)
  - [CreateShare](doc//CreateShare.md)
  - [CreateUserRequest](doc//CreateUserRequest.md)
+ - [CreateZip200Response](doc//CreateZip200Response.md)
+ - [CreateZipRequest](doc//CreateZipRequest.md)
  - [CreatedShare](doc//CreatedShare.md)
  - [DismissDuplicatesRequest](doc//DismissDuplicatesRequest.md)
  - [DuplicateGroup](doc//DuplicateGroup.md)
@@ -141,6 +146,8 @@ Class | Method | HTTP request | Description
  - [GetAlbumPeople200Response](doc//GetAlbumPeople200Response.md)
  - [GetAlbumPeople200ResponsePeopleInner](doc//GetAlbumPeople200ResponsePeopleInner.md)
  - [GetAndroidApp200Response](doc//GetAndroidApp200Response.md)
+ - [GetMemories200Response](doc//GetMemories200Response.md)
+ - [GetMemories200ResponseMemoriesInner](doc//GetMemories200ResponseMemoriesInner.md)
  - [GetPhotoFacets200Response](doc//GetPhotoFacets200Response.md)
  - [GetPhotoFacets200ResponseCamerasInner](doc//GetPhotoFacets200ResponseCamerasInner.md)
  - [GetPhotoFacets200ResponseYearsInner](doc//GetPhotoFacets200ResponseYearsInner.md)
@@ -156,6 +163,7 @@ Class | Method | HTTP request | Description
  - [MapConfig](doc//MapConfig.md)
  - [MapConfigTiles](doc//MapConfigTiles.md)
  - [MediaFiles](doc//MediaFiles.md)
+ - [MediaRecord](doc//MediaRecord.md)
  - [Module](doc//Module.md)
  - [OCRStatus](doc//OCRStatus.md)
  - [OCRStatusCounts](doc//OCRStatusCounts.md)

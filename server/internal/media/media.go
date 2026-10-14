@@ -77,6 +77,7 @@ func Register(app core.App) {
 		se.Router.GET("/api/v1/media/{id}/original", original)
 		se.Router.GET("/api/v1/photos/facets", facets).Bind(apis.RequireAuth("users"))
 		se.Router.GET("/api/v1/photos/locations", locations).Bind(apis.RequireAuth("users"))
+		se.Router.GET("/api/v1/photos/memories", memories).Bind(apis.RequireAuth("users"))
 		w.start()
 		return se.Next()
 	})

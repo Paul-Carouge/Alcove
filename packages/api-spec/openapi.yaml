@@ -1195,6 +1195,96 @@ paths:
         "404": { description: Unknown file. }
         "409": { description: The OCR tools are not installed. }
         "429": { description: Too many jobs queued. }
+  /api/v1/photos/memories:
+    get:
+      tags: [photos]
+      operationId: getMemories
+      summary: Photos and videos taken around today's date in previous years ("1 year ago today").
+      security:
+        - userToken: []
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: The client's today (its time zone decides the day). Defaults to the server's date.
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Groups by year, most recent first; up to 24 items each (media records with `expand.node`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [memories]
+                properties:
+                  memories:
+                    type: array
+                    items:
+                      type: object
+                      required: [yearsAgo, year, items]
+                      properties:
+                        yearsAgo: { type: integer }
+                        year: { type: integer }
+                        items:
+                          type: array
+                          items: { $ref: "#/components/schemas/MediaRecord" }
+        "400": { description: Invalid date. }
+        "401": { description: Authentication required. }
+  /api/v1/zip:
+    post:
+      tags: [drive]
+      operationId: createZip
+      summary: Prepare a ZIP of files and folders (with their content) or of an album.
+      description: |
+        Checks access and resolves the files now, then returns a link valid 10 minutes that streams the
+        archive without authentication (browsers download it like any file). Photos, videos and other
+        compressed formats are stored as they are; text is deflated. Names are made unique per folder.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nodes: { type: array, maxItems: 2000, items: { type: string }, description: Your files or folders. }
+                album: { type: string, description: An album you own or are part of (instead of nodes). }
+                name: { type: string, description: Archive name without .zip. }
+      responses:
+        "200":
+          description: Ready.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, files, expiresAt]
+                properties:
+                  url: { type: string, example: /api/v1/zip/Q2xhdWRl }
+                  files: { type: integer }
+                  expiresAt: { type: string, format: date-time }
+        "400": { description: "Nothing to download, both or neither of nodes and album, or more than 20,000 files." }
+        "401": { description: Authentication required. }
+        "404": { description: "An item is not yours, is in the trash, or the album is not shared with you." }
+        "429": { description: Too many archives being prepared. }
+  /api/v1/zip/{ticket}:
+    get:
+      tags: [drive]
+      operationId: downloadZip
+      summary: Stream a prepared ZIP.
+      security: []
+      parameters:
+        - name: ticket
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The archive.
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        "404": { description: Unknown or expired link. }
   /api/v1/admin/ocr:
     get:
       tags: [admin]
@@ -1347,6 +1437,16 @@ components:
         usedBytes: { type: integer, description: "Files, trash included." }
         twoFactor: { type: boolean, description: Uses an authenticator app. }
         created: { type: string }
+    MediaRecord:
+      type: object
+      description: A record of the PocketBase `media` collection, with `expand.node`.
+      required: [id, node]
+      properties:
+        id: { type: string }
+        node: { type: string }
+        kind: { type: string, enum: [image, video] }
+        taken_at: { type: string }
+      additionalProperties: true
     SearchHit:
       type: object
       required: [node, match]

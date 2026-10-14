@@ -393,3 +393,16 @@ func MediaInAlbum(app core.App, album, mediaID string) (media, node *core.Record
 	node, err = app.FindRecordById("nodes", media.GetString("node"))
 	return media, node, err
 }
+
+// NodeIDs returns the file nodes of an album's items (not in the trash), newest first.
+func NodeIDs(app core.App, album string) ([]string, error) {
+	var rows []struct {
+		ID string `db:"id"`
+	}
+	err := visibleItems(app, album).Select("n.id").OrderBy("m.taken_at DESC", "m.id DESC").All(&rows)
+	ids := make([]string, len(rows))
+	for i, r := range rows {
+		ids[i] = r.ID
+	}
+	return ids, err
+}

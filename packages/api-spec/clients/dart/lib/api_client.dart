@@ -202,6 +202,10 @@ class ApiClient {
           return CreateShare.fromJson(value);
         case 'CreateUserRequest':
           return CreateUserRequest.fromJson(value);
+        case 'CreateZip200Response':
+          return CreateZip200Response.fromJson(value);
+        case 'CreateZipRequest':
+          return CreateZipRequest.fromJson(value);
         case 'CreatedShare':
           return CreatedShare.fromJson(value);
         case 'DismissDuplicatesRequest':
@@ -220,6 +224,10 @@ class ApiClient {
           return GetAlbumPeople200ResponsePeopleInner.fromJson(value);
         case 'GetAndroidApp200Response':
           return GetAndroidApp200Response.fromJson(value);
+        case 'GetMemories200Response':
+          return GetMemories200Response.fromJson(value);
+        case 'GetMemories200ResponseMemoriesInner':
+          return GetMemories200ResponseMemoriesInner.fromJson(value);
         case 'GetPhotoFacets200Response':
           return GetPhotoFacets200Response.fromJson(value);
         case 'GetPhotoFacets200ResponseCamerasInner':
@@ -250,6 +258,8 @@ class ApiClient {
           return MapConfigTiles.fromJson(value);
         case 'MediaFiles':
           return MediaFiles.fromJson(value);
+        case 'MediaRecord':
+          return MediaRecord.fromJson(value);
         case 'Module':
           return ModuleTypeTransformer().decode(value);
         case 'OCRStatus':

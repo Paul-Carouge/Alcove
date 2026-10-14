@@ -201,26 +201,9 @@ func (d *Docs) makeSearchable(id string) (string, error) {
 	}
 
 	base := strings.TrimSuffix(node.GetString("name"), filepath.Ext(node.GetString("name")))
-	name, err := drive.AvailableName(d.app, node.GetString("owner"), node.GetString("parent"), base+" (OCR).pdf")
+	rec, err := drive.SaveNewFile(d.app, node.GetString("owner"), node.GetString("parent"), base+" (OCR).pdf",
+		func() (*filesystem.File, error) { return filesystem.NewFileFromPath(out) })
 	if err != nil {
-		return "", err
-	}
-	col, err := d.app.FindCollectionByNameOrId(drive.Collection)
-	if err != nil {
-		return "", err
-	}
-	f, err := filesystem.NewFileFromPath(out)
-	if err != nil {
-		return "", err
-	}
-	f.Name = "searchable.pdf"
-	rec := core.NewRecord(col)
-	rec.Set("owner", node.GetString("owner"))
-	rec.Set("parent", node.GetString("parent"))
-	rec.Set("name", name)
-	rec.Set("kind", drive.KindFile)
-	rec.Set("blob", f)
-	if err := d.app.Save(rec); err != nil {
 		if drive.IsQuotaError(err) {
 			return "", errors.New("storage quota reached")
 		}

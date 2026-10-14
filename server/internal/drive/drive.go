@@ -19,6 +19,7 @@ import (
 	"github.com/pocketbase/dbx"
 	validation "github.com/pocketbase/ozzo-validation/v4"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/filesystem"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -242,4 +243,51 @@ func checkNoCycle(app core.App, node *core.Record) error {
 		id = parent.GetString("parent")
 	}
 	return errCycle
+}
+
+// SaveNewFile creates a file node named name in parent, or "name (2).ext"… when the name is taken,
+// retrying when concurrent writers take the same free name first. file is consumed by PocketBase.
+func SaveNewFile(app core.App, owner, parent, name string, newFile func() (*filesystem.File, error)) (*core.Record, error) {
+	col, err := app.FindCollectionByNameOrId(Collection)
+	if err != nil {
+		return nil, err
+	}
+	var lastErr error
+	for range 5 {
+		free, err := AvailableName(app, owner, parent, name)
+		if err != nil {
+			return nil, err
+		}
+		f, err := newFile()
+		if err != nil {
+			return nil, err
+		}
+		f.OriginalName = free
+		node := core.NewRecord(col)
+		node.Set("owner", owner)
+		node.Set("parent", parent)
+		node.Set("name", free)
+		node.Set("kind", KindFile)
+		node.Set("blob", f)
+		lastErr = app.Save(node)
+		if lastErr == nil {
+			return node, nil
+		}
+		if IsQuotaError(lastErr) || !isNameTaken(lastErr) {
+			return nil, lastErr
+		}
+	}
+	return nil, lastErr
+}
+
+// isNameTaken reports a unique-name violation (another node got the name first).
+func isNameTaken(err error) bool {
+	var verrs validation.Errors
+	if errors.As(err, &verrs) {
+		if e, ok := verrs["name"]; ok {
+			var ve validation.Error
+			return errors.As(e, &ve) && ve.Code() == "validation_not_unique"
+		}
+	}
+	return strings.Contains(err.Error(), "UNIQUE constraint failed")
 }

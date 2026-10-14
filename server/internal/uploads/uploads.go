@@ -219,36 +219,13 @@ func (s *service) discard(hook tusd.HookEvent) {
 }
 
 func (s *service) createNode(owner, parent, filename, binPath string) (*core.Record, error) {
-	col, err := s.app.FindCollectionByNameOrId(drive.Collection)
+	node, err := drive.SaveNewFile(s.app, owner, parent, filename, func() (*filesystem.File, error) {
+		return filesystem.NewFileFromPath(binPath)
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("save node: %w", err)
 	}
-	// Retry once on a name collision created by a concurrent upload.
-	for attempt := 0; ; attempt++ {
-		name, err := drive.AvailableName(s.app, owner, parent, filename)
-		if err != nil {
-			return nil, err
-		}
-		file, err := filesystem.NewFileFromPath(binPath)
-		if err != nil {
-			return nil, err
-		}
-		file.OriginalName = name
-
-		node := core.NewRecord(col)
-		node.Set("owner", owner)
-		node.Set("parent", parent)
-		node.Set("name", name)
-		node.Set("kind", drive.KindFile)
-		node.Set("blob", file)
-		err = s.app.Save(node)
-		if err == nil {
-			return node, nil
-		}
-		if attempt >= 1 || drive.IsQuotaError(err) {
-			return nil, fmt.Errorf("save node: %w", err)
-		}
-	}
+	return node, nil
 }
 
 // removeStale deletes tus files (.bin/.info) not modified since cutoff. The

@@ -327,6 +327,8 @@ void main() {
     while (queue.active) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
+    // Broadcast events arrive asynchronously, after the queue went idle.
+    await pumpEventQueue();
     expect(queue.finished, 2);
     expect(queue.failedCount, 1);
     expect(arrived, ['n9', 'n9']);

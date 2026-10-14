@@ -148,5 +148,7 @@
   "tagsEmpty": "Aucune étiquette : créez-en une ci-dessous, par exemple « Factures ».",
   "tagNew": "Nouvelle étiquette",
   "tagAdd": "Ajouter l’étiquette",
-  "tagNameTaken": "Vous avez déjà une étiquette avec ce nom."
+  "tagNameTaken": "Vous avez déjà une étiquette avec ce nom.",
+  "searchByTag": "Par étiquette",
+  "searchTagged": "Étiquette « {tag} »"
 }

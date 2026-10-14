@@ -46,6 +46,7 @@ void main() {
         return _json({
           'items': [
             {'node': _node('f1', 'Contrats', kind: 'folder'), 'match': 'name'},
+            {'node': _node('t1', 'edf.pdf'), 'match': 'tag', 'tag': 'Dépenses'},
             {
               'node': _node('d1', 'bail.pdf'),
               'match': 'content',
@@ -87,6 +88,8 @@ void main() {
     expect(queries, ['depot']); // debounced: one request
     expect(find.text('FILES AND FOLDERS'), findsOneWidget);
     expect(find.text('INSIDE DOCUMENTS'), findsOneWidget);
+    expect(find.text('BY TAG'), findsOneWidget);
+    expect(find.text('Tagged “Dépenses”'), findsOneWidget);
     expect(find.text('Contrats'), findsOneWidget);
     expect(find.text('bail.pdf'), findsOneWidget);
     expect(find.textContaining('dépôt', findRichText: true), findsOneWidget);

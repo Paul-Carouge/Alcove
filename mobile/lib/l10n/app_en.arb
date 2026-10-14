@@ -355,5 +355,14 @@
   "tagsEmpty": "No tags yet: create one below, for example “Invoices”.",
   "tagNew": "New tag",
   "tagAdd": "Add the tag",
-  "tagNameTaken": "You already have a tag with this name."
+  "tagNameTaken": "You already have a tag with this name.",
+  "searchByTag": "By tag",
+  "searchTagged": "Tagged “{tag}”",
+  "@searchTagged": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  }
 }

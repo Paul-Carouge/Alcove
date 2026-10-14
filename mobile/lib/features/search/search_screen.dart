@@ -12,19 +12,27 @@ import '../files/files_screen.dart';
 
 /// One search result: a file or folder found by name, or a document found by its text.
 class SearchHit {
-  SearchHit(this.node, this.inText, this.snippet);
+  SearchHit(this.node, this.match, this.snippet, {this.tag = ''});
 
   final RecordModel node;
-  final bool inText;
+
+  /// name, tag or content.
+  final String match;
   final List<(String, bool)> snippet; // text, matched
+
+  /// The matching tag's name (tag matches).
+  final String tag;
+
+  bool get inText => match == 'content';
 
   factory SearchHit.fromJson(Map<String, dynamic> j) => SearchHit(
     RecordModel.fromJson(j['node'] as Map<String, dynamic>),
-    j['match'] == 'content',
+    j['match'] as String? ?? 'name',
     [
       for (final s in (j['snippet'] as List<dynamic>? ?? const []))
         ((s as Map<String, dynamic>)['text'] as String? ?? '', s['hit'] == true),
     ],
+    tag: j['tag'] as String? ?? '',
   );
 }
 
@@ -108,7 +116,8 @@ class _SearchScreenState extends State<SearchScreen> {
     final c = context.colors;
     final locale = Localizations.localeOf(context).toLanguageTag();
     final hits = _hits;
-    final byName = hits?.where((h) => !h.inText).toList() ?? const [];
+    final byName = hits?.where((h) => h.match == 'name').toList() ?? const [];
+    final byTag = hits?.where((h) => h.match == 'tag').toList() ?? const [];
     final inText = hits?.where((h) => h.inText).toList() ?? const [];
 
     Widget row(SearchHit h) => NodeRow(
@@ -116,7 +125,14 @@ class _SearchScreenState extends State<SearchScreen> {
       locale: locale,
       thumb: nodeThumb(widget.session, h.node, _token),
       onTap: () => openNode(context, widget.session, h.node),
-      below: h.inText && h.snippet.isNotEmpty ? _Snippet(segments: h.snippet) : null,
+      below: h.inText && h.snippet.isNotEmpty
+          ? _Snippet(segments: h.snippet)
+          : h.match == 'tag'
+          ? Text(
+              l.searchTagged(h.tag),
+              style: TextStyle(fontSize: AlcoveFont.sizeSm, color: c.textMuted),
+            )
+          : null,
     );
 
     return Scaffold(
@@ -167,6 +183,8 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             if (byName.isNotEmpty)
               InsetGroup(title: l.searchByName, children: [for (final h in byName) row(h)]),
+            if (byTag.isNotEmpty)
+              InsetGroup(title: l.searchByTag, children: [for (final h in byTag) row(h)]),
             if (inText.isNotEmpty)
               InsetGroup(title: l.searchInText, children: [for (final h in inText) row(h)]),
           ],

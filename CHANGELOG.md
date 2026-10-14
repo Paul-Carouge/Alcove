@@ -7,6 +7,26 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-14
+
+### Changed
+- **Installing is clearer**: the installer and the first-launch message show the addresses phones and other
+  computers can actually open (`http://192.168.x.y:8090`, Tailscale), with `name.local` as an alternative,
+  instead of `0.0.0.0` or a bare host name. "Cannot reach the release server" now says why (missing
+  certificate store, no network).
+- The self-hosting guide starts with three steps and a table to choose the install mode, and ends with
+  troubleshooting.
+- Web pages load faster: the upload client is fetched on first upload. Small sizes read "6 B".
+
+### Fixed
+- Several files with the same name arriving at once (a burst of phone backups) no longer fail after the
+  second one.
+- Empty files upload from the app.
+- The app renews its session when brought back after a while, and shows the sign-in screen if the session
+  was revoked, instead of failing screens.
+- The ffmpeg fallback of the installer works on a fresh Debian or Ubuntu (package lists refreshed first).
+- CI checks that the generated Dart API client compiles.
+
 ## [0.25.0] - 2026-10-14
 
 ### Added

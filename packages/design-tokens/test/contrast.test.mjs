@@ -40,6 +40,12 @@ const PAIRS = [
   ["onStageMuted", "stagePanel", 4.5],
   ["onStageLink", "stagePanel", 4.5],
   ["favorite", "stage", 3],
+  // Tag chips: coloured text on a tint of the same colour.
+  ...["Gray", "Red", "Orange", "Yellow", "Green", "Teal", "Blue", "Violet", "Pink"].map((c) => [
+    `tag${c}`,
+    `tag${c}Bg`,
+    4.5,
+  ]),
 ];
 
 for (const mode of ["light", "dark"]) {

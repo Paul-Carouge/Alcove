@@ -10,6 +10,7 @@ import (
 	"io"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -151,10 +152,43 @@ func beforeSave(app core.App, node *core.Record) error {
 		node.Set("sha256", meta.sha256)
 	}
 
+	if err := checkTags(app, node); err != nil {
+		return err
+	}
 	if !node.IsNew() && node.Original().GetString("parent") != node.GetString("parent") {
 		return checkNoCycle(app, node)
 	}
 	return nil
+}
+
+var errForeignTag = validation.Errors{"tags": validation.NewError("validation_tags_owner", "Unknown tag.")}
+
+// checkTags makes sure every tag on a node belongs to the node's owner: tag ids are not secret, and
+// the relation field alone would accept anyone's.
+func checkTags(app core.App, node *core.Record) error {
+	ids := node.GetStringSlice("tags")
+	if len(ids) == 0 {
+		return nil
+	}
+	if !node.IsNew() && slices.Equal(ids, node.Original().GetStringSlice("tags")) {
+		return nil
+	}
+	n, err := app.CountRecords("tags", dbx.In("id", toAny(ids)...), dbx.HashExp{"owner": node.GetString("owner")})
+	if err != nil {
+		return err
+	}
+	if int(n) != len(ids) {
+		return errForeignTag
+	}
+	return nil
+}
+
+func toAny(ss []string) []any {
+	out := make([]any, len(ss))
+	for i, s := range ss {
+		out[i] = s
+	}
+	return out
 }
 
 type fileMeta struct {

@@ -7,6 +7,17 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-14
+
+### Added
+- **Empty the trash** in one go, with a confirmation.
+- Public links to a folder show **thumbnails** of its photos and videos instead of generic icons
+  (`?thumb=1` on the public file endpoint).
+
+### Changed
+- Web on phones: trash rows keep names on one line with size and date below; shared links show their
+  expiry under the name instead of dropping it.
+
 ## [0.23.0] - 2026-10-14
 
 ### Added

@@ -1124,8 +1124,9 @@ paths:
       operationId: search
       summary: Find your files and folders by name, then documents by their text.
       description: |
-        Name matches (substring, folders first) come first, then documents whose text contains every
-        word as a prefix, accents and case ignored, best matches first. Trashed items are left out.
+        Name matches (substring, folders first) come first, then files carrying a tag whose name starts
+        with the query, then documents whose text contains every word as a prefix, accents and case
+        ignored, best matches first. Trashed items are left out.
       security:
         - userToken: []
       parameters:
@@ -1307,7 +1308,8 @@ components:
           type: object
           description: The `nodes` record, with `expand.parent` when it is in a folder.
           additionalProperties: true
-        match: { type: string, enum: [name, content] }
+        match: { type: string, enum: [name, tag, content] }
+        tag: { type: string, description: Name of the matching tag (tag matches only). }
         snippet:
           type: array
           description: Text around the matching words (content matches only).

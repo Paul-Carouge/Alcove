@@ -758,8 +758,9 @@ export interface paths {
     };
     /**
      * Find your files and folders by name, then documents by their text.
-     * @description Name matches (substring, folders first) come first, then documents whose text contains every
-     *     word as a prefix, accents and case ignored, best matches first. Trashed items are left out.
+     * @description Name matches (substring, folders first) come first, then files carrying a tag whose name starts
+     *     with the query, then documents whose text contains every word as a prefix, accents and case
+     *     ignored, best matches first. Trashed items are left out.
      */
     get: operations["search"];
     put?: never;
@@ -867,7 +868,9 @@ export interface components {
         [key: string]: unknown;
       };
       /** @enum {string} */
-      match: "name" | "content";
+      match: "name" | "tag" | "content";
+      /** @description Name of the matching tag (tag matches only). */
+      tag?: string;
       /** @description Text around the matching words (content matches only). */
       snippet?: {
         text: string;

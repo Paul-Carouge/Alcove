@@ -15,6 +15,7 @@ class SearchHit {
   SearchHit({
     required this.node,
     required this.match,
+    this.tag,
     this.snippet = const [],
   });
 
@@ -23,6 +24,15 @@ class SearchHit {
 
   SearchHitMatchEnum match;
 
+  /// Name of the matching tag (tag matches only).
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? tag;
+
   /// Text around the matching words (content matches only).
   List<SearchHitSnippetInner> snippet;
 
@@ -30,6 +40,7 @@ class SearchHit {
   bool operator ==(Object other) => identical(this, other) || other is SearchHit &&
     other.node == node &&
     other.match == match &&
+    other.tag == tag &&
     _deepEquality.equals(other.snippet, snippet);
 
   @override
@@ -37,15 +48,21 @@ class SearchHit {
     // ignore: unnecessary_parenthesis
     (node.hashCode) +
     (match.hashCode) +
+    (tag == null ? 0 : tag!.hashCode) +
     (snippet.hashCode);
 
   @override
-  String toString() => 'SearchHit[node=$node, match=$match, snippet=$snippet]';
+  String toString() => 'SearchHit[node=$node, match=$match, tag=$tag, snippet=$snippet]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'node'] = this.node;
       json[r'match'] = this.match;
+    if (this.tag != null) {
+      json[r'tag'] = this.tag;
+    } else {
+      json[r'tag'] = null;
+    }
       json[r'snippet'] = this.snippet;
     return json;
   }
@@ -71,6 +88,7 @@ class SearchHit {
       return SearchHit(
         node: mapValueOfType<Object>(json, r'node')!,
         match: SearchHitMatchEnum.fromJson(json[r'match'])!,
+        tag: mapValueOfType<String>(json, r'tag'),
         snippet: SearchHitSnippetInner.listFromJson(json[r'snippet']),
       );
     }
@@ -138,11 +156,13 @@ class SearchHitMatchEnum {
   String toJson() => value;
 
   static const name = SearchHitMatchEnum._(r'name');
+  static const tag = SearchHitMatchEnum._(r'tag');
   static const content = SearchHitMatchEnum._(r'content');
 
   /// List of all possible values in this [enum][SearchHitMatchEnum].
   static const values = <SearchHitMatchEnum>[
     name,
+    tag,
     content,
   ];
 
@@ -183,6 +203,7 @@ class SearchHitMatchEnumTypeTransformer {
     if (data != null) {
       switch (data) {
         case r'name': return SearchHitMatchEnum.name;
+        case r'tag': return SearchHitMatchEnum.tag;
         case r'content': return SearchHitMatchEnum.content;
         default:
           if (!allowNull) {

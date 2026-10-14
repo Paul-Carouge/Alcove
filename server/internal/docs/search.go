@@ -95,11 +95,12 @@ func segments(s string) []Segment {
 
 type hit struct {
 	Node    *core.Record `json:"node"`
-	Match   string       `json:"match"` // name or content
+	Match   string       `json:"match"` // name, tag or content
 	Snippet []Segment    `json:"snippet,omitempty"`
+	Tag     string       `json:"tag,omitempty"` // the matching tag's name
 }
 
-// search finds the user's files and folders by name, then documents by content.
+// search finds the user's files and folders by name, then by tag, then documents by content.
 func (d *Docs) search(e *core.RequestEvent) error {
 	q := strings.TrimSpace(e.Request.URL.Query().Get("q"))
 	if q == "" || len([]rune(q)) > maxQuery {
@@ -124,6 +125,37 @@ func (d *Docs) search(e *core.RequestEvent) error {
 	for _, n := range byName {
 		seen[n.Id] = true
 		hits = append(hits, hit{Node: n, Match: "name"})
+	}
+
+	// Tags: files carrying a tag whose name starts with what was typed ("fact" → "Factures").
+	var tags []struct {
+		ID   string `db:"id"`
+		Name string `db:"name"`
+	}
+	err = e.App.DB().Select("id", "name").From("tags").
+		AndWhere(dbx.HashExp{"owner": owner}).
+		AndWhere(dbx.NewExp(`name LIKE {:prefix} ESCAPE '\'`, dbx.Params{"prefix": strings.TrimSuffix(like, "%")[1:] + "%"})).
+		OrderBy("name").Limit(5).All(&tags)
+	if err != nil {
+		return err
+	}
+	for _, t := range tags {
+		var tagged []*core.Record
+		err := e.App.RecordQuery(drive.Collection).
+			AndWhere(dbx.HashExp{"owner": owner, "trashed_at": ""}).
+			AndWhere(dbx.NewExp(`EXISTS (SELECT 1 FROM json_each(nodes.tags) WHERE value = {:tag})`, dbx.Params{"tag": t.ID})).
+			OrderBy("kind DESC", "name ASC").
+			Limit(maxHits).
+			All(&tagged)
+		if err != nil {
+			return err
+		}
+		for _, n := range tagged {
+			if !seen[n.Id] {
+				seen[n.Id] = true
+				hits = append(hits, hit{Node: n, Match: "tag", Tag: t.Name})
+			}
+		}
 	}
 
 	// Content: full-text, best matches first.

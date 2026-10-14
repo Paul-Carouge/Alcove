@@ -94,6 +94,7 @@ type searchHit struct {
 		Name string `json:"name"`
 	} `json:"node"`
 	Match   string `json:"match"`
+	Tag     string `json:"tag"`
 	Snippet []struct {
 		Text string `json:"text"`
 		Hit  bool   `json:"hit"`
@@ -377,5 +378,37 @@ func TestAdminOCR(t *testing.T) {
 		s.TestAppFactory = func(testing.TB) *tests.TestApp { return e.app }
 		s.DisableTestAppCleanup = true
 		s.Test(t)
+	}
+}
+
+func TestSearchByTag(t *testing.T) {
+	e := setup(t)
+	tagsCol, err := e.app.FindCollectionByNameOrId("tags")
+	if err != nil {
+		t.Fatal(err)
+	}
+	newTag := func(owner *core.Record, name string) *core.Record {
+		r := core.NewRecord(tagsCol)
+		r.Set("owner", owner.Id)
+		r.Set("name", name)
+		r.Set("color", "orange")
+		if err := e.app.Save(r); err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	invoices := newTag(e.alice, "Factures")
+	newTag(e.bob, "Facturation") // Bob's: never shown to Alice
+	n, _ := e.upload(t, e.alice, "edf-mars.txt", []byte("Électricité"))
+	n.Set("tags", []string{invoices.Id})
+	if err := e.app.Save(n); err != nil {
+		t.Fatal(err)
+	}
+	hits := e.search(t, e.aliceTok, "fact")
+	if len(hits) != 1 || hits[0].Node.ID != n.Id || hits[0].Match != "tag" || hits[0].Tag != "Factures" {
+		t.Fatalf("hits = %+v", hits)
+	}
+	if hits := e.search(t, e.bobTok, "fact"); len(hits) != 0 {
+		t.Errorf("bob sees %+v", hits)
 	}
 }

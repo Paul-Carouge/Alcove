@@ -18,7 +18,7 @@ class DocumentsApi {
 
   /// Find your files and folders by name, then documents by their text.
   ///
-  /// Name matches (substring, folders first) come first, then documents whose text contains every word as a prefix, accents and case ignored, best matches first. Trashed items are left out. 
+  /// Name matches (substring, folders first) come first, then files carrying a tag whose name starts with the query, then documents whose text contains every word as a prefix, accents and case ignored, best matches first. Trashed items are left out. 
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -54,7 +54,7 @@ class DocumentsApi {
 
   /// Find your files and folders by name, then documents by their text.
   ///
-  /// Name matches (substring, folders first) come first, then documents whose text contains every word as a prefix, accents and case ignored, best matches first. Trashed items are left out. 
+  /// Name matches (substring, folders first) come first, then files carrying a tag whose name starts with the query, then documents whose text contains every word as a prefix, accents and case ignored, best matches first. Trashed items are left out. 
   ///
   /// Parameters:
   ///

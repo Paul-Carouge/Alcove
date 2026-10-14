@@ -11,6 +11,8 @@ export interface DriveNode extends RecordModel {
 	mime: string;
 	sha256: string;
 	trashed_at: string;
+	/** Ids of the owner's tags (see #lib/tags). */
+	tags?: string[];
 	created: string;
 	updated: string;
 }

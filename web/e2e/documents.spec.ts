@@ -84,3 +84,45 @@ test('administrators see the OCR tools on the System page', async ({ page }) => 
 	await toggle.check();
 	await expect(toggle).toBeChecked();
 });
+
+test('tags label files and filter documents', async ({ page }) => {
+	await signIn(page, DOC_USER);
+	// Tag a file from its menu in Files, creating the tag on the way.
+	await page.getByRole('button', { name: 'Actions for lease.pdf' }).click();
+	await page.getByRole('menuitem', { name: 'Tags' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Tags of “lease.pdf”' });
+	await expect(dialog.getByText(/No tags yet/)).toBeVisible();
+	await dialog.getByRole('textbox', { name: 'New tag' }).fill('Contrats');
+	await dialog.getByRole('radio', { name: 'Green' }).first().click();
+	await dialog.getByRole('button', { name: 'Add' }).click();
+	await expect(dialog.getByRole('checkbox', { name: 'Contrats' })).toBeChecked();
+	// Same name, other case: refused.
+	await dialog.getByRole('textbox', { name: 'New tag' }).fill('contrats');
+	await dialog.getByRole('button', { name: 'Add' }).click();
+	await expect(dialog.getByText('You already have a tag with this name.')).toBeVisible();
+	await dialog.getByRole('button', { name: 'Save' }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByRole('row', { name: /lease\.pdf/ }).getByText('Contrats')).toBeVisible();
+
+	// Documents: filter by tag.
+	await nav(page, 'Documents');
+	const filter = page.getByRole('radiogroup', { name: 'Tag' });
+	await filter.getByRole('radio', { name: 'Contrats' }).click();
+	await expect(page.getByRole('button', { name: 'lease.pdf', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'invoice.png', exact: true })).toHaveCount(0);
+
+	// Rename the tag, then delete it: the file stays, untagged.
+	await page.getByRole('button', { name: 'Tags of lease.pdf' }).click();
+	const again = page.getByRole('dialog', { name: 'Tags of “lease.pdf”' });
+	await again.getByRole('button', { name: 'Edit the tag Contrats' }).click();
+	await again.getByRole('textbox', { name: 'Tag name' }).fill('Logement');
+	await again.getByRole('button', { name: 'Save' }).first().click();
+	await expect(again.getByRole('checkbox', { name: 'Logement' })).toBeChecked();
+	await again.getByRole('button', { name: 'Edit the tag Logement' }).click();
+	page.once('dialog', (d) => d.accept());
+	await again.getByRole('button', { name: 'Delete' }).click();
+	await expect(again.getByText(/No tags yet/)).toBeVisible();
+	await again.getByRole('button', { name: 'Cancel' }).click();
+	await expect(page.getByRole('radiogroup', { name: 'Tag' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'invoice.png', exact: true })).toBeVisible();
+});

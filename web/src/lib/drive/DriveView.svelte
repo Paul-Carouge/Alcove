@@ -13,7 +13,8 @@
 		Search as SearchIcon,
 		Trash2,
 		Upload as UploadIcon,
-		X
+		X,
+		Tag as TagIcon
 	} from '@lucide/svelte';
 	import { ClientResponseError, type RecordSubscription } from 'pocketbase';
 	import { m } from '#lib/paraglide/messages.js';
@@ -27,6 +28,9 @@
 	import { previewKind } from './files.js';
 	import Thumb from './Thumb.svelte';
 	import Viewer from './Viewer.svelte';
+	import TagChip from '#lib/tags/TagChip.svelte';
+	import TagsDialog from '#lib/tags/TagsDialog.svelte';
+	import { tags } from '#lib/tags/tags.svelte.js';
 	import ShareDialog from '#lib/shares/ShareDialog.svelte';
 	import { formatDate, formatSize } from './format.js';
 	import { onNodeChange } from './live.js';
@@ -212,6 +216,14 @@
 		move(items, targetId, targetName);
 	}
 
+	let tagging = $state<DriveNode | null>(null);
+	let taggingOpen = $state(false);
+	$effect(() => {
+		tags.load().catch(() => {});
+	});
+	const tagsOf = (node: DriveNode) =>
+		(node.tags ?? []).map((id) => tags.byId.get(id)).filter((t) => t !== undefined);
+
 	function actionsFor(node: DriveNode) {
 		return [
 			...(node.kind === 'file'
@@ -219,6 +231,14 @@
 				: []),
 			{ label: m.action_share(), icon: Link, onselect: () => (sharing = node) },
 			{ label: m.action_rename(), icon: Pencil, onselect: () => (renaming = node) },
+			{
+				label: m.action_tags(),
+				icon: TagIcon,
+				onselect: () => {
+					tagging = node;
+					taggingOpen = true;
+				}
+			},
 			{ label: m.action_move(), icon: FolderInput, onselect: () => openMove([node]) },
 			{ label: m.action_trash(), icon: Trash2, danger: true, onselect: () => trash([node]) }
 		];
@@ -452,6 +472,7 @@
 									{:else}
 										<button class="name as-link" onclick={() => open(node)}>{node.name}</button>
 									{/if}
+									{#each tagsOf(node) as t (t.id)}<TagChip tag={t} />{/each}
 								</div>
 							</td>
 							<td class="num muted"
@@ -493,6 +514,7 @@
 />
 <p class="visually-hidden" aria-live="polite">{announcement}</p>
 <Viewer items={files} bind:index={viewerIndex} ondownload={download} />
+<TagsDialog bind:open={taggingOpen} node={tagging} />
 
 <style>
 	.drive {

@@ -42,14 +42,16 @@ export async function search(q: string, signal?: AbortSignal): Promise<SearchHit
 export type DocumentFilter = 'all' | 'pdf' | 'image' | 'text';
 
 /** Documents shown on the Documents page: PDFs, text files, and images in which text was found. */
-export function documentsFilter(kind: DocumentFilter): string {
-	const visible = `node.trashed_at = "" && (kind != "image" || (status = "ready" && text != ""))`;
-	return kind === 'all' ? visible : `${visible} && kind = "${kind}"`;
+export function documentsFilter(kind: DocumentFilter, tag = ''): string {
+	let f = `node.trashed_at = "" && (kind != "image" || (status = "ready" && text != ""))`;
+	if (kind !== 'all') f += ` && kind = "${kind}"`;
+	if (tag) f += pb.filter(' && node.tags.id ?= {:tag}', { tag });
+	return f;
 }
 
-export async function listDocuments(kind: DocumentFilter, page = 1, perPage = 50) {
+export async function listDocuments(kind: DocumentFilter, page = 1, perPage = 50, tag = '') {
 	return pb.collection('documents').getList<DocumentRecord>(page, perPage, {
-		filter: documentsFilter(kind),
+		filter: documentsFilter(kind, tag),
 		sort: '-updated',
 		expand: 'node',
 		// The full text can be long: only an excerpt in lists.

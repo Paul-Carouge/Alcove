@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { Check, Copy, FileText, Search as SearchIcon, ScanText } from '@lucide/svelte';
+	import {
+		Check,
+		Copy,
+		FileText,
+		Search as SearchIcon,
+		ScanText,
+		Tag as TagIcon
+	} from '@lucide/svelte';
 	import {
 		documentText,
 		listDocuments,
@@ -19,11 +26,17 @@
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
+	import TagChip from '#lib/tags/TagChip.svelte';
+	import TagsDialog from '#lib/tags/TagsDialog.svelte';
+	import { tags } from '#lib/tags/tags.svelte.js';
 
 	const locale = getLocale();
 	const PER_PAGE = 50;
 
 	let filter = $state<DocumentFilter>('all');
+	let tagFilter = $state('');
+	let tagging = $state<DriveNode | null>(null);
+	let taggingOpen = $state(false);
 	let docs = $state<DocumentRecord[] | null>(null);
 	let total = $state(0);
 	let page = $state(1);
@@ -46,10 +59,10 @@
 
 	const nodes = $derived((docs ?? []).map((d) => d.expand?.node).filter((n) => !!n) as DriveNode[]);
 
-	async function load(kind: DocumentFilter, p = 1) {
+	async function load(kind: DocumentFilter, p = 1, tag = tagFilter) {
 		try {
-			const res = await listDocuments(kind, p, PER_PAGE);
-			if (kind !== filter) return;
+			const res = await listDocuments(kind, p, PER_PAGE, tag);
+			if (kind !== filter || tag !== tagFilter) return;
 			docs = p === 1 ? res.items : [...(docs ?? []), ...res.items];
 			total = res.totalItems;
 			page = p;
@@ -61,9 +74,19 @@
 
 	$effect(() => {
 		const kind = filter;
+		const tag = tagFilter;
 		docs = null;
-		load(kind);
+		load(kind, 1, tag);
 	});
+	$effect(() => {
+		tags.load().catch(() => {});
+	});
+	// A deleted tag can no longer filter.
+	$effect(() => {
+		if (tagFilter && tags.loaded && !tags.byId.has(tagFilter)) tagFilter = '';
+	});
+	const tagsOf = (node: DriveNode) =>
+		(node.tags ?? []).map((id) => tags.byId.get(id)).filter((t) => t !== undefined);
 
 	// Documents are read in the background: refresh when one changes (debounced).
 	$effect(() => {
@@ -163,6 +186,28 @@
 	{/each}
 </div>
 
+{#if tags.items.length}
+	<div class="tag-filter" role="radiogroup" aria-label={m.tags_filter()}>
+		<button
+			role="radio"
+			aria-checked={tagFilter === ''}
+			class="tag-all"
+			class:on={tagFilter === ''}
+			onclick={() => (tagFilter = '')}>{m.tags_any()}</button
+		>
+		{#each tags.items as t (t.id)}
+			<button
+				role="radio"
+				aria-checked={tagFilter === t.id}
+				class="tag-opt"
+				class:on={tagFilter === t.id}
+				onclick={() => (tagFilter = tagFilter === t.id ? '' : t.id)}
+				><TagChip tag={t} size="md" /></button
+			>
+		{/each}
+	</div>
+{/if}
+
 {#if failed}
 	<Alert>{m.error_load()}</Alert>
 {:else if docs === null}
@@ -196,11 +241,26 @@
 						{#if doc.status === 'ready' && doc.text}
 							<p class="excerpt">{doc.text}</p>
 						{/if}
+						{#if tagsOf(node).length}
+							<p class="row-tags">
+								{#each tagsOf(node) as t (t.id)}<TagChip tag={t} />{/each}
+							</p>
+						{/if}
 						<p class="meta">
 							{#if doc.status === 'pending'}<span class="dot" aria-hidden="true"></span>{/if}
 							{[statusText(doc), formatDate(node.updated, locale)].filter(Boolean).join(' · ')}
 						</p>
 					</div>
+					<button
+						class="icon-btn"
+						aria-label={m.tags_edit_for({ name: node.name })}
+						onclick={() => {
+							tagging = node;
+							taggingOpen = true;
+						}}
+					>
+						<TagIcon size={18} aria-hidden="true" />
+					</button>
 					{#if doc.status === 'ready' && doc.text}
 						<Button variant="secondary" onclick={() => showText(doc)}>
 							<ScanText size={16} aria-hidden="true" />
@@ -219,6 +279,19 @@
 {/if}
 
 <Viewer items={nodes} bind:index={viewerIndex} ondownload={downloadNode} />
+<TagsDialog
+	bind:open={taggingOpen}
+	node={tagging}
+	onsaved={(ids) => {
+		// The document list does not follow node changes live: update the row in place.
+		docs = (docs ?? []).map((d) =>
+			d.expand?.node && d.expand.node.id === tagging?.id
+				? { ...d, expand: { ...d.expand, node: { ...d.expand.node, tags: ids } } }
+				: d
+		);
+		if (tagFilter && !ids.includes(tagFilter)) load(filter, 1);
+	}}
+/>
 
 <Dialog bind:open={textOpen} title={textDoc?.expand?.node?.name ?? m.documents_text_title()} wide>
 	{#if fullText === null}
@@ -303,6 +376,58 @@
 		background: var(--color-surface);
 		color: var(--color-text);
 		box-shadow: var(--shadow-sm);
+	}
+	.tag-filter {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin: calc(-1 * var(--space-1)) 0 var(--space-4);
+	}
+	.tag-filter button {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.25rem;
+		padding: 0 var(--space-1);
+		border: 2px solid transparent;
+		border-radius: var(--radius-full);
+		background: none;
+		cursor: pointer;
+	}
+	.tag-filter .tag-all {
+		padding: 0 var(--space-3);
+		color: var(--color-text-muted);
+		font: inherit;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
+	.tag-filter button.on {
+		border-color: var(--color-accent);
+	}
+	.tag-filter .tag-all.on {
+		color: var(--color-text);
+	}
+	.row-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		margin: 2px 0 0;
+	}
+	.icon-btn {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 2.75rem;
+		height: 2.75rem;
+		border: 0;
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+	.icon-btn:hover {
+		background: var(--color-surface-sunken);
+		color: var(--color-text);
 	}
 	.muted {
 		margin: 0 0 var(--space-2);

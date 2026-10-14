@@ -213,3 +213,24 @@ export function getMediaMany(ids: string[]) {
 		sort: '-taken_at,-id'
 	});
 }
+
+export interface Memory {
+	yearsAgo: number;
+	year: number;
+	items: Media[];
+}
+
+/** Photos taken around today in previous years, by year (most recent first). */
+export async function getMemories(today = new Date()): Promise<Memory[]> {
+	const date = [
+		today.getFullYear(),
+		String(today.getMonth() + 1).padStart(2, '0'),
+		String(today.getDate()).padStart(2, '0')
+	].join('-');
+	const { data, response } = await api().GET('/api/v1/photos/memories', {
+		headers: auth(),
+		params: { query: { date } }
+	});
+	if (!data) throw new Error(`memories failed: ${response.status}`);
+	return data.memories as unknown as Memory[];
+}

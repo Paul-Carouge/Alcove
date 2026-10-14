@@ -14,7 +14,9 @@
 		thumbOf,
 		onopen,
 		ontogglefavorite,
-		ontoggleselect
+		ontoggleselect,
+		onstartselect,
+		onselectgroup
 	}: {
 		items: Media[];
 		token: string;
@@ -27,7 +29,12 @@
 		thumbOf?: (item: Media) => string | null;
 		onopen: (item: Media) => void;
 		ontogglefavorite?: (item: Media) => void;
-		ontoggleselect?: (item: Media) => void;
+		/** shift: extend from the last toggled item (range selection). */
+		ontoggleselect?: (item: Media, shift: boolean) => void;
+		/** Starts selection mode with this item (the circle on a tile). */
+		onstartselect?: (item: Media) => void;
+		/** Selects or unselects a whole month. */
+		onselectgroup?: (items: Media[]) => void;
 	} = $props();
 
 	const locale = getLocale();
@@ -53,7 +60,23 @@
 <div class="grid" bind:clientWidth={width} class:selecting={selected}>
 	{#each groups as group (group.key)}
 		<section class="month" aria-labelledby={group.key ? `month-${group.key}` : undefined}>
-			{#if group.key}<h2 id="month-{group.key}">{monthLabel(group.key, locale)}</h2>{/if}
+			{#if group.key}
+				<h2 id="month-{group.key}">
+					<span>{monthLabel(group.key, locale)}</span>
+					{#if selected && onselectgroup}
+						{@const all = group.items.every((it) => selected?.has(it.id))}
+						<button
+							class="group-select"
+							aria-pressed={all}
+							onclick={() => onselectgroup(group.items)}
+						>
+							<CircleCheck size={16} aria-hidden="true" />{all
+								? m.photos_unselect_month()
+								: m.photos_select_month()}
+						</button>
+					{/if}
+				</h2>
+			{/if}
 			{#each justify(group.items, ratio, width, target, GAP) as row, r (r)}
 				<div class="row" style:height="{row.height}px">
 					{#each row.items as it (it.id)}
@@ -70,7 +93,7 @@
 								class="open"
 								aria-label={selected ? m.photo_select({ name }) : m.photo_open({ name })}
 								aria-pressed={selected ? isSelected : undefined}
-								onclick={() => (selected ? ontoggleselect?.(it) : onopen(it))}
+								onclick={(e) => (selected ? ontoggleselect?.(it, e.shiftKey) : onopen(it))}
 							>
 								{#if src}
 									<img {src} alt="" loading="lazy" decoding="async" />
@@ -93,6 +116,15 @@
 									<span class="check" aria-hidden="true"><CircleCheck size={22} /></span>
 								{/if}
 							</button>
+							{#if !selected && onstartselect}
+								<button
+									class="start"
+									aria-label={m.photo_select({ name })}
+									onclick={() => onstartselect(it)}
+								>
+									<CircleCheck size={20} aria-hidden="true" />
+								</button>
+							{/if}
 							{#if !selected && ontogglefavorite && canFavorite(it)}
 								<button
 									class="heart"
@@ -234,15 +266,60 @@
 	}
 	.tile:hover .heart,
 	.tile:focus-within .heart,
-	.tile.fav .heart {
+	.tile.fav .heart,
+	.tile:hover .start,
+	.tile:focus-within .start {
 		opacity: 1;
+	}
+	.start {
+		position: absolute;
+		top: var(--space-1);
+		left: var(--space-1);
+		display: grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border: 0;
+		border-radius: var(--radius-full);
+		background: transparent;
+		color: var(--color-on-stage);
+		filter: drop-shadow(0 1px 2px var(--color-stage-scrim));
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity var(--duration-fast) var(--ease-standard);
+	}
+	.month h2 {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+	.group-select {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: 2.25rem;
+		padding: 0 var(--space-3);
+		border: 0;
+		border-radius: var(--radius-full);
+		background: transparent;
+		color: var(--color-accent);
+		font: inherit;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		cursor: pointer;
+	}
+	.group-select:hover,
+	.group-select[aria-pressed='true'] {
+		background: var(--color-accent-subtle);
 	}
 	.tile.fav .heart {
 		color: var(--color-favorite);
 	}
 	/* No hover on touch screens: only favorites show their heart, toggled from the viewer. */
 	@media (hover: none) {
-		.tile:not(.fav) .heart {
+		.tile:not(.fav) .heart,
+		.start {
 			display: none;
 		}
 	}

@@ -7,6 +7,14 @@
 	import { uploads, type UploadItem } from './uploads.svelte.js';
 
 	let collapsed = $state(false);
+	let height = $state(0);
+
+	// Leave room under the page for the panel, so the last rows can always be scrolled above it.
+	$effect(() => {
+		const root = document.documentElement;
+		root.style.setProperty('--uploads-space', items.length ? `${height + 24}px` : '0px');
+		return () => root.style.removeProperty('--uploads-space');
+	});
 
 	const items = $derived(uploads.items);
 	const done = $derived(items.filter((i) => i.status === 'done').length);
@@ -32,7 +40,7 @@
 </script>
 
 {#if items.length > 0}
-	<section class="panel" aria-labelledby="uploads-title">
+	<section class="panel" aria-labelledby="uploads-title" bind:clientHeight={height}>
 		<header>
 			<h2 id="uploads-title">{m.uploads_title()}</h2>
 			<span class="summary" aria-live="polite"

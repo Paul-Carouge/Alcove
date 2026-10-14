@@ -261,7 +261,7 @@
 		width: 100%;
 		max-width: 80rem;
 		margin-inline: auto;
-		padding: var(--space-2) var(--space-6) var(--space-7);
+		padding: var(--space-2) var(--space-6) calc(var(--space-7) + var(--uploads-space, 0px));
 	}
 	main:focus {
 		outline: none;
@@ -304,7 +304,7 @@
 			padding: 0 var(--space-3);
 		}
 		main {
-			padding: var(--space-2) var(--space-4) var(--space-6);
+			padding: var(--space-2) var(--space-4) calc(var(--space-6) + var(--uploads-space, 0px));
 		}
 	}
 </style>

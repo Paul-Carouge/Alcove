@@ -29,6 +29,7 @@
 	import Thumb from './Thumb.svelte';
 	import Viewer from './Viewer.svelte';
 	import TagChip from '#lib/tags/TagChip.svelte';
+	import { downloadZip } from './zip.js';
 	import TagsDialog from '#lib/tags/TagsDialog.svelte';
 	import { tags } from '#lib/tags/tags.svelte.js';
 	import ShareDialog from '#lib/shares/ShareDialog.svelte';
@@ -224,11 +225,23 @@
 	const tagsOf = (node: DriveNode) =>
 		(node.tags ?? []).map((id) => tags.byId.get(id)).filter((t) => t !== undefined);
 
+	async function zip(nodes: DriveNode[]) {
+		actionError = null;
+		try {
+			await downloadZip(
+				{ nodes: nodes.map((n) => n.id) },
+				nodes.length === 1 ? nodes[0]!.name : folderName
+			);
+		} catch {
+			actionError = m.zip_failed();
+		}
+	}
+
 	function actionsFor(node: DriveNode) {
 		return [
-			...(node.kind === 'file'
-				? [{ label: m.action_download(), icon: Download, onselect: () => download(node) }]
-				: []),
+			node.kind === 'file'
+				? { label: m.action_download(), icon: Download, onselect: () => download(node) }
+				: { label: m.action_download_zip(), icon: Download, onselect: () => zip([node]) },
 			{ label: m.action_share(), icon: Link, onselect: () => (sharing = node) },
 			{ label: m.action_rename(), icon: Pencil, onselect: () => (renaming = node) },
 			{
@@ -301,6 +314,10 @@
 		{#if selection.size > 0}
 			<div class="selbar" role="toolbar" aria-label={m.selected_count({ count: selection.size })}>
 				<span class="count">{m.selected_count({ count: selection.size })}</span>
+				<Button variant="secondary" onclick={() => zip(selected)}>
+					<Download size={18} aria-hidden="true" />
+					{m.action_download()}
+				</Button>
 				<Button variant="secondary" onclick={() => openMove(selected)}>
 					<FolderInput size={18} aria-hidden="true" />
 					{m.action_move()}

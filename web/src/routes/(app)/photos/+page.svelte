@@ -8,6 +8,7 @@
 		BookImage,
 		CircleCheck,
 		Copy,
+		Download,
 		Image as ImageIcon,
 		MapPin,
 		Heart,
@@ -17,16 +18,21 @@
 	} from '@lucide/svelte';
 	import { trashNode } from '#lib/drive/api.js';
 	import { onMediaChange } from '#lib/drive/live.js';
+	import { downloadZip } from '#lib/drive/zip.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		fileToken,
 		getFacets,
 		getMedia,
+		getMemories,
+		monthKey,
+		thumbUrl,
 		isRefined,
 		listMedia,
 		setFavorite,
 		type Facets,
 		type Media,
+		type Memory,
 		type PhotoFilter,
 		type Refine
 	} from '#lib/photos/api.js';
@@ -62,6 +68,32 @@
 	let target = $state<{ id: string; name: string } | null>(null);
 
 	const hasMore = $derived(items.length < total);
+
+	// Memories ("1 year ago today") above the timeline.
+	let memories = $state<Memory[]>([]);
+	let memoryItems = $state<Media[]>([]);
+	let memoryIndex = $state(-1);
+	const showMemories = $derived(
+		filter === 'all' && !isRefined(refine) && !selected && !target && memories.length > 0
+	);
+	function openMemory(mem: Memory) {
+		memoryItems = mem.items;
+		memoryIndex = 0;
+	}
+
+	// Years of the loaded timeline, to jump to.
+	const years = $derived.by(() => {
+		const out: { year: string; key: string }[] = [];
+		for (const it of items) {
+			const key = monthKey(it.taken_at);
+			const year = key.slice(0, 4);
+			if (out.at(-1)?.year !== year) out.push({ year, key });
+		}
+		return out;
+	});
+	function jumpTo(key: string) {
+		document.getElementById(`month-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 
 	// Same order as the server (-taken_at,-id): a video's date is only known once probed.
 	const sortTimeline = (list: Media[]) =>
@@ -130,6 +162,9 @@
 	$effect(() => {
 		fileToken().then((t) => (token = t));
 		untrack(() => loadMore());
+		getMemories()
+			.then((list) => (memories = list))
+			.catch(() => {});
 		const addTo = routePage.url.searchParams.get('addTo');
 		if (addTo) {
 			getAlbum(addTo)
@@ -222,10 +257,58 @@
 		goto(`${resolve('/(app)/photos/map')}?focus=${encodeURIComponent(id)}`);
 	}
 
-	function toggleSelect(item: Media) {
+	// Shift extends the selection from the last photo toggled, like file managers.
+	let anchor = '';
+	function toggleSelect(item: Media, shift = false) {
 		if (!selected) return;
-		if (selected.has(item.id)) selected.delete(item.id);
+		const from = items.findIndex((x) => x.id === anchor);
+		const to = items.indexOf(item);
+		if (shift && from >= 0 && to >= 0) {
+			const [a, b] = from < to ? [from, to] : [to, from];
+			for (const it of items.slice(a, b + 1)) selected.add(it.id);
+		} else if (selected.has(item.id)) selected.delete(item.id);
 		else selected.add(item.id);
+		anchor = item.id;
+	}
+
+	function startSelect(item: Media) {
+		selected = new SvelteSet([item.id]);
+		anchor = item.id;
+	}
+
+	function selectGroup(group: Media[]) {
+		if (!selected) return;
+		const all = group.every((it) => selected!.has(it.id));
+		for (const it of group) {
+			if (all) selected.delete(it.id);
+			else selected.add(it.id);
+		}
+	}
+
+	let zipping = $state(false);
+	async function downloadSelection() {
+		if (!selected?.size) return;
+		const ids = selected;
+		zipping = true;
+		status = m.zip_preparing();
+		try {
+			await downloadZip(
+				{ nodes: items.filter((it) => ids.has(it.id)).map((it) => it.node) },
+				'Photos'
+			);
+			status = '';
+		} catch {
+			status = m.zip_failed();
+		} finally {
+			zipping = false;
+		}
+	}
+
+	/** From the viewer (Delete key or menu): the next photo shows. */
+	async function trashFromViewer(it: Media) {
+		const at = viewerIndex;
+		await trash([it]);
+		viewerIndex = items.length ? Math.min(at, items.length - 1) : -1;
 	}
 
 	function endSelection() {
@@ -361,6 +444,14 @@
 				<Button variant="ghost" disabled={!selected.size} onclick={favoriteSelection}>
 					<Heart size={16} aria-hidden="true" />{m.photos_favorite_selected()}
 				</Button>
+				<Button
+					variant="ghost"
+					disabled={!selected.size}
+					loading={zipping}
+					onclick={downloadSelection}
+				>
+					<Download size={16} aria-hidden="true" />{m.photos_download_selected()}
+				</Button>
 				<Button variant="ghost" disabled={!selected.size} onclick={trashSelection}>
 					<Trash2 size={16} aria-hidden="true" />{m.photos_trash_selected()}
 				</Button>
@@ -374,6 +465,39 @@
 	</div>
 {/if}
 <p class="status" role="status">{status}</p>
+
+{#if showMemories}
+	<section class="memories" aria-labelledby="memories-title">
+		<h2 id="memories-title">{m.photos_memories()}</h2>
+		<ul>
+			{#each memories as mem (mem.year)}
+				{@const cover = mem.items[0]}
+				{@const when = m.photos_years_ago({ count: mem.yearsAgo })}
+				<li>
+					<button
+						class="memory"
+						aria-label={m.photos_memory_open({ when })}
+						onclick={() => openMemory(mem)}
+					>
+						{#if cover && token}<img src={thumbUrl(cover, token)} alt="" loading="lazy" />{/if}
+						<span class="memory-label">
+							<strong>{when}</strong>
+							<span>{mem.year} · {mem.items.length}</span>
+						</span>
+					</button>
+				</li>
+			{/each}
+		</ul>
+	</section>
+{/if}
+
+{#if years.length > 1 && !selected}
+	<nav class="years" aria-label={m.photos_jump()}>
+		{#each years as y (y.year)}
+			<button onclick={() => jumpTo(y.key)}>{y.year}</button>
+		{/each}
+	</nav>
+{/if}
 
 {#if failed && items.length === 0}
 	<Alert>{m.error_load()}</Alert>
@@ -398,6 +522,8 @@
 		onopen={(it) => (viewerIndex = items.indexOf(it))}
 		ontogglefavorite={toggleFavorite}
 		ontoggleselect={toggleSelect}
+		onstartselect={target ? undefined : startSelect}
+		onselectgroup={selectGroup}
 	/>
 	{#if loading}<p class="muted center">{m.loading()}</p>{/if}
 	<div bind:this={sentinel} aria-hidden="true"></div>
@@ -407,16 +533,14 @@
 	{items}
 	bind:index={viewerIndex}
 	ontogglefavorite={toggleFavorite}
+	ontrash={trashFromViewer}
 	actions={(it) => [
 		{ label: m.album_add_button(), icon: BookImage, onselect: () => chooseAlbum([it.id]) },
 		{
 			label: m.photos_trash_one(),
 			icon: Trash2,
 			danger: true,
-			onselect: () => {
-				viewerIndex = -1;
-				trash([it]);
-			}
+			onselect: () => trashFromViewer(it)
 		},
 		...(it.has_location
 			? [
@@ -429,6 +553,7 @@
 			: [])
 	]}
 />
+<PhotoViewer items={memoryItems} bind:index={memoryIndex} ontogglefavorite={toggleFavorite} />
 <AlbumPicker bind:open={pickerOpen} mediaIds={pickerIds} onadded={added} />
 
 <style>
@@ -612,5 +737,92 @@
 		margin: 0;
 		max-width: 30rem;
 		color: var(--color-text-muted);
+	}
+	.memories {
+		margin-bottom: var(--space-5);
+	}
+	.memories h2 {
+		margin: 0 0 var(--space-2);
+		font-size: var(--text-md);
+	}
+	.memories ul {
+		display: flex;
+		gap: var(--space-3);
+		margin: 0;
+		padding: 0 0 var(--space-1);
+		overflow-x: auto;
+		list-style: none;
+		scrollbar-width: thin;
+	}
+	.memory {
+		position: relative;
+		display: block;
+		width: 10rem;
+		height: 13rem;
+		padding: 0;
+		overflow: hidden;
+		border: 0;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface-sunken);
+		box-shadow: var(--shadow-sm);
+		cursor: pointer;
+	}
+	.memory img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform var(--duration-base) var(--ease-standard);
+	}
+	.memory:hover img {
+		transform: scale(1.04);
+	}
+	.memory-label {
+		position: absolute;
+		inset: auto 0 0;
+		display: grid;
+		padding: var(--space-6) var(--space-3) var(--space-3);
+		background: linear-gradient(transparent, var(--color-stage-scrim));
+		color: var(--color-on-stage);
+		font-size: var(--text-xs);
+		text-align: left;
+	}
+	.memory-label strong {
+		font-size: var(--text-md);
+	}
+	.years {
+		position: fixed;
+		right: var(--space-2);
+		top: 50%;
+		z-index: 5;
+		display: grid;
+		gap: 2px;
+		padding: var(--space-1);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+		box-shadow: var(--shadow-sm);
+		transform: translateY(-50%);
+	}
+	.years button {
+		min-width: 3.25rem;
+		min-height: 2rem;
+		padding: 0 var(--space-2);
+		border: 0;
+		border-radius: var(--radius-full);
+		background: transparent;
+		color: var(--color-text-muted);
+		font: inherit;
+		font-size: var(--text-xs);
+		font-variant-numeric: tabular-nums;
+		cursor: pointer;
+	}
+	.years button:hover {
+		background: var(--color-surface-sunken);
+		color: var(--color-text);
+	}
+	@media (max-width: 900px) {
+		.years {
+			display: none;
+		}
 	}
 </style>

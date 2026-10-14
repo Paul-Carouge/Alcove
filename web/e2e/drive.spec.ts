@@ -216,3 +216,24 @@ test('select all and move everything to the trash', async ({ page }) => {
 		.click();
 	await expect(page.getByText('This folder is empty')).toBeVisible();
 });
+
+test('a folder downloads as a ZIP', async ({ page }) => {
+	await signIn(page);
+	const folder = unique('Zip');
+	await uploadInto(page, folder, 'inside.txt', 'zipped');
+	await page.getByRole('link', { name: 'Files', exact: true }).click();
+	await page.getByRole('button', { name: `Actions for ${folder}` }).click();
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		page.getByRole('menuitem', { name: 'Download (ZIP)' }).click()
+	]);
+	expect(download.suggestedFilename()).toBe(`${folder}.zip`);
+	const bytes = await download.createReadStream().then(async (s) => {
+		const chunks: Buffer[] = [];
+		for await (const c of s) chunks.push(c as Buffer);
+		return Buffer.concat(chunks);
+	});
+	// A ZIP whose entry is the folder's file.
+	expect(bytes.subarray(0, 2).toString()).toBe('PK');
+	expect(bytes.includes(Buffer.from(`${folder}/inside.txt`))).toBe(true);
+});

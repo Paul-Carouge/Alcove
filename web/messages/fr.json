@@ -718,5 +718,29 @@
 			}
 		}
 	],
-	"share_expires_on": "Expire le {date}"
+	"share_expires_on": "Expire le {date}",
+	"viewer_zoom_in": "Zoomer (+)",
+	"viewer_zoom_out": "Dézoomer (−)",
+	"viewer_slideshow": "Diaporama (Espace)",
+	"viewer_slideshow_stop": "Arrêter le diaporama (Espace)",
+	"photos_select_month": "Sélectionner le mois",
+	"photos_unselect_month": "Désélectionner le mois",
+	"photos_download_selected": "Télécharger",
+	"photos_memories": "Souvenirs",
+	"photos_years_ago": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Il y a 1 an",
+				"countPlural=other": "Il y a {count} ans"
+			}
+		}
+	],
+	"photos_memory_open": "Ouvrir les photos de {when}",
+	"photos_jump": "Aller à une date",
+	"zip_preparing": "Préparation du téléchargement…",
+	"zip_failed": "Le téléchargement n’a pas pu être préparé.",
+	"action_download_zip": "Télécharger (ZIP)",
+	"album_download": "Télécharger l’album"
 }

@@ -1,5 +1,16 @@
 <script lang="ts">
-	import { ChevronLeft, ChevronRight, Download, Heart, Info, X } from '@lucide/svelte';
+	import {
+		ChevronLeft,
+		ChevronRight,
+		Download,
+		Heart,
+		Info,
+		Pause,
+		Play,
+		X,
+		ZoomIn,
+		ZoomOut
+	} from '@lucide/svelte';
 	import { formatSize } from '#lib/drive/format.js';
 	import ActionsMenu, { type MenuAction } from '#lib/ui/ActionsMenu.svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -21,7 +32,8 @@
 		actions = () => [],
 		previewOf,
 		videoOf,
-		downloadable = true
+		downloadable = true,
+		ontrash
 	}: {
 		items: Media[];
 		index?: number;
@@ -33,6 +45,8 @@
 		previewOf?: (m: Media) => string | null;
 		videoOf?: (m: Media) => string | null;
 		downloadable?: boolean;
+		/** Moves the current item to the trash (Delete key). */
+		ontrash?: (m: Media) => void;
 	} = $props();
 
 	let dialog: HTMLDialogElement;
@@ -58,10 +72,126 @@
 	function go(step: number) {
 		if (items.length > 1) index = (index + step + items.length) % items.length;
 	}
+
+	// Zoom and pan (wheel, double click, pinch, drag), reset for every item.
+	const MAX_ZOOM = 5;
+	let scale = $state(1);
+	let tx = $state(0);
+	let ty = $state(0);
+	let stage = $state<HTMLDivElement>();
+	$effect(() => {
+		void item?.id;
+		scale = 1;
+		tx = 0;
+		ty = 0;
+	});
+	function zoomAt(next: number, cx?: number, cy?: number) {
+		next = Math.min(MAX_ZOOM, Math.max(1, next));
+		if (next === 1) {
+			scale = 1;
+			tx = ty = 0;
+			return;
+		}
+		// Keep the point under the cursor in place.
+		if (stage && cx !== undefined && cy !== undefined) {
+			const r = stage.getBoundingClientRect();
+			const px = cx - r.left - r.width / 2;
+			const py = cy - r.top - r.height / 2;
+			tx = px - ((px - tx) * next) / scale;
+			ty = py - ((py - ty) * next) / scale;
+		}
+		scale = next;
+	}
+	function onWheel(e: WheelEvent) {
+		if (item?.kind === 'video') return;
+		e.preventDefault();
+		zoomAt(scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+	}
+	function onDblClick(e: MouseEvent) {
+		if (item?.kind === 'video') return;
+		zoomAt(scale > 1 ? 1 : 2.5, e.clientX, e.clientY);
+	}
+
+	// Pointers: one drags (pan when zoomed, swipe otherwise), two pinch.
+	// Plain Map on purpose: pointer positions are bookkeeping, nothing renders from them.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const pointers = new Map<number, { x: number; y: number }>();
+	let start = { x: 0, y: 0, tx: 0, ty: 0, dist: 0, scale: 1 };
+	function onPointerDown(e: PointerEvent) {
+		if (item?.kind === 'video' || (e.target as HTMLElement).closest('button')) return;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+		pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+		const pts = [...pointers.values()];
+		start = {
+			x: e.clientX,
+			y: e.clientY,
+			tx,
+			ty,
+			dist: pts.length === 2 ? Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y) : 0,
+			scale
+		};
+	}
+	function onPointerMove(e: PointerEvent) {
+		if (!pointers.has(e.pointerId)) return;
+		pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+		const pts = [...pointers.values()];
+		if (pts.length === 2 && start.dist) {
+			const d = Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y);
+			zoomAt(
+				(start.scale * d) / start.dist,
+				(pts[0]!.x + pts[1]!.x) / 2,
+				(pts[0]!.y + pts[1]!.y) / 2
+			);
+		} else if (pts.length === 1 && scale > 1) {
+			tx = start.tx + e.clientX - start.x;
+			ty = start.ty + e.clientY - start.y;
+		}
+	}
+	function onPointerUp(e: PointerEvent) {
+		const was = pointers.size;
+		pointers.delete(e.pointerId);
+		if (was !== 1 || scale > 1) return;
+		const dx = e.clientX - start.x;
+		const dy = e.clientY - start.y;
+		if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+		else if (e.pointerType !== 'mouse' && dy > 100 && dy > Math.abs(dx) * 1.5) index = -1;
+	}
+
+	// Slideshow.
+	const SLIDE_MS = 4000;
+	let playing = $state(false);
+	$effect(() => {
+		if (!playing || !item || items.length < 2) return;
+		const t = setTimeout(() => go(1), SLIDE_MS);
+		return () => clearTimeout(t);
+	});
+	$effect(() => {
+		if (!item) playing = false;
+	});
+
+	// The neighbours load in the background so the next picture shows at once.
+	$effect(() => {
+		if (!ready || index < 0 || items.length < 2) return;
+		for (const step of [1, -1]) {
+			const it = items[(index + step + items.length) % items.length];
+			const src = it && it.kind !== 'video' ? preview(it) : null;
+			if (src) new Image().src = src;
+		}
+	});
+
 	function onKeydown(e: KeyboardEvent) {
+		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 		if (e.key === 'ArrowRight') go(1);
 		else if (e.key === 'ArrowLeft') go(-1);
+		else if (e.key === 'Home') index = 0;
+		else if (e.key === 'End') index = items.length - 1;
 		else if (e.key === 'i') showInfo = !showInfo;
+		else if (e.key === 'f' && item && ontogglefavorite && canFavorite(item)) ontogglefavorite(item);
+		else if ((e.key === 'Delete' || e.key === 'Backspace') && item && ontrash) ontrash(item);
+		else if (e.key === ' ' && items.length > 1) playing = !playing;
+		else if (e.key === '+' || e.key === '=') zoomAt(scale * 1.5);
+		else if (e.key === '-') zoomAt(scale / 1.5);
+		else if (e.key === '0') zoomAt(1);
 		else return;
 		e.preventDefault();
 	}
@@ -84,8 +214,45 @@
 >
 	{#if item && node}
 		<header>
-			<span class="name">{node.name}</span>
+			<span class="title">
+				<span class="name">{node.name}</span>
+				{#if items.length > 1}<span class="count">{index + 1} / {items.length}</span>{/if}
+			</span>
 			<div class="tools">
+				{#if item.kind !== 'video'}
+					<button
+						class="icon-btn"
+						aria-label={m.viewer_zoom_out()}
+						title={m.viewer_zoom_out()}
+						disabled={scale <= 1}
+						onclick={() => zoomAt(scale / 1.5)}
+					>
+						<ZoomOut size={20} aria-hidden="true" />
+					</button>
+					<button
+						class="icon-btn"
+						aria-label={m.viewer_zoom_in()}
+						title={m.viewer_zoom_in()}
+						disabled={scale >= MAX_ZOOM}
+						onclick={() => zoomAt(scale * 1.5)}
+					>
+						<ZoomIn size={20} aria-hidden="true" />
+					</button>
+				{/if}
+				{#if items.length > 1}
+					<button
+						class="icon-btn"
+						aria-pressed={playing}
+						aria-label={playing ? m.viewer_slideshow_stop() : m.viewer_slideshow()}
+						title={playing ? m.viewer_slideshow_stop() : m.viewer_slideshow()}
+						onclick={() => (playing = !playing)}
+					>
+						{#if playing}<Pause size={20} aria-hidden="true" />{:else}<Play
+								size={20}
+								aria-hidden="true"
+							/>{/if}
+					</button>
+				{/if}
 				{#if ontogglefavorite && canFavorite(item)}<button
 						class="icon-btn"
 						class:fav={item.favorite}
@@ -131,7 +298,18 @@
 		</header>
 
 		<div class="body" class:with-info={showInfo}>
-			<div class="stage">
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="stage"
+				class:zoomed={scale > 1}
+				bind:this={stage}
+				onwheel={onWheel}
+				ondblclick={onDblClick}
+				onpointerdown={onPointerDown}
+				onpointermove={onPointerMove}
+				onpointerup={onPointerUp}
+				onpointercancel={onPointerUp}
+			>
 				{#if items.length > 1}
 					<button class="nav prev" aria-label={m.viewer_prev()} onclick={() => go(-1)}
 						><ChevronLeft size={24} aria-hidden="true" /></button
@@ -151,7 +329,12 @@
 						></video>
 					{/key}
 				{:else if preview(item)}
-					{#key item.id}<img src={preview(item)} alt={node.name} />{/key}
+					{#key item.id}<img
+							src={preview(item)}
+							alt={node.name}
+							draggable="false"
+							style:transform="translate({tx}px, {ty}px) scale({scale})"
+						/>{/key}
 				{:else}
 					<p class="muted">{m.photo_no_preview()}</p>
 				{/if}
@@ -244,11 +427,27 @@
 		gap: var(--space-3);
 		padding: var(--space-2) var(--space-3) var(--space-2) var(--space-5);
 	}
+	.title {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-3);
+		min-width: 0;
+	}
 	.name {
 		font-weight: var(--weight-medium);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	.count {
+		flex: none;
+		color: var(--color-on-stage-muted);
+		font-size: var(--text-sm);
+		font-variant-numeric: tabular-nums;
+	}
+	.icon-btn:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 	.tools {
 		display: flex;
@@ -288,6 +487,19 @@
 		align-items: center;
 		justify-content: center;
 		padding: var(--space-3) var(--space-8) var(--space-5);
+		overflow: hidden;
+		touch-action: none;
+		user-select: none;
+	}
+	.stage.zoomed {
+		cursor: grab;
+	}
+	.stage img {
+		transition: transform var(--duration-fast) var(--ease-standard);
+		will-change: transform;
+	}
+	.stage.zoomed img {
+		transition: none;
 	}
 	img,
 	video {

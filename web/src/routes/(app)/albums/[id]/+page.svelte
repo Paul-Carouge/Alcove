@@ -6,6 +6,7 @@
 	import {
 		ArrowLeft,
 		CircleCheck,
+		Download,
 		ImagePlus,
 		Link as LinkIcon,
 		LogOut,
@@ -16,6 +17,7 @@
 		X
 	} from '@lucide/svelte';
 	import { onAlbumChange, onAlbumItemChange } from '#lib/drive/live.js';
+	import { downloadZip } from '#lib/drive/zip.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { pb } from '#lib/pb.js';
 	import { fileToken, setFavorite, type Media } from '#lib/photos/api.js';
@@ -163,9 +165,15 @@
 		selected = null;
 	}
 
+	const downloadAll: MenuAction = {
+		label: m.album_download(),
+		icon: Download,
+		onselect: () => void downloadZip({ album: id }, name).catch(() => {})
+	};
 	const menu = $derived.by((): MenuAction[] =>
 		role === 'owner'
 			? [
+					downloadAll,
 					{
 						label: m.album_public_link(),
 						icon: LinkIcon,
@@ -180,6 +188,7 @@
 					}
 				]
 			: [
+					downloadAll,
 					{
 						label: m.album_leave(),
 						icon: LogOut,

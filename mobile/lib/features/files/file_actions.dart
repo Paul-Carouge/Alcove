@@ -149,8 +149,15 @@ Future<AddAction?> showAddSheet(BuildContext context, {required bool canScan}) {
   );
 }
 
+/// PDFs and images can get a searchable copy (the server checks it is a document).
+bool _scanLike(RecordModel node) {
+  final mime = node.getStringValue('mime');
+  return node.getStringValue('kind') == 'file' &&
+      (mime.startsWith('application/pdf') || (mime.startsWith('image/') && !mime.contains('svg')));
+}
+
 /// What can be done with one file or folder.
-enum NodeAction { rename, move, tags, trash }
+enum NodeAction { rename, move, tags, searchable, trash }
 
 Future<NodeAction?> showNodeSheet(BuildContext context, RecordModel node) {
   final l = AppLocalizations.of(context);
@@ -181,6 +188,13 @@ Future<NodeAction?> showNodeSheet(BuildContext context, RecordModel node) {
                 title: l.tags,
                 onTap: () => Navigator.pop(context, NodeAction.tags),
               ),
+              if (_scanLike(node))
+                GroupTile(
+                  icon: Icons.find_in_page_outlined,
+                  title: l.searchableMake,
+                  subtitle: l.searchableHint,
+                  onTap: () => Navigator.pop(context, NodeAction.searchable),
+                ),
               GroupTile(
                 icon: Icons.delete_outline,
                 title: l.trashConfirm,

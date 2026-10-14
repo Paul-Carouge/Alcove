@@ -150,5 +150,9 @@
   "tagAdd": "Ajouter l’étiquette",
   "tagNameTaken": "Vous avez déjà une étiquette avec ce nom.",
   "searchByTag": "Par étiquette",
-  "searchTagged": "Étiquette « {tag} »"
+  "searchTagged": "Étiquette « {tag} »",
+  "searchableMake": "Créer un PDF cherchable",
+  "searchableHint": "Une copie dont le texte se sélectionne et se recherche",
+  "searchableRunning": "Création du PDF cherchable… il apparaîtra à côté de l’original.",
+  "searchableDone": "PDF cherchable enregistré à côté de l’original"
 }

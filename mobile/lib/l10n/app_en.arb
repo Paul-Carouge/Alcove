@@ -364,5 +364,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "searchableMake": "Make a searchable PDF",
+  "searchableHint": "A copy whose text can be selected and searched",
+  "searchableRunning": "Making the searchable PDF… it appears next to the original.",
+  "searchableDone": "Searchable PDF saved next to the original"
 }

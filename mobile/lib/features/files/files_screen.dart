@@ -120,6 +120,11 @@ class _FilesScreenState extends State<FilesScreen> {
           if (ids == null) return;
           await _drive.setTags(node.id, ids);
           await _load();
+        case NodeAction.searchable:
+          _snack(l.searchableRunning);
+          await _drive.makeSearchable(node.id);
+          await _load();
+          if (mounted) _snack(l.searchableDone);
         case NodeAction.trash:
           await _drive.trash(node.id);
           setState(() => _nodes = _nodes?.where((n) => n.id != node.id).toList());

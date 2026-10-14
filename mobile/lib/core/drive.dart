@@ -47,6 +47,19 @@ class Drive {
 
   Future<RecordModel> restore(String id) => _nodes.update(id, body: {'trashed_at': ''});
 
+  /// Makes a searchable copy of a scan (`<name> (OCR).pdf`) and waits for it; returns the new file id.
+  /// Throws on refusal or failure.
+  Future<String> makeSearchable(String id, {Duration poll = const Duration(seconds: 2)}) async {
+    final path = '/api/v1/documents/${Uri.encodeComponent(id)}/searchable';
+    var job = await session.pb.send<Map<String, dynamic>>(path, method: 'POST');
+    while (job['status'] == 'running') {
+      await Future<void>.delayed(poll);
+      job = await session.pb.send<Map<String, dynamic>>(path);
+    }
+    if (job['status'] != 'done') throw StateError(job['error'] as String? ?? 'failed');
+    return job['node'] as String;
+  }
+
   /// Sub-folders of a folder ('' = root), by name.
   Future<List<RecordModel>> folders(String parent) async {
     final list = await _nodes.getFullList(

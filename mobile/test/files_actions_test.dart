@@ -285,6 +285,28 @@ void main() {
     expect(find.text('Factures'), findsOneWidget); // the chip under the name
   });
 
+  test('makeSearchable starts the job and waits for the new file', () async {
+    var polls = 0;
+    final client = MockClient((req) async {
+      if (req.url.path == '/api/v1/documents/n1/searchable') {
+        if (req.method == 'POST') return _json(202, {'status': 'running'});
+        polls++;
+        return _json(200, polls < 3 ? {'status': 'running'} : {'status': 'done', 'node': 'n9'});
+      }
+      if (req.url.path == '/api/v1/documents/n2/searchable') {
+        return _json(req.method == 'POST' ? 202 : 200, {
+          'status': req.method == 'POST' ? 'running' : 'failed',
+          'error': 'no text',
+        });
+      }
+      return _json(404, {});
+    });
+    final drive = Drive(await _session(client));
+    expect(await drive.makeSearchable('n1', poll: Duration.zero), 'n9');
+    expect(polls, 3);
+    await expectLater(drive.makeSearchable('n2', poll: Duration.zero), throwsStateError);
+  });
+
   test('the upload queue sends files one by one and reports them', () async {
     final drive = FakeDrive();
     final client = MockClient((r) async => drive.handle(r));

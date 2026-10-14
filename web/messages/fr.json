@@ -695,5 +695,28 @@
 	"searchable_hint": "Une copie dont le texte se sélectionne et se recherche dans n’importe quel lecteur PDF, enregistrée à côté",
 	"searchable_running": "création du PDF cherchable…",
 	"searchable_done": "PDF cherchable enregistré à côté",
-	"searchable_failed": "le PDF cherchable n’a pas pu être créé"
+	"searchable_failed": "le PDF cherchable n’a pas pu être créé",
+	"trash_empty_action": "Vider la corbeille",
+	"trash_empty_confirm_title": "Vider la corbeille ?",
+	"trash_empty_confirm_body": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "L’élément de la corbeille est supprimé définitivement. C’est irréversible.",
+				"countPlural=other": "Les {count} éléments de la corbeille sont supprimés définitivement, avec leur contenu. C’est irréversible."
+			}
+		}
+	],
+	"trash_empty_failed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément n’a pas pu être supprimé.",
+				"countPlural=other": "{count} éléments n’ont pas pu être supprimés."
+			}
+		}
+	],
+	"share_expires_on": "Expire le {date}"
 }

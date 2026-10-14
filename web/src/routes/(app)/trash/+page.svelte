@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { RotateCcw, Trash2 } from '@lucide/svelte';
 	import { ClientResponseError } from 'pocketbase';
-	import { deleteForever, listTrash, restoreNode } from '#lib/drive/api.js';
+	import { deleteForever, forEachNode, listTrash, restoreNode } from '#lib/drive/api.js';
 	import FileIcon from '#lib/drive/FileIcon.svelte';
 	import { formatDate, formatSize } from '#lib/drive/format.js';
 	import { onNodeChange } from '#lib/drive/live.js';
@@ -20,6 +20,21 @@
 	let confirming = $state<DriveNode | null>(null);
 	let confirmOpen = $state(false);
 	let busy = $state(false);
+	let emptyOpen = $state(false);
+	let emptying = $state(false);
+
+	async function emptyTrash() {
+		emptying = true;
+		error = null;
+		// Deleting a folder takes its content with it: only top-level items are listed.
+		const failed = await forEachNode(
+			items.map((i) => i.id),
+			deleteForever
+		);
+		emptying = false;
+		emptyOpen = false;
+		if (failed.length) error = m.trash_empty_failed({ count: failed.length });
+	}
 
 	$effect(() => {
 		listTrash()
@@ -74,7 +89,14 @@
 	<title>{m.trash_title()}</title>
 </svelte:head>
 
-<h1>{m.trash_title()}</h1>
+<div class="head">
+	<h1>{m.trash_title()}</h1>
+	{#if items.length}
+		<Button variant="secondary" onclick={() => (emptyOpen = true)}>
+			<Trash2 size={16} aria-hidden="true" />{m.trash_empty_action()}
+		</Button>
+	{/if}
+</div>
 <p class="note">{m.trash_note()}</p>
 
 {#if error}<div class="err"><Alert>{error}</Alert></div>{/if}
@@ -107,7 +129,15 @@
 					<td>
 						<div class="name-cell">
 							<FileIcon kind={node.kind} mime={node.mime} />
-							<span class="name">{node.name}</span>
+							<span class="text">
+								<span class="name">{node.name}</span>
+								<span class="sub muted"
+									>{node.kind === 'folder' ? m.kind_folder() : formatSize(node.size, locale)} · {formatDate(
+										node.trashed_at,
+										locale
+									)}</span
+								>
+							</span>
 						</div>
 					</td>
 					<td class="num muted">{node.kind === 'folder' ? '—' : formatSize(node.size, locale)}</td>
@@ -132,6 +162,16 @@
 	</table>
 {/if}
 
+<Dialog bind:open={emptyOpen} title={m.trash_empty_confirm_title()}>
+	<p class="confirm">{m.trash_empty_confirm_body({ count: items.length })}</p>
+	<div class="actions">
+		<Button variant="ghost" onclick={() => (emptyOpen = false)}>{m.cancel_button()}</Button>
+		<Button variant="danger" loading={emptying} onclick={emptyTrash}
+			>{m.trash_empty_action()}</Button
+		>
+	</div>
+</Dialog>
+
 <Dialog bind:open={confirmOpen} title={m.delete_forever_title()}>
 	<p class="confirm">{m.delete_forever_body({ name: confirming?.name ?? '' })}</p>
 	<div class="actions">
@@ -143,10 +183,25 @@
 </Dialog>
 
 <style>
+	.head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-top: var(--space-2);
+	}
 	h1 {
 		font-size: var(--text-2xl);
 		letter-spacing: -0.02em;
-		margin-top: var(--space-2);
+	}
+	.text {
+		display: grid;
+		min-width: 0;
+	}
+	.sub {
+		display: none;
+		font-size: var(--text-xs);
 	}
 	.note {
 		margin: var(--space-2) 0 var(--space-5);
@@ -204,12 +259,25 @@
 		gap: var(--space-3);
 	}
 	.name {
+		overflow: hidden;
 		font-size: var(--text-md);
-		overflow-wrap: anywhere;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
+	.name-cell {
+		min-width: 0;
+	}
+	/* Phones: size and date under the name, so the name gets the width. */
 	@media (max-width: 600px) {
-		.date {
+		.date,
+		.num {
 			display: none;
+		}
+		.sub {
+			display: block;
+		}
+		.list {
+			table-layout: fixed;
 		}
 	}
 	.empty {

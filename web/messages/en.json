@@ -695,5 +695,28 @@
 	"searchable_hint": "A copy whose text can be selected and searched in any PDF reader, saved next to it",
 	"searchable_running": "making a searchable PDF…",
 	"searchable_done": "searchable PDF saved next to it",
-	"searchable_failed": "the searchable PDF could not be made"
+	"searchable_failed": "the searchable PDF could not be made",
+	"trash_empty_action": "Empty the trash",
+	"trash_empty_confirm_title": "Empty the trash?",
+	"trash_empty_confirm_body": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "The item in the trash is deleted for good. This cannot be undone.",
+				"countPlural=other": "The {count} items in the trash are deleted for good, with their content. This cannot be undone."
+			}
+		}
+	],
+	"trash_empty_failed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item could not be deleted.",
+				"countPlural=other": "{count} items could not be deleted."
+			}
+		}
+	],
+	"share_expires_on": "Expires {date}"
 }

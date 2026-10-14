@@ -93,10 +93,17 @@ export async function unlockShare(token: string, password: string) {
 	return data;
 }
 
-export function publicFileUrl(token: string, nodeId: string, access?: string, inline = false) {
+export function publicFileUrl(
+	token: string,
+	nodeId: string,
+	access?: string,
+	inline = false,
+	thumb = false
+) {
 	const q = new URLSearchParams({
 		...(access ? { access } : {}),
-		...(inline ? { inline: '1' } : {})
+		...(inline ? { inline: '1' } : {}),
+		...(thumb ? { thumb: '1' } : {})
 	});
 	const qs = q.toString();
 	return `/api/v1/public/shares/${encodeURIComponent(token)}/files/${encodeURIComponent(nodeId)}${qs ? `?${qs}` : ''}`;

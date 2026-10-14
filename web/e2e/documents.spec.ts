@@ -145,3 +145,20 @@ test('tags label files and filter documents', async ({ page }) => {
 		timeout: 20_000
 	});
 });
+
+test('the trash can be emptied at once', async ({ page }) => {
+	await signIn(page, DOC_USER);
+	for (const name of ['harbor.jpg', 'invoice.png']) {
+		await page.getByRole('button', { name: `Actions for ${name}` }).click();
+		await page.getByRole('menuitem', { name: 'Move to trash' }).click();
+		await expect(
+			page.getByRole('row', { name: new RegExp(name.replace('.', '\\.')) })
+		).toBeHidden();
+	}
+	await nav(page, 'Trash');
+	await page.getByRole('button', { name: 'Empty the trash' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Empty the trash?' });
+	await expect(dialog).toContainText('The 2 items in the trash are deleted for good');
+	await dialog.getByRole('button', { name: 'Empty the trash' }).click();
+	await expect(page.getByRole('heading', { name: 'The trash is empty' })).toBeVisible();
+});

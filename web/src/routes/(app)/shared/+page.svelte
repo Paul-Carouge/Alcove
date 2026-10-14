@@ -86,6 +86,13 @@
 									{#if share.has_password}· <Lock size={12} aria-hidden="true" />
 										{m.share_protected()}{/if}
 								</span>
+								<span class="muted small expiry">
+									{share.expires_at
+										? expired(share)
+											? m.public_expired()
+											: m.share_expires_on({ date: formatDate(share.expires_at, locale) })
+										: m.share_no_expiry()}
+								</span>
 							</div>
 						</div>
 					</td>
@@ -233,9 +240,16 @@
 		max-width: 28rem;
 		color: var(--color-text-muted);
 	}
+	.expiry {
+		display: none;
+	}
+	/* Phones: the expiry column moves under the name. */
 	@media (max-width: 600px) {
 		.date {
 			display: none;
+		}
+		.expiry {
+			display: inline;
 		}
 	}
 </style>

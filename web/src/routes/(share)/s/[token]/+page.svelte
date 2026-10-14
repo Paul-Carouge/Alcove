@@ -102,6 +102,10 @@
 		[...(share?.children ?? [])].sort((a, b) => compareNodes(a, b, locale))
 	);
 	const fileUrl = (n: PublicNode, inline = false) => publicFileUrl(token, n.id, access, inline);
+	// Photos and videos show their thumbnail; the icon stays when there is none.
+	const hasThumb = (n: PublicNode) =>
+		n.kind === 'file' && /^(image|video)\//.test(n.mime ?? '') && !noThumb.has(n.id);
+	let noThumb = $state(new Set<string>());
 
 	// Album links: items in the shape the photo grid and viewer use.
 	let viewerIndex = $state(-1);
@@ -229,7 +233,17 @@
 		<ul class="items">
 			{#each children as node (node.id)}
 				<li>
-					<FileIcon kind={node.kind} mime={node.mime} />
+					{#if hasThumb(node)}
+						<img
+							class="thumb"
+							src={publicFileUrl(token, node.id, access, false, true)}
+							alt=""
+							loading="lazy"
+							onerror={() => (noThumb = new Set([...noThumb, node.id]))}
+						/>
+					{:else}
+						<FileIcon kind={node.kind} mime={node.mime} />
+					{/if}
 					{#if node.kind === 'folder'}
 						<button class="name as-link" onclick={() => openFolder(node.id)}>{node.name}</button>
 						<span class="muted size">—</span>
@@ -400,6 +414,14 @@
 		color: var(--color-text);
 	}
 	.icon-btn:hover {
+		background: var(--color-surface-sunken);
+	}
+	.thumb {
+		flex: none;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: var(--radius-md);
+		object-fit: cover;
 		background: var(--color-surface-sunken);
 	}
 </style>

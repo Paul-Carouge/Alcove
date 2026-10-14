@@ -115,30 +115,34 @@ Future<AddAction?> showAddSheet(BuildContext context, {required bool canScan}) {
   return showModalBottomSheet<AddAction>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
-        child: InsetGroup(
-          children: [
-            GroupTile(
-              icon: Icons.create_new_folder_outlined,
-              title: l.newFolder,
-              onTap: () => Navigator.pop(context, AddAction.folder),
-            ),
-            GroupTile(
-              icon: Icons.upload_file_outlined,
-              title: l.uploadFiles,
-              subtitle: l.uploadFilesHint,
-              onTap: () => Navigator.pop(context, AddAction.upload),
-            ),
-            if (canScan)
+      child: SingleChildScrollView(
+        padding: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
+          child: InsetGroup(
+            children: [
               GroupTile(
-                icon: Icons.document_scanner_outlined,
-                title: l.scanDocument,
-                subtitle: l.scanDocumentHint,
-                onTap: () => Navigator.pop(context, AddAction.scan),
+                icon: Icons.create_new_folder_outlined,
+                title: l.newFolder,
+                onTap: () => Navigator.pop(context, AddAction.folder),
               ),
-          ],
+              GroupTile(
+                icon: Icons.upload_file_outlined,
+                title: l.uploadFiles,
+                subtitle: l.uploadFilesHint,
+                onTap: () => Navigator.pop(context, AddAction.upload),
+              ),
+              if (canScan)
+                GroupTile(
+                  icon: Icons.document_scanner_outlined,
+                  title: l.scanDocument,
+                  subtitle: l.scanDocumentHint,
+                  onTap: () => Navigator.pop(context, AddAction.scan),
+                ),
+            ],
+          ),
         ),
       ),
     ),
@@ -146,36 +150,45 @@ Future<AddAction?> showAddSheet(BuildContext context, {required bool canScan}) {
 }
 
 /// What can be done with one file or folder.
-enum NodeAction { rename, move, trash }
+enum NodeAction { rename, move, tags, trash }
 
 Future<NodeAction?> showNodeSheet(BuildContext context, RecordModel node) {
   final l = AppLocalizations.of(context);
   return showModalBottomSheet<NodeAction>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
-        child: InsetGroup(
-          title: node.getStringValue('name'),
-          children: [
-            GroupTile(
-              icon: Icons.drive_file_rename_outline,
-              title: l.rename,
-              onTap: () => Navigator.pop(context, NodeAction.rename),
-            ),
-            GroupTile(
-              icon: Icons.drive_file_move_outline,
-              title: l.move,
-              onTap: () => Navigator.pop(context, NodeAction.move),
-            ),
-            GroupTile(
-              icon: Icons.delete_outline,
-              title: l.trashConfirm,
-              danger: true,
-              onTap: () => Navigator.pop(context, NodeAction.trash),
-            ),
-          ],
+      child: SingleChildScrollView(
+        padding: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
+          child: InsetGroup(
+            title: node.getStringValue('name'),
+            children: [
+              GroupTile(
+                icon: Icons.drive_file_rename_outline,
+                title: l.rename,
+                onTap: () => Navigator.pop(context, NodeAction.rename),
+              ),
+              GroupTile(
+                icon: Icons.drive_file_move_outline,
+                title: l.move,
+                onTap: () => Navigator.pop(context, NodeAction.move),
+              ),
+              GroupTile(
+                icon: Icons.sell_outlined,
+                title: l.tags,
+                onTap: () => Navigator.pop(context, NodeAction.tags),
+              ),
+              GroupTile(
+                icon: Icons.delete_outline,
+                title: l.trashConfirm,
+                danger: true,
+                onTap: () => Navigator.pop(context, NodeAction.trash),
+              ),
+            ],
+          ),
         ),
       ),
     ),

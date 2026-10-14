@@ -142,5 +142,11 @@
   "uploaded": "{count, plural, =1{1 fichier envoyé} other{{count} fichiers envoyés}}",
   "uploadsFailed": "{count, plural, =1{1 fichier n’a pas pu être envoyé} other{{count} fichiers n’ont pas pu être envoyés}}",
   "uploadsDoneHint": "Ils sont dans ce dossier",
-  "moreActions": "Plus d’actions pour {name}"
+  "moreActions": "Plus d’actions pour {name}",
+  "tags": "Étiquettes",
+  "tagsOf": "Étiquettes de « {name} »",
+  "tagsEmpty": "Aucune étiquette : créez-en une ci-dessous, par exemple « Factures ».",
+  "tagNew": "Nouvelle étiquette",
+  "tagAdd": "Ajouter l’étiquette",
+  "tagNameTaken": "Vous avez déjà une étiquette avec ce nom."
 }

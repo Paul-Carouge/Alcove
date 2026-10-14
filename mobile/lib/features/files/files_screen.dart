@@ -16,6 +16,7 @@ import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import '../search/search_screen.dart';
 import 'file_actions.dart';
+import 'tags.dart';
 
 /// Browses the drive: folders first, then files, by name. Files open in the system browser,
 /// which downloads or shows them. With an [uploads] queue, files can be added, renamed, moved and
@@ -39,6 +40,7 @@ class _FilesScreenState extends State<FilesScreen> {
   List<RecordModel>? _nodes;
   bool _failed = false;
   late final Drive _drive = Drive(widget.session);
+  late final TagBook _tags = TagBook(widget.session);
   StreamSubscription<String>? _arrivals;
 
   String get _here => widget.folder?.id ?? '';
@@ -113,6 +115,11 @@ class _FilesScreenState extends State<FilesScreen> {
               : (await widget.session.pb.collection('nodes').getOne(to)).getStringValue('name');
           await _load();
           if (mounted) _snack(l.movedTo(folder));
+        case NodeAction.tags:
+          final ids = await pickTags(context, _tags, node);
+          if (ids == null) return;
+          await _drive.setTags(node.id, ids);
+          await _load();
         case NodeAction.trash:
           await _drive.trash(node.id);
           setState(() => _nodes = _nodes?.where((n) => n.id != node.id).toList());
@@ -139,6 +146,8 @@ class _FilesScreenState extends State<FilesScreen> {
   Future<void> _load() async {
     try {
       _token = await widget.session.fileToken();
+      // Tags are optional decoration: a failure must not hide the files.
+      await _tags.load().catchError((Object _) {});
       final parent = widget.folder?.id ?? '';
       final list = await widget.session.pb
           .collection('nodes')
@@ -221,6 +230,7 @@ class _FilesScreenState extends State<FilesScreen> {
                   thumb: _thumb(n),
                   onTap: () => _open(n),
                   onMore: widget.uploads == null ? null : () => _actions(n),
+                  tags: _tags.of(n),
                 ),
             ],
           ),
@@ -328,7 +338,11 @@ class NodeRow extends StatelessWidget {
     required this.onTap,
     this.below,
     this.onMore,
+    this.tags = const [],
   });
+
+  /// Tags shown under the name.
+  final List<RecordModel> tags;
 
   final RecordModel node;
   final String locale;
@@ -386,6 +400,14 @@ class NodeRow extends StatelessWidget {
                       fontWeight: AlcoveFont.medium,
                     ),
                   ),
+                  if (tags.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: [for (final t in tags) TagChip(tag: t)],
+                    ),
+                  ],
                   if (below != null) ...[
                     const SizedBox(height: 2),
                     below!,

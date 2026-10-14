@@ -42,6 +42,9 @@ class Drive {
   Future<RecordModel> trash(String id) =>
       _nodes.update(id, body: {'trashed_at': DateTime.now().toUtc().toIso8601String()});
 
+  Future<RecordModel> setTags(String id, List<String> tags) =>
+      _nodes.update(id, body: {'tags': tags});
+
   Future<RecordModel> restore(String id) => _nodes.update(id, body: {'trashed_at': ''});
 
   /// Sub-folders of a folder ('' = root), by name.

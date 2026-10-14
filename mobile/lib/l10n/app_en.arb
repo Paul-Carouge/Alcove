@@ -342,5 +342,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "tags": "Tags",
+  "tagsOf": "Tags of “{name}”",
+  "@tagsOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tagsEmpty": "No tags yet: create one below, for example “Invoices”.",
+  "tagNew": "New tag",
+  "tagAdd": "Add the tag",
+  "tagNameTaken": "You already have a tag with this name."
 }

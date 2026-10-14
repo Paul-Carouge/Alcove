@@ -26,6 +26,7 @@ class FakeDrive {
   final nodes = <String, Map<String, dynamic>>{};
   var _seq = 0;
   final uploads = <String, ({String name, String parent, int length, int offset})>{};
+  final tags = <Map<String, dynamic>>[];
 
   Map<String, dynamic> add(String name, {String kind = 'file', String parent = ''}) {
     final id = 'n${_seq++}';
@@ -48,6 +49,26 @@ class FakeDrive {
   http.Response handle(http.Request req) {
     final path = req.url.path;
     if (path == '/api/files/token') return _json(200, {'token': 'ft'});
+    if (path == '/api/collections/tags/records' && req.method == 'GET') {
+      return _json(200, {
+        'page': 1,
+        'perPage': 500,
+        'totalItems': tags.length,
+        'totalPages': 1,
+        'items': tags,
+      });
+    }
+    if (path == '/api/collections/tags/records' && req.method == 'POST') {
+      final body = jsonDecode(req.body) as Map<String, dynamic>;
+      final t = {
+        'id': 't${tags.length}',
+        'collectionId': 'tags',
+        'collectionName': 'tags',
+        ...body,
+      };
+      tags.add(t);
+      return _json(200, t);
+    }
     if (path == '/api/collections/nodes/records' && req.method == 'GET') {
       final filter = req.url.queryParameters['filter'] ?? '';
       final parent = RegExp(r"parent = '([^']*)'").firstMatch(filter)?.group(1) ?? '';
@@ -231,6 +252,37 @@ void main() {
     expect(find.text('note.pdf'), findsNothing);
     expect(find.text('Moved to “Archives”'), findsOneWidget);
     expect(drive.nodes.values.firstWhere((n) => n['name'] == 'note.pdf')['parent'], 'n0');
+  });
+
+  testWidgets('tag a file', (tester) async {
+    final drive = FakeDrive()..add('facture.pdf');
+    final client = MockClient((r) async => drive.handle(r));
+    final session = (await tester.runAsync(() => _session(client)))!;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: FilesScreen(
+          session: session,
+          uploads: UploadQueue(session, httpClient: () => client),
+        ),
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.byTooltip('More actions for facture.pdf'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tags'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No tags yet'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('newTag')), 'Factures');
+    await tester.tap(find.byTooltip('Add the tag'));
+    await settle(tester);
+    expect(tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value, isTrue);
+    await tester.tap(find.byKey(const Key('saveTags')));
+    await settle(tester);
+    expect(drive.nodes.values.first['tags'], ['t0']);
+    expect(find.text('Factures'), findsOneWidget); // the chip under the name
   });
 
   test('the upload queue sends files one by one and reports them', () async {

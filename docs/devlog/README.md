@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.28.0](2026-10-14-v0.28.0.md) | 2026-10-14 | Lin |
 | [0.27.0](2026-10-14-v0.27.0.md) | 2026-10-14 | One search field |
 | [0.26.0](2026-10-14-v0.26.0.md) | 2026-10-14 | Installing on a blank machine |
 | [0.25.0](2026-10-14-v0.25.0.md) | 2026-10-14 | The little things |

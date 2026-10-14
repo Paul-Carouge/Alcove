@@ -7,6 +7,24 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-14
+
+### Changed
+- **A new look, "Lin", on the web and in the app**: a warm paper background, near-black ink and a deep sage
+  accent, headings in the Fraunces serif and text in Inter (both bundled, nothing loaded from outside),
+  larger rounded corners, very soft shadows and more space. Dark mode follows the same palette.
+- **Web**: a calmer shell (the current section is a lifted sheet), serif page titles with item counts,
+  one empty-state style everywhere, albums shown as small stacks of prints, dialogs that become bottom
+  sheets on phones, a new sign-in page, and restyled settings, admin, setup and public share pages.
+- **App**: built with Material 3 Expressive: buttons that change shape when pressed, a "+" menu that unfolds
+  from the button, a floating toolbar in the viewer, a morphing loading indicator, large titles that shrink
+  as you scroll, spring motion (off when the system asks for reduced motion) and Android 16 style lists.
+
+### Fixed
+- Web on phones: the Photos and Documents pages no longer scroll sideways, the photo viewer's close button
+  stays on screen, and the album page tools no longer wrap badly.
+- Two Security page labels were not translated.
+
 ## [0.27.0] - 2026-10-14
 
 ### Changed

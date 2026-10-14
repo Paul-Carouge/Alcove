@@ -3,15 +3,22 @@
 **Your files, photos and documents, on your own server. Calm, fast and private.**
 
 Alcove is a self-hosted personal cloud: a file drive, a photo and video library, and a document
-archive with full-text search (OCR). Notes, calendar and contacts come later. It runs as one small
-binary, deploys with one `docker compose up`, updates in realtime across your devices, and keeps your
-data on hardware you control.
+archive with full-text search (OCR). Notes and a calendar come later. It runs as one small binary,
+installs with one command, updates in realtime across your devices, and keeps your data on hardware you
+control: a spare PC at home, a Raspberry Pi or a small cloud server.
 
-> **Status: early development (v0.18).** The web app has accounts with two-factor, a drive with
-> resumable uploads, previews, share links and quotas, a photo and video timeline with albums shared between
-> accounts; one-command install and updates. Expect breaking changes before 1.0 and keep backups.
-
-<!-- Screenshots: coming with phase 1 (drive). -->
+> **Status: early development (v0.25).** Working today:
+> - **Files**: drive with resumable uploads, folders, tags, previews, share links (password, expiry),
+>   ZIP downloads, trash, quotas, search inside documents.
+> - **Photos**: timeline with memories, albums shared between accounts or by public link, map,
+>   duplicates, favorites, a full-screen viewer with zoom and slideshow; HEIC and videos.
+> - **Documents**: text of PDFs, scans and screenshots (OCR, French and English), searchable PDF copies.
+> - **Android app**: photos, albums, files (send, scan, organise), automatic photo backup, search,
+>   updates itself from your server.
+> - **Running it**: one-command install, signed updates from the command line or the app, two-factor,
+>   accounts and quotas, English and French.
+>
+> Expect breaking changes before 1.0 and keep backups.
 
 ## Why Alcove
 
@@ -64,7 +71,7 @@ Alcove and phones offer the matching version at their next launch. The iPhone ap
 | 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters and map done |
 | 3 | Documents (OCR, full-text search) | 🚧 PDF text, OCR of scans and screenshots, full-text search done |
 | 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, albums, file management, scanning, automatic backup and in-app updates done |
-| 5 | Notes, calendar (CalDAV), contacts (CardDAV) | |
+| 5 | Notes, calendar (CalDAV) | |
 | 6 | Desktop app with folder sync | |
 
 Details are in [docs/ROADMAP.md](docs/ROADMAP.md).

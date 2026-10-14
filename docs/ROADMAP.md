@@ -70,10 +70,10 @@ Full scope: mobile login, drive browser, viewer, offline favorites, **automatic 
 tasks, Wi-Fi/charging constraints, resumable, deduplicated), QR-code server pairing, share sheet,
 optional UnifiedPush/ntfy notifications, Play Store release (and F-Droid if feasible).
 
-## Phase 5: Notes, calendar, contacts
+## Phase 5: Notes and calendar
 
-Markdown notes with realtime sync, calendars (CalDAV) and contacts (CardDAV) so native apps
-(DAVx⁵, iOS, Thunderbird) work out of the box.
+Markdown notes with realtime sync, and calendars (CalDAV) so native apps (DAVx⁵, iOS, Thunderbird) work
+out of the box. Contacts (CardDAV) are not planned for now.
 
 ## Phase 6: Desktop sync
 

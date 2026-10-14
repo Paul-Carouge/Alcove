@@ -1,6 +1,22 @@
 # Self-hosting
 
-> Alcove is in early development (drive and photo timeline work). Keep backups and expect breaking changes before 1.0.
+> Alcove is in early development. Keep backups and expect breaking changes before 1.0.
+
+## In three steps
+
+1. **Install** on the machine that will keep your files (a PC at home, a Raspberry Pi, a cloud server):
+   `curl -fsSL https://github.com/Paul-Carouge/Alcove/releases/latest/download/install.sh | sh`
+2. **Open the link it prints** (`http://<address>:8090/setup?token=…`, or `https://<your domain>/…`)
+   from any computer or phone on the same network, and create your account.
+3. **Install the app** on your phone from Account → Alcove on your phone, and enter the same address.
+
+Which mode to choose when the installer asks?
+
+| You want… | Choose | Address |
+|---|---|---|
+| Use it only at home (and through Tailscale when away) | **Local network** | `http://192.168.x.y:8090` |
+| Reach it from anywhere with your own domain name | **Internet with a domain** | `https://cloud.example.com` |
+| You already run nginx, Traefik or Caddy | **Behind your reverse proxy** | yours |
 
 ## Requirements
 
@@ -218,3 +234,18 @@ tile.openstreetmap.org (which sees the area viewed). For many users, prefer your
 
 Read the release notes before major versions; breaking changes are announced in the
 [CHANGELOG](../CHANGELOG.md).
+
+## Troubleshooting
+
+- **The setup link does not open from my phone.** Use the address the installer printed (an IP such as
+  `192.168.1.20`), not `localhost`. Phone and server must be on the same network, and port 8090 open in
+  the server's firewall (`sudo ufw allow 8090` on Ubuntu).
+- **"cannot reach the release server".** The installer or `alcove update` needs to reach GitHub. On minimal
+  systems, install the certificate store first (`sudo apt install ca-certificates`).
+- **HTTPS does not work with my domain.** The domain's DNS must point to this machine, and ports 80 and 443
+  must reach it (router port forwarding at home). Check with `alcove status`.
+- **Photos have no thumbnail.** Videos and HEIC need ffmpeg: `alcove status` shows which one is used;
+  `sudo alcove update` installs Alcove's own copy on Linux.
+- **Scans are not searchable.** The OCR tools are optional: see Documents and OCR on the System page.
+- **Something else.** `alcove status` shows the service, its address, ffmpeg, OCR and pending updates;
+  `journalctl -u alcove` (Linux) shows the server's log.

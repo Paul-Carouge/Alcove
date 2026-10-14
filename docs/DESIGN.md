@@ -3,6 +3,10 @@
 Alcove should feel like a quiet room: **clean, fast, calm.** Your files are the content, and the
 interface stays out of the way.
 
+The visual direction is called **Lin** (linen): warm paper background, near-black ink, a deep sage
+accent, a serif for headings and a neutral sans for text, generous whitespace, soft corners and very
+soft warm shadows. Think of a calm notebook or a small museum: quiet, refined, never flashy.
+
 ## Principles
 
 1. **Content first.** Chrome is neutral and low-contrast. Color is reserved for meaning (accent = action
@@ -31,16 +35,17 @@ Never use raw values in components. If a value is missing, add a token.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `bg` | `#F7F8FA` | `#121417` | App background |
-| `surface` | `#FFFFFF` | `#1A1D21` | Cards, panels, inputs |
-| `surfaceRaised` | `#FFFFFF` | `#22262B` | Menus, dialogs (with shadow) |
-| `surfaceSunken` | `#EEF0F3` | `#0D0F11` | Wells, code, drop zones |
-| `border` / `borderStrong` | `#DCE0E5` / `#B9C0C9` | `#2E333A` / `#454C55` | Dividers / input outlines |
-| `text` / `textMuted` | `#1A1D21` / `#535C68` | `#E8EAED` / `#A0A8B3` | Body / secondary text |
-| `accent` (+`Hover`, `Subtle`, `Contrast`) | `#3E5C8A` | `#93B2E0` | Primary actions, links, selection (slate blue) |
-| `success`, `warning`, `danger` | `#1E7146`, `#9A3F06`, `#B42318` | `#5BD394`, `#FDB022`, `#F97066` | Status |
+| `bg` | `#F7F5F0` | `#161512` | App background (paper) |
+| `surface` | `#FFFFFF` | `#1E1C19` | Cards, panels, inputs |
+| `surfaceRaised` | `#FFFFFF` | `#26241F` | Menus, dialogs (with shadow) |
+| `surfaceSunken` | `#EFEBE3` | `#11100E` | Wells, code, segmented controls |
+| `border` / `borderStrong` | `#E6E1D7` / `#ADA697` | `#2F2C27` / `#5C574E` | Dividers / input outlines |
+| `text` / `textMuted` | `#1F1E1B` / `#635F57` | `#EDEAE3` / `#A9A398` | Body (ink) / secondary text |
+| `accent` (+`Hover`, `Subtle`, `Contrast`) | `#3F6B5A` | `#8FBFA8` | Primary actions, links, selection (deep sage) |
+| `success`, `warning`, `danger` | `#2E6B45`, `#8A4A0B`, `#A9322A` | `#7FD3A0`, `#F2B35C`, `#F08A7E` | Status |
 | `focus` | = accent | = accent | Focus ring |
-| `overlay` | `#1A1D2166` | `#000000A3` | Scrims behind dialogs |
+| `overlay` | `#1F1E1B66` | `#000000A3` | Scrims behind dialogs |
+| `stage*`, `onStage*` | always dark | always dark | Photo viewer |
 
 Dark mode follows the system (`prefers-color-scheme`). The web app can force a theme with
 `<html data-theme="light|dark">`. Every text/background pair is checked for WCAG AA contrast by
@@ -48,8 +53,14 @@ Dark mode follows the system (`prefers-color-scheme`). The web app can force a t
 
 ### Typography
 
-- Family: **Inter** (variable), self-hosted on web (`@fontsource-variable/inter`) and bundled in the app.
-  Never loaded from Google Fonts. Mono: JetBrains Mono, falling back to system mono.
+- Families: **Fraunces** (variable, optical sizes) for headings, page titles and a few display
+  details (`--font-display`), **Inter** (variable) for everything else (`--font-sans`). Self-hosted
+  on web (`@fontsource-variable/fraunces`, `@fontsource-variable/inter`, imported once in the root
+  layout) and bundled in the app. Never loaded from Google Fonts (the CSP forbids it). Mono:
+  JetBrains Mono, falling back to system mono.
+- Headings use weight 400–500 in Fraunces (it is already expressive); page titles are `3xl`
+  (`2xl` on phones), dialog titles `xl`. Small uppercase labels (table headers, sidebar groups)
+  stay in Inter, `xs`, tracked `0.08em`.
 - Scale (px): `xs 12 · sm 14 · md 16 (body) · lg 18 · xl 22 · 2xl 28 · 3xl 36`. Web uses rem, so
   user font-size preferences apply. Flutter respects the system text scale.
 - Weights: 400 regular, 500 medium (labels, buttons), 600 semibold (headings). No bold-on-bold.
@@ -58,7 +69,8 @@ Dark mode follows the system (`prefers-color-scheme`). The web app can force a t
 ### Spacing, radius, elevation, breakpoints
 
 - Spacing (4px grid): `0, 4, 8, 12, 16, 24, 32, 48, 64` → `space-0`…`space-8`.
-- Radius: `sm 6` (chips, inputs inner), `md 10` (buttons, inputs), `lg 16` (cards, sheets), `full` (avatars, pills).
+- Radius: `sm 8` (small controls), `md 12` (buttons, inputs, menu items), `lg 18` (cards, lists, tiles),
+  `xl 24` (dialogs, settings cards, empty states), `full` (avatars, pills, search).
 - Shadows: `sm` (resting cards), `md` (popovers), `lg` (dialogs). Dark mode uses deeper, darker shadows
   plus lighter surfaces for elevation.
 - Breakpoints: `sm 600`, `md 900`, `lg 1200`. Mobile-first. Drive grid columns grow with width.
@@ -81,12 +93,13 @@ pressed, focus-visible, disabled, loading, error.
 | IconButton | Always has an accessible label (tooltip on web) |
 | TextField | Label always visible (no placeholder-as-label), helper/error text below, error announced |
 | Select / Menu | Keyboard navigable, typeahead, `Esc` closes, focus returns to trigger |
-| Dialog / Sheet | Focus trap, `Esc`/back closes, title labelled. Bottom sheet on mobile |
+| Dialog / Sheet | Focus trap, `Esc`/back closes, title labelled. Bottom sheet (with grab handle) below 600px |
 | Toast | Polite live region, auto-dismiss ≥ 5 s, pause on hover/focus, never the only place for errors |
-| Card | `surface` + `border` + `shadow-sm`, radius `lg` |
+| Card | `surface` + `border` + `shadow-sm`, radius `lg` (lists) or `xl` (settings sections) |
+| Data table | `table.data-table` (base.css): a card of rows, uppercase tracked headers, row hover tint |
 | ListItem / GridTile | File rows/tiles: icon or thumbnail, name, meta. Selection via checkbox, not only color |
 | Breadcrumbs | Folder path, collapses the middle on narrow screens |
-| EmptyState | Illustration-free: icon, one sentence, one action |
+| EmptyState | `#lib/ui/EmptyState.svelte`: icon in a small arch (the logo's alcove), title, one sentence, at most one action |
 | Skeleton | For content loading, respects reduced motion (no shimmer) |
 | ProgressBar | Uploads; has text percentage for screen readers |
 
@@ -95,11 +108,14 @@ justified. 20px default, 24px in touch toolbars.
 
 ## Layout
 
-- **App shell (web):** 16rem sidebar (logo, sections, version) + sticky translucent top bar (account menu)
-  + content column capped at 80rem. Below `md` (900px) the sidebar becomes a drawer with a scrim.
+- **App shell (web):** 16.5rem sidebar on the paper background (logo, sections, storage, version); the
+  current section is a white "sheet" lifted with `shadow-sm` and a sage icon. Sticky translucent top
+  bar (global search pill, account menu) + content column capped at 80rem. Below `md` (900px) the
+  sidebar becomes a drawer with a scrim.
   Upcoming sections stay visible but disabled with a "Soon" badge, so the roadmap is legible.
-- **Public pages:** split layout. A brand panel (logo, pitch, three promises, soft accent gradient) on the left,
-  the form on the right. Below `md` only the form remains, with the logo in the header.
+- **Public pages:** split layout. A brand panel (logo, serif pitch, three promises, hairline arches) on
+  the left, the form in a white card on the right. Below `md` only the card remains, with the logo in
+  the header.
 - **Account menu:** avatar trigger → identity, theme (system/light/dark, persisted per browser), language,
   sign-out. Closes on `Esc` (focus returns to the trigger) and on outside pointer-down.
 

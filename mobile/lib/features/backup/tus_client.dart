@@ -57,6 +57,9 @@ class TusUploader {
       );
       final location = res.headers['location'];
       if (res.statusCode != 201 || location == null) throw _error(res);
+      // An empty file is complete on creation: the server already names its node.
+      final created = res.headers['alcove-node-id'];
+      if (created != null && total == 0) return created;
       url = endpoint.resolve(location);
       onCreated?.call(url.toString());
     }

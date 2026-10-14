@@ -124,4 +124,34 @@ void main() {
     await again.restore();
     expect(again.isSignedIn, isFalse);
   });
+
+  test('coming back to the app renews a stale token, and signs out if it was revoked', () async {
+    handler = (_) => _json(200, {'token': _token, 'record': _user});
+    final s = newSession();
+    await s.useServer(Uri.parse('https://cloud.example.com'));
+    await s.signIn('paul@example.com', 'secret');
+    requests.clear();
+
+    await s.refreshIfStale();
+    await s.refreshIfStale(); // fresh: not asked again
+    expect(requests.where((r) => r.url.path.endsWith('/auth-refresh')), hasLength(1));
+
+    handler = (_) => _json(401, {'status': 401});
+    await s.refreshIfStale(maxAge: Duration.zero);
+    expect(s.isSignedIn, isFalse);
+  });
+
+  test('offline: the session is kept', () async {
+    handler = (_) => _json(200, {'token': _token, 'record': _user});
+    final s = newSession();
+    await s.useServer(Uri.parse('https://cloud.example.com'));
+    await s.signIn('paul@example.com', 'secret');
+    handler = (_) => throw const SocketExceptionLike();
+    await s.refreshIfStale(maxAge: Duration.zero);
+    expect(s.isSignedIn, isTrue);
+  });
+}
+
+class SocketExceptionLike implements Exception {
+  const SocketExceptionLike();
 }

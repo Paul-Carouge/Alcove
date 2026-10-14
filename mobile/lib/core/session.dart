@@ -60,8 +60,24 @@ class Session extends ChangeNotifier {
     if (url == null) return;
     await _connect(url, initialAuth: await store.readAuth());
     if (!isSignedIn) return;
+    await _refresh();
+  }
+
+  DateTime? _refreshedAt;
+
+  /// Renews the token when the app comes back after a while (tokens expire after some days), so a
+  /// phone that keeps the app open never ends up with failing screens instead of the sign-in page.
+  Future<void> refreshIfStale({Duration maxAge = const Duration(hours: 6)}) async {
+    if (!isSignedIn) return;
+    final at = _refreshedAt;
+    if (at != null && DateTime.now().difference(at) < maxAge) return;
+    await _refresh();
+  }
+
+  Future<void> _refresh() async {
     try {
       await pb.collection('users').authRefresh();
+      _refreshedAt = DateTime.now();
     } on ClientException catch (e) {
       // Revoked or expired token: sign in again. Offline: keep the saved session.
       if (e.statusCode == 401 || e.statusCode == 403) await signOut();

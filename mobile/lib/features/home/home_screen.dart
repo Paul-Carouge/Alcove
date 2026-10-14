@@ -59,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(widget.session.refreshIfStale());
       _autoBackup();
       unawaited(_updater.check());
     }

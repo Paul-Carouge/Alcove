@@ -22,6 +22,7 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/config"
+	"github.com/Paul-Carouge/Alcove/server/internal/netaddr"
 )
 
 // MinPasswordLength matches the web client's rule.
@@ -64,12 +65,17 @@ func randomToken() string {
 }
 
 func (w *wizard) printLink(app core.App, baseURL string, preset bool) {
-	link := strings.TrimRight(baseURL, "/") + "/setup"
-	if !preset {
-		link += "?token=" + w.token
+	// "http://0.0.0.0:8090" cannot be opened: show the machine's network addresses instead.
+	var links []string
+	for _, b := range netaddr.Reachable(baseURL) {
+		link := strings.TrimRight(b, "/") + "/setup"
+		if !preset {
+			link += "?token=" + w.token
+		}
+		links = append(links, link)
 	}
-	app.Logger().Info("first launch: open the setup wizard", "url", link)
-	fmt.Printf("\n(!) First launch: finish setting up %s at\n%s\n", buildinfo.Name, link)
+	app.Logger().Info("first launch: open the setup wizard", "url", links[0])
+	fmt.Printf("\n(!) First launch: finish setting up %s at\n%s\n", buildinfo.Name, strings.Join(links, "\n"))
 	if preset {
 		fmt.Println("    (use the token from ALCOVE_SETUP_TOKEN)")
 	}

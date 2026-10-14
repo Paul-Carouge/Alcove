@@ -158,9 +158,21 @@ func latestRelease(ctx context.Context) (*updater.Release, *updater.Client, erro
 	}
 	rel, err := c.Latest(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot reach the release server: %w", err)
+		return nil, nil, releaseError(err)
 	}
 	return rel, c, nil
+}
+
+// releaseError explains the usual causes of not reaching the release server.
+func releaseError(err error) error {
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "x509") || strings.Contains(msg, "certificate"):
+		return fmt.Errorf("cannot reach the release server: this system has no trusted certificates; install them (Debian/Ubuntu: apt install ca-certificates) and try again (%w)", err)
+	case strings.Contains(msg, "no such host") || strings.Contains(msg, "dial tcp"):
+		return fmt.Errorf("cannot reach the release server: check this machine's internet connection and DNS (%w)", err)
+	}
+	return fmt.Errorf("cannot reach the release server: %w", err)
 }
 
 var errAborted = errors.New("aborted")

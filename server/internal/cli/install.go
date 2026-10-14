@@ -19,6 +19,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/buildinfo"
 	"github.com/Paul-Carouge/Alcove/server/internal/envfile"
 	"github.com/Paul-Carouge/Alcove/server/internal/ffbundle"
+	"github.com/Paul-Carouge/Alcove/server/internal/netaddr"
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
 )
 
@@ -100,6 +101,7 @@ func install(o installOpts) error {
 		vars["ALCOVE_SETUP_TOKEN"] = randomSecret(24)
 	}
 	base := ""
+	var others []string // other addresses that reach the same server (local mode)
 	switch o.mode {
 	case "public":
 		spec.Args = []string{"serve", o.domain}
@@ -113,7 +115,11 @@ func install(o installOpts) error {
 		vars["ALCOVE_HEALTH_URL"] = base + "/health"
 	default:
 		spec.Args = []string{"serve", "--http=0.0.0.0:" + strconv.Itoa(o.port)}
-		base = "http://" + hostname() + ":" + strconv.Itoa(o.port)
+		port := strconv.Itoa(o.port)
+		// Phones rarely resolve a bare host name: lead with the network address.
+		urls := netaddr.Reachable("http://0.0.0.0:" + port)
+		base = urls[0]
+		others = append(urls[1:], "http://"+hostname()+".local:"+port)
 		vars["ALCOVE_HEALTH_URL"] = "http://127.0.0.1:" + strconv.Itoa(o.port) + "/health"
 	}
 	vars["ALCOVE_INSTALL_MODE"] = "native"
@@ -168,8 +174,15 @@ func install(o installOpts) error {
 		ensureOCR(u, spec)
 	}
 
+	setupLink := func() {
+		u.say("  Finish the setup in your browser:\n    %s/setup?token=%s\n", base, url.QueryEscape(vars["ALCOVE_SETUP_TOKEN"]))
+		if len(others) > 0 {
+			u.say("  (also reachable at %s)\n", strings.Join(others, ", "))
+		}
+	}
 	if o.noStart {
-		u.say("\nFiles are in place. Start the server with:\n  %s", strings.Join(spec.Command(), " "))
+		u.say("\nFiles are in place. Start the server with:\n  %s\n", strings.Join(spec.Command(), " "))
+		setupLink()
 		return nil
 	}
 
@@ -186,8 +199,8 @@ func install(o installOpts) error {
 	if err := waitHealthy(vars["ALCOVE_HEALTH_URL"], "", 90*time.Second); err != nil {
 		return fmt.Errorf("the service was installed but does not answer yet: %w", err)
 	}
-	u.say("\n  ✓ %s is running.\n\n  Finish the setup in your browser:\n    %s/setup?token=%s\n",
-		buildinfo.Name, base, url.QueryEscape(vars["ALCOVE_SETUP_TOKEN"]))
+	u.say("\n  ✓ %s is running.\n", buildinfo.Name)
+	setupLink()
 	u.say("  Update later with:  sudo alcove update\n  Status:             alcove status\n")
 	return nil
 }
@@ -320,6 +333,10 @@ func ensureFFmpeg(u *ui, spec service.Spec) {
 	}
 	if !u.confirm("ffmpeg (video and HEIC thumbnails) is not installed. Install it now with "+cmd[0]+"?", true) {
 		return
+	}
+	// A fresh Debian/Ubuntu often has no package lists yet.
+	if cmd[0] == "apt-get" {
+		_, _ = service.Runner("apt-get", "update")
 	}
 	if out, err := service.Runner(cmd[0], cmd[1:]...); err != nil {
 		u.say("  ! ffmpeg installation failed (%v); you can install it later.\n%s", err, lastLines(out, 5))

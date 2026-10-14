@@ -23,7 +23,7 @@ func releaseForThisVersion(ctx context.Context) (*updater.Client, *updater.Relea
 	}
 	rel, err := c.Latest(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot reach the release server: %w", err)
+		return nil, nil, releaseError(err)
 	}
 	return c, rel, nil
 }

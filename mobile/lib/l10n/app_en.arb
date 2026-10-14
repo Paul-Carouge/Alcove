@@ -368,5 +368,17 @@
   "searchableMake": "Make a searchable PDF",
   "searchableHint": "A copy whose text can be selected and searched",
   "searchableRunning": "Making the searchable PDF… it appears next to the original.",
-  "searchableDone": "Searchable PDF saved next to the original"
+  "searchableDone": "Searchable PDF saved next to the original",
+  "saveToPhone": "Save to this phone",
+  "savedToPhone": "Saved to the phone's gallery (Alcove)",
+  "saveToPhoneFailed": "Could not save it to the phone",
+  "memories": "Memories",
+  "yearsAgo": "{count, plural, =1{1 year ago} other{{count} years ago}}",
+  "@yearsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -103,6 +103,16 @@ http.Response fakeAlcove(http.Request req) {
       ],
     });
   }
+  if (path == '/api/v1/photos/memories') {
+    final media = fakeMedia();
+    return _json({
+      'memories': [
+        {'yearsAgo': 1, 'year': 2025, 'items': media.sublist(2, 9)},
+        {'yearsAgo': 3, 'year': 2023, 'items': media.sublist(12, 16)},
+        {'yearsAgo': 6, 'year': 2020, 'items': media.sublist(20, 22)},
+      ],
+    });
+  }
   if (path == '/api/v1/search') {
     Map<String, dynamic> node(String id, String name, String kind, String mime) => {
       'id': id,

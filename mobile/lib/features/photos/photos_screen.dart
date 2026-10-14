@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pocketbase/pocketbase.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/session.dart';
@@ -33,6 +35,14 @@ class _PhotosScreenState extends State<PhotosScreen> {
   bool _failed = false;
   String _token = '';
 
+  /// Columns added or removed by pinching the grid.
+  int _density = 0;
+  final Map<int, Offset> _pointers = {};
+  double _pinchStart = 0;
+
+  /// "1 year ago today" groups.
+  List<(int, int, List<MediaItem>)> _memories = []; // years ago, year, items
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +50,69 @@ class _PhotosScreenState extends State<PhotosScreen> {
       if (_scroll.position.extentAfter < 1200) _loadMore();
     });
     _reload();
+    _loadMemories();
+  }
+
+  Future<void> _loadMemories() async {
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final res = await widget.session.pb.send<Map<String, dynamic>>(
+        '/api/v1/photos/memories',
+        query: {'date': today},
+      );
+      final list = [
+        for (final g
+            in (res['memories'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>())
+          (
+            (g['yearsAgo'] as num).toInt(),
+            (g['year'] as num).toInt(),
+            [
+              for (final it in (g['items'] as List<dynamic>).cast<Map<String, dynamic>>())
+                MediaItem(RecordModel.fromJson(it)),
+            ],
+          ),
+      ];
+      if (mounted) setState(() => _memories = list.where((g) => g.$3.isNotEmpty).toList());
+    } catch (_) {
+      // Memories are a bonus: the timeline works without them.
+    }
+  }
+
+  // Two fingers apart: bigger photos (fewer columns); together: more columns. A raw Listener does not
+  // take part in the gesture arena, so scrolling keeps working.
+  void _pointerMove(PointerEvent e) {
+    _pointers[e.pointer] = e.position;
+    if (_pointers.length != 2) return;
+    final pts = _pointers.values.toList();
+    final d = (pts[0] - pts[1]).distance;
+    if (_pinchStart == 0) {
+      _pinchStart = d;
+      return;
+    }
+    final ratio = d / _pinchStart;
+    if (ratio > 1.3 || ratio < 0.77) {
+      setState(() => _density = (_density + (ratio > 1 ? -1 : 1)).clamp(-2, 4));
+      _pinchStart = d;
+      HapticFeedback.selectionClick();
+    }
+  }
+
+  void _pointerUp(PointerEvent e) {
+    _pointers.remove(e.pointer);
+    if (_pointers.length < 2) _pinchStart = 0;
+  }
+
+  void _openMemory(List<MediaItem> items) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PhotoViewer(
+          session: widget.session,
+          items: items,
+          initial: 0,
+          onChanged: () => setState(() {}),
+        ),
+      ),
+    );
   }
 
   @override
@@ -97,7 +170,8 @@ class _PhotosScreenState extends State<PhotosScreen> {
     );
   }
 
-  int _columns(double width) => width >= 900 ? 6 : (width >= 600 ? 5 : 3);
+  int _columns(double width) =>
+      ((width >= 900 ? 6 : (width >= 600 ? 5 : 3)) + _density).clamp(2, 8);
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +191,18 @@ class _PhotosScreenState extends State<PhotosScreen> {
         ],
       ),
     ];
+
+    if (_memories.isNotEmpty) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: _Memories(
+            groups: _memories,
+            thumb: (it) => it.thumbUrl(widget.session.pb, _token),
+            onOpen: _openMemory,
+          ),
+        ),
+      );
+    }
 
     if (_failed && _items.isEmpty) {
       slivers.add(
@@ -200,10 +286,18 @@ class _PhotosScreenState extends State<PhotosScreen> {
     }
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: AlcoveSpace.s7)));
 
-    return RefreshIndicator(
-      onRefresh: _reload,
-      edgeOffset: 120,
-      child: CustomScrollView(controller: _scroll, slivers: slivers),
+    return Listener(
+      onPointerDown: (e) => _pointers[e.pointer] = e.position,
+      onPointerMove: _pointerMove,
+      onPointerUp: _pointerUp,
+      onPointerCancel: _pointerUp,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await Future.wait([_reload(), _loadMemories()]);
+        },
+        edgeOffset: 120,
+        child: CustomScrollView(controller: _scroll, slivers: slivers),
+      ),
     );
   }
 
@@ -424,4 +518,101 @@ class _Pill extends StatelessWidget {
     ),
     child: Padding(padding: const EdgeInsets.fromLTRB(4, 2, 7, 2), child: child),
   );
+}
+
+/// "1 year ago today": one card per year, opening its photos.
+class _Memories extends StatelessWidget {
+  const _Memories({required this.groups, required this.thumb, required this.onOpen});
+
+  final List<(int, int, List<MediaItem>)> groups;
+  final Uri? Function(MediaItem) thumb;
+  final void Function(List<MediaItem>) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AlcoveSpace.s3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s2),
+            child: Text(l.memories, style: context.text.titleMedium),
+          ),
+          SizedBox(
+            height: 176,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s4),
+              itemCount: groups.length,
+              separatorBuilder: (_, _) => const SizedBox(width: AlcoveSpace.s3),
+              itemBuilder: (context, i) {
+                final (ago, year, items) = groups[i];
+                final url = thumb(items.first);
+                return Semantics(
+                  button: true,
+                  label: l.yearsAgo(ago),
+                  child: GestureDetector(
+                    onTap: () => onOpen(items),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+                      child: SizedBox(
+                        width: 128,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ColoredBox(color: c.surfaceSunken),
+                            if (url != null) RemoteImage(url: url, cacheWidth: 384),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.center,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    c.stage.withValues(alpha: 0),
+                                    c.stage.withValues(alpha: 0.75),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: AlcoveSpace.s3,
+                              right: AlcoveSpace.s3,
+                              bottom: AlcoveSpace.s3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l.yearsAgo(ago),
+                                    style: TextStyle(
+                                      color: c.onStage,
+                                      fontWeight: AlcoveFont.semibold,
+                                      fontSize: AlcoveFont.sizeMd,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$year · ${items.length}',
+                                    style: TextStyle(
+                                      color: c.onStageMuted,
+                                      fontSize: AlcoveFont.sizeXs,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

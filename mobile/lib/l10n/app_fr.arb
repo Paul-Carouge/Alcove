@@ -154,5 +154,10 @@
   "searchableMake": "Créer un PDF cherchable",
   "searchableHint": "Une copie dont le texte se sélectionne et se recherche",
   "searchableRunning": "Création du PDF cherchable… il apparaîtra à côté de l’original.",
-  "searchableDone": "PDF cherchable enregistré à côté de l’original"
+  "searchableDone": "PDF cherchable enregistré à côté de l’original",
+  "saveToPhone": "Enregistrer sur le téléphone",
+  "savedToPhone": "Enregistré dans la galerie du téléphone (Alcove)",
+  "saveToPhoneFailed": "Impossible de l’enregistrer sur le téléphone",
+  "memories": "Souvenirs",
+  "yearsAgo": "{count, plural, =1{Il y a 1 an} other{Il y a {count} ans}}"
 }

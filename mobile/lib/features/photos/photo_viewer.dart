@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/session.dart';
@@ -38,6 +43,8 @@ class _PhotoViewerState extends State<PhotoViewer> {
   late int _index = widget.initial;
   String _token = '';
   bool _chrome = true;
+  bool _zoomed = false; // the page cannot be swiped while a photo is zoomed in
+  bool _saving = false;
 
   MediaItem get _item => widget.items[_index];
 
@@ -183,6 +190,50 @@ class _PhotoViewerState extends State<PhotoViewer> {
     return '${NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: u == 0 ? 0 : 1).format(v)} ${units[u]}';
   }
 
+  /// Saves the original to the phone's gallery (Pictures/Alcove or Movies/Alcove).
+  Future<void> _saveToPhone() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final item = _item;
+    setState(() => _saving = true);
+    try {
+      final perm = await PhotoManager.requestPermissionExtend(
+        requestOption: const PermissionRequestOption(
+          androidPermission: AndroidPermission(type: RequestType.common, mediaLocation: false),
+        ),
+      );
+      if (!perm.hasAccess) throw StateError('no access');
+      final token = await widget.session.fileToken();
+      final res = await http.get(item.originalUrl(widget.session.pb, token));
+      if (res.statusCode != 200) throw StateError('HTTP ${res.statusCode}');
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${item.id}-${item.name.replaceAll('/', '_')}');
+      await file.writeAsBytes(res.bodyBytes);
+      try {
+        if (item.isVideo) {
+          await PhotoManager.editor.saveVideo(
+            file,
+            title: item.name,
+            relativePath: 'Movies/Alcove',
+          );
+        } else {
+          await PhotoManager.editor.saveImageWithPath(
+            file.path,
+            title: item.name,
+            relativePath: 'Pictures/Alcove',
+          );
+        }
+      } finally {
+        await file.delete().catchError((Object _) => file);
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l.savedToPhone)));
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l.saveToPhoneFailed)));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   void _toggleChrome() {
     setState(() => _chrome = !_chrome);
     SystemChrome.setEnabledSystemUIMode(
@@ -211,8 +262,12 @@ class _PhotoViewerState extends State<PhotoViewer> {
             else
               PageView.builder(
                 controller: _pages,
+                physics: _zoomed ? const NeverScrollableScrollPhysics() : null,
                 itemCount: widget.items.length,
-                onPageChanged: (i) => setState(() => _index = i),
+                onPageChanged: (i) => setState(() {
+                  _index = i;
+                  _zoomed = false;
+                }),
                 itemBuilder: (_, i) {
                   final it = widget.items[i];
                   final pb = widget.session.pb;
@@ -224,25 +279,23 @@ class _PhotoViewerState extends State<PhotoViewer> {
                     );
                   }
                   final url = it.previewUrl(pb, _token);
-                  return GestureDetector(
+                  return ZoomablePage(
+                    key: ValueKey(it.id),
                     onTap: _toggleChrome,
-                    child: InteractiveViewer(
-                      maxScale: 5,
-                      child: Center(
-                        child: url == null
-                            ? Icon(Icons.image_outlined, color: colors.onStageMuted, size: 48)
-                            : RemoteImage(
-                                url: url,
-                                fit: BoxFit.contain,
-                                semanticLabel: it.name,
-                                placeholder: Icon(
-                                  Icons.broken_image_outlined,
-                                  color: colors.onStageMuted,
-                                  size: 48,
-                                ),
-                              ),
-                      ),
-                    ),
+                    onZoomChanged: (z) => setState(() => _zoomed = z),
+                    onDismiss: () => Navigator.of(context).maybePop(),
+                    child: url == null
+                        ? Icon(Icons.image_outlined, color: colors.onStageMuted, size: 48)
+                        : RemoteImage(
+                            url: url,
+                            fit: BoxFit.contain,
+                            semanticLabel: it.name,
+                            placeholder: Icon(
+                              Icons.broken_image_outlined,
+                              color: colors.onStageMuted,
+                              size: 48,
+                            ),
+                          ),
                   );
                 },
               ),
@@ -292,9 +345,14 @@ class _PhotoViewerState extends State<PhotoViewer> {
                                       fontSize: AlcoveFont.sizeMd,
                                     ),
                                   ),
-                                  if (taken != null)
+                                  if (taken != null || widget.items.length > 1)
                                     Text(
-                                      '${DateFormat.Hm(locale).format(taken)} · ${item.name}',
+                                      [
+                                        if (taken != null)
+                                          '${DateFormat.Hm(locale).format(taken)} · ${item.name}',
+                                        if (widget.items.length > 1)
+                                          '${_index + 1} / ${widget.items.length}',
+                                      ].join('  ·  '),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -354,6 +412,16 @@ class _PhotoViewerState extends State<PhotoViewer> {
                                   onPressed: _details,
                                   icon: const Icon(Icons.info_outline),
                                 ),
+                                IconButton(
+                                  tooltip: l.saveToPhone,
+                                  onPressed: _saving ? null : _saveToPhone,
+                                  icon: _saving
+                                      ? const SizedBox.square(
+                                          dimension: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.download_outlined),
+                                ),
                                 if (widget.onTrashed != null && _mine(item))
                                   IconButton(
                                     tooltip: l.trashConfirm,
@@ -371,6 +439,104 @@ class _PhotoViewerState extends State<PhotoViewer> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A photo that zooms (pinch, double tap) and closes when dragged down while not zoomed.
+class ZoomablePage extends StatefulWidget {
+  const ZoomablePage({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.onZoomChanged,
+    this.onDismiss,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final ValueChanged<bool>? onZoomChanged;
+  final VoidCallback? onDismiss;
+
+  @override
+  State<ZoomablePage> createState() => ZoomablePageState();
+}
+
+class ZoomablePageState extends State<ZoomablePage> with SingleTickerProviderStateMixin {
+  final transform = TransformationController();
+  late final AnimationController _anim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  );
+  Animation<Matrix4>? _tween;
+  Offset _tapAt = Offset.zero;
+  double _drag = 0;
+  bool _zoomed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim.addListener(() {
+      if (_tween != null) transform.value = _tween!.value;
+    });
+    transform.addListener(() {
+      final z = transform.value.getMaxScaleOnAxis() > 1.01;
+      if (z != _zoomed) {
+        setState(() => _zoomed = z);
+        widget.onZoomChanged?.call(z);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    transform.dispose();
+    super.dispose();
+  }
+
+  void _toggleZoom() {
+    const scale = 2.5;
+    final end = _zoomed
+        ? Matrix4.identity()
+        : (Matrix4.identity()
+            ..translateByDouble(-_tapAt.dx * (scale - 1), -_tapAt.dy * (scale - 1), 0, 1)
+            ..scaleByDouble(scale, scale, 1, 1));
+    _tween = Matrix4Tween(begin: transform.value, end: end).animate(
+      CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic),
+    );
+    _anim.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (_drag.abs() / 400).clamp(0.0, 1.0);
+    return GestureDetector(
+      onTap: widget.onTap,
+      onDoubleTapDown: (d) => _tapAt = d.localPosition,
+      onDoubleTap: _toggleZoom,
+      onVerticalDragUpdate: _zoomed ? null : (d) => setState(() => _drag += d.delta.dy),
+      onVerticalDragEnd: _zoomed
+          ? null
+          : (d) {
+              if (_drag > 120 || (d.primaryVelocity ?? 0) > 900) {
+                widget.onDismiss?.call();
+              } else {
+                setState(() => _drag = 0);
+              }
+            },
+      child: Transform.translate(
+        offset: Offset(0, _drag > 0 ? _drag : 0),
+        child: Opacity(
+          opacity: 1 - progress * 0.6,
+          child: InteractiveViewer(
+            transformationController: transform,
+            maxScale: 5,
+            panEnabled: _zoomed,
+            child: Center(child: widget.child),
+          ),
         ),
       ),
     );

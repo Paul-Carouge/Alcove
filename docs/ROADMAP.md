@@ -51,7 +51,9 @@ HEIC/RAW support, duplicate detection. Originals are never modified. Optional fa
 - **v0.20** ✅ text of PDFs and text files, OCR of scanned PDFs and screenshots (Tesseract FR + EN, shipped
   like ffmpeg, [ADR 0025](adr/0025-documents-and-ocr.md)), full-text search (SQLite FTS5) with highlighted
   snippets, Documents page.
-- Next: tags, scan import from the mobile camera, searchable PDF export.
+- **v0.21** ✅ scan import from the mobile camera (ML Kit, ADR 0026).
+- **v0.22** ✅ tags on files and folders, Documents filtered by tag.
+- Next: searchable PDF export, search by tag.
 
 Full scope: OCR (FR + EN), full-text search across documents and file names, PDF text layer, tags, scan
 import from the mobile camera.

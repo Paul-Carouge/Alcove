@@ -690,5 +690,10 @@
 	"tag_color_blue": "Blue",
 	"tag_color_violet": "Violet",
 	"tag_color_pink": "Pink",
-	"search_found_by_tag": "Tag"
+	"search_found_by_tag": "Tag",
+	"searchable_make": "Make a searchable PDF of {name}",
+	"searchable_hint": "A copy whose text can be selected and searched in any PDF reader, saved next to it",
+	"searchable_running": "making a searchable PDF…",
+	"searchable_done": "searchable PDF saved next to it",
+	"searchable_failed": "the searchable PDF could not be made"
 }

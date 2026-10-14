@@ -690,5 +690,10 @@
 	"tag_color_blue": "Bleu",
 	"tag_color_violet": "Violet",
 	"tag_color_pink": "Rose",
-	"search_found_by_tag": "Étiquette"
+	"search_found_by_tag": "Étiquette",
+	"searchable_make": "Créer un PDF cherchable de {name}",
+	"searchable_hint": "Une copie dont le texte se sélectionne et se recherche dans n’importe quel lecteur PDF, enregistrée à côté",
+	"searchable_running": "création du PDF cherchable…",
+	"searchable_done": "PDF cherchable enregistré à côté",
+	"searchable_failed": "le PDF cherchable n’a pas pu être créé"
 }

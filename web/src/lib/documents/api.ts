@@ -4,6 +4,7 @@ import type { DriveNode } from '#lib/drive/types.js';
 import { pb } from '#lib/pb.js';
 
 export type OCRStatus = components['schemas']['OCRStatus'];
+export type SearchableJob = components['schemas']['SearchableJob'];
 export type SearchHit = Omit<components['schemas']['SearchHit'], 'node'> & { node: DriveNode };
 
 /** A record of the `documents` collection (ADR 0025). */
@@ -81,6 +82,25 @@ export async function setOCR(enabled: boolean): Promise<OCRStatus> {
 
 export async function installOCR(): Promise<OCRStatus> {
 	const { data, response } = await api().POST('/api/v1/admin/ocr/install', { headers: auth() });
+	if (!data) throw new DocumentsError(response.status);
+	return data;
+}
+
+/** Starts making a searchable copy of a scan ("<name> (OCR).pdf", made in the background). */
+export async function makeSearchable(nodeId: string): Promise<SearchableJob> {
+	const { data, response } = await api().POST('/api/v1/documents/{nodeId}/searchable', {
+		headers: auth(),
+		params: { path: { nodeId } }
+	});
+	if (!data) throw new DocumentsError(response.status);
+	return data;
+}
+
+export async function searchableStatus(nodeId: string): Promise<SearchableJob> {
+	const { data, response } = await api().GET('/api/v1/documents/{nodeId}/searchable', {
+		headers: auth(),
+		params: { path: { nodeId } }
+	});
 	if (!data) throw new DocumentsError(response.status);
 	return data;
 }

@@ -4,6 +4,7 @@
 	import {
 		Check,
 		Copy,
+		FileSearch,
 		FileText,
 		Search as SearchIcon,
 		ScanText,
@@ -12,6 +13,8 @@
 	import {
 		documentText,
 		listDocuments,
+		makeSearchable,
+		searchableStatus,
 		type DocumentFilter,
 		type DocumentRecord
 	} from '#lib/documents/api.js';
@@ -35,6 +38,8 @@
 
 	let filter = $state<DocumentFilter>('all');
 	let tagFilter = $state('');
+	// Searchable copies being made, by source node id.
+	let making = $state<Record<string, 'running' | 'done' | 'failed'>>({});
 	let tagging = $state<DriveNode | null>(null);
 	let taggingOpen = $state(false);
 	let docs = $state<DocumentRecord[] | null>(null);
@@ -113,6 +118,20 @@
 		if (!q) return;
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query
 		goto(`${resolve('/(app)/search')}?q=${encodeURIComponent(q)}`);
+	}
+
+	async function searchable(node: DriveNode) {
+		making[node.id] = 'running';
+		try {
+			let job = await makeSearchable(node.id);
+			while (job.status === 'running') {
+				await new Promise((r) => setTimeout(r, 2000));
+				job = await searchableStatus(node.id);
+			}
+			making[node.id] = job.status === 'done' ? 'done' : 'failed';
+		} catch {
+			making[node.id] = 'failed';
+		}
 	}
 
 	async function showText(doc: DocumentRecord) {
@@ -249,8 +268,26 @@
 						<p class="meta">
 							{#if doc.status === 'pending'}<span class="dot" aria-hidden="true"></span>{/if}
 							{[statusText(doc), formatDate(node.updated, locale)].filter(Boolean).join(' · ')}
+							{#if making[node.id] === 'running'}
+								<span class="job" role="status">· {m.searchable_running()}</span>
+							{:else if making[node.id] === 'done'}
+								<span class="job done" role="status">· {m.searchable_done()}</span>
+							{:else if making[node.id] === 'failed'}
+								<span class="job failed" role="status">· {m.searchable_failed()}</span>
+							{/if}
 						</p>
 					</div>
+					{#if doc.method === 'ocr'}
+						<button
+							class="icon-btn"
+							aria-label={m.searchable_make({ name: node.name })}
+							title={m.searchable_hint()}
+							disabled={making[node.id] === 'running'}
+							onclick={() => searchable(node)}
+						>
+							<FileSearch size={18} aria-hidden="true" />
+						</button>
+					{/if}
 					<button
 						class="icon-btn"
 						aria-label={m.tags_edit_for({ name: node.name })}
@@ -424,6 +461,20 @@
 		background: transparent;
 		color: var(--color-text-muted);
 		cursor: pointer;
+	}
+	.icon-btn:disabled {
+		opacity: 0.5;
+		cursor: progress;
+	}
+	.job {
+		color: var(--color-accent);
+		font-weight: var(--weight-medium);
+	}
+	.job.done {
+		color: var(--color-success);
+	}
+	.job.failed {
+		color: var(--color-danger);
 	}
 	.icon-btn:hover {
 		background: var(--color-surface-sunken);

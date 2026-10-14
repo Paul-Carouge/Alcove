@@ -137,4 +137,11 @@ test('tags label files and filter documents', async ({ page }) => {
 	await again.getByRole('button', { name: 'Cancel' }).click();
 	await expect(page.getByRole('radiogroup', { name: 'Tag' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'invoice.png', exact: true })).toBeVisible();
+
+	// A searchable copy of the scan, saved next to it and read in turn.
+	await page.getByRole('button', { name: 'Make a searchable PDF of invoice.png' }).click();
+	await expect(page.getByText('searchable PDF saved next to it')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByRole('button', { name: 'invoice (OCR).pdf', exact: true })).toBeVisible({
+		timeout: 20_000
+	});
 });

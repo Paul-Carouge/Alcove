@@ -34,7 +34,9 @@ describe('compareNodes', () => {
 
 describe('formatSize', () => {
 	it('formats with locale units', () => {
-		expect(formatSize(0, 'en')).toBe('0 byte');
+		expect(formatSize(0, 'en')).toBe('0\u00a0B');
+		expect(formatSize(6, 'fr')).toBe('6\u00a0o');
+		expect(formatSize(999, 'en')).toBe('999\u00a0B');
 		expect(formatSize(1500, 'en')).toBe('1.5 kB');
 		expect(formatSize(1_234_567, 'fr')).toMatch(/^1,2\sMo$/);
 	});

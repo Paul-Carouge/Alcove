@@ -14,12 +14,12 @@ test('storage meter, quota rejection and almost-full warning', async ({ page }) 
 	await page.getByRole('button', { name: 'Sign in' }).click();
 
 	const meter = page.getByRole('region', { name: 'Storage' });
-	await expect(meter).toContainText('0 byte of 100 byte used');
+	await expect(meter).toContainText('0\u00a0B of 100\u00a0B used');
 
 	const input = page.locator('input[type=file]');
 	await input.setInputFiles(file('sixty.txt', 60));
 	await expect(page.getByRole('row', { name: /sixty\.txt/ })).toBeVisible();
-	await expect(meter).toContainText('60 byte of 100 byte used');
+	await expect(meter).toContainText('60\u00a0B of 100\u00a0B used');
 
 	await input.setInputFiles(file('too-big.txt', 60));
 	const panel = page.getByRole('region', { name: 'Uploads' });
@@ -30,6 +30,6 @@ test('storage meter, quota rejection and almost-full warning', async ({ page }) 
 
 	await input.setInputFiles(file('fits.txt', 35));
 	await expect(page.getByRole('row', { name: /fits\.txt/ })).toBeVisible();
-	await expect(meter).toContainText('95 byte of 100 byte used');
+	await expect(meter).toContainText('95\u00a0B of 100\u00a0B used');
 	await expect(meter).toContainText('Almost full');
 });

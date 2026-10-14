@@ -1,4 +1,4 @@
-import { Upload, type DetailedError, type UploadOptions } from 'tus-js-client';
+import type { DetailedError, Upload, UploadOptions } from 'tus-js-client';
 import { pb } from '#lib/pb.js';
 
 export type UploadStatus = 'queued' | 'uploading' | 'done' | 'error' | 'quota' | 'canceled';
@@ -17,6 +17,10 @@ const ENDPOINT = '/api/v1/uploads/';
 const CHUNK_SIZE = 8 * 1024 * 1024; // below the server's 64 MiB per-request limit
 const CONCURRENCY = 3;
 
+// The tus client is only needed once something is uploaded: keep it out of the first page load.
+let tus: Promise<typeof import('tus-js-client')> | null = null;
+const loadTus = () => (tus ??= import('tus-js-client'));
+
 const isQuota = (err: DetailedError) =>
 	err.originalResponse?.getStatus() === 413 &&
 	(err.originalResponse.getBody() ?? '').startsWith('ERR_QUOTA_EXCEEDED');
@@ -34,7 +38,8 @@ function shouldRetry(err: DetailedError): boolean {
 class UploadQueue {
 	items = $state<UploadItem[]>([]);
 	#files = new Map<number, File>();
-	#running = new Map<number, Upload>();
+	/** null while the tus client loads. */
+	#running = new Map<number, Upload | null>();
 	#nextId = 1;
 
 	get active() {
@@ -110,14 +115,22 @@ class UploadQueue {
 				this.#finish(item.id);
 			}
 		};
-		const upload = new Upload(file, options);
-		this.#running.set(item.id, upload);
-
-		upload.findPreviousUploads().then((previous) => {
-			const sameFolder = previous.find((p) => p.metadata.parent === item.parent);
-			if (sameFolder) upload.resumeFromPreviousUpload(sameFolder);
-			upload.start();
-		});
+		this.#running.set(item.id, null);
+		loadTus()
+			.then(({ Upload }) => {
+				if (item.status !== 'uploading') return; // canceled while loading
+				const upload = new Upload(file, options);
+				this.#running.set(item.id, upload);
+				return upload.findPreviousUploads().then((previous) => {
+					const sameFolder = previous.find((p) => p.metadata.parent === item.parent);
+					if (sameFolder) upload.resumeFromPreviousUpload(sameFolder);
+					upload.start();
+				});
+			})
+			.catch(() => {
+				item.status = 'error';
+				this.#finish(item.id);
+			});
 	}
 
 	#finish(id: number) {

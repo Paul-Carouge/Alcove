@@ -8,11 +8,22 @@ export function formatSize(bytes: number, locale: string): string {
 		value /= 1000;
 		unit++;
 	}
+	if (unit === 0) {
+		// "6 byte" (the short form) reads oddly: use the symbol, "6 B" / "6 o".
+		const parts = new Intl.NumberFormat(locale, {
+			style: 'unit',
+			unit: 'byte',
+			unitDisplay: 'narrow'
+		}).formatToParts(value);
+		const num = parts.filter((p) => p.type !== 'unit' && p.type !== 'literal').map((p) => p.value);
+		const sym = parts.find((p) => p.type === 'unit')?.value ?? 'B';
+		return `${num.join('')}\u00a0${sym}`;
+	}
 	return new Intl.NumberFormat(locale, {
 		style: 'unit',
 		unit: UNITS[unit],
 		unitDisplay: 'short',
-		maximumFractionDigits: unit === 0 || value >= 100 ? 0 : 1
+		maximumFractionDigits: value >= 100 ? 0 : 1
 	}).format(value);
 }
 

@@ -37,7 +37,7 @@ test('create a folder, open it, upload a file into it', async ({ page }) => {
 
 	const row = page.getByRole('row', { name: /notes\.txt/ });
 	await expect(row).toBeVisible();
-	await expect(row).toContainText('21 byte');
+	await expect(row).toContainText('21\u00a0B');
 	await expect(page.getByRole('region', { name: 'Uploads' })).toContainText('1 of 1 uploaded');
 
 	// Breadcrumbs lead back to the root, where the folder is listed.
@@ -236,4 +236,19 @@ test('a folder downloads as a ZIP', async ({ page }) => {
 	// A ZIP whose entry is the folder's file.
 	expect(bytes.subarray(0, 2).toString()).toBe('PK');
 	expect(bytes.includes(Buffer.from(`${folder}/inside.txt`))).toBe(true);
+});
+
+test('empty files and names with emoji upload', async ({ page }) => {
+	await signIn(page);
+	const folder = unique('Edge');
+	await newFolder(page, folder);
+	await page.getByRole('link', { name: folder }).click();
+	await expect(page.getByRole('heading', { name: folder, level: 1 })).toBeVisible();
+	await page.locator('input[type=file]').setInputFiles([
+		{ name: 'vide.txt', mimeType: 'text/plain', buffer: Buffer.alloc(0) },
+		{ name: 'Été 🌞.txt', mimeType: 'text/plain', buffer: Buffer.from('soleil') }
+	]);
+	await expect(page.getByRole('region', { name: 'Uploads' })).toContainText('2 of 2 uploaded');
+	await expect(page.getByRole('row', { name: /vide\.txt/ })).toBeVisible();
+	await expect(page.getByRole('row', { name: /Été 🌞\.txt/ })).toBeVisible();
 });

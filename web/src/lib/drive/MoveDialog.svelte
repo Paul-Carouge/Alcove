@@ -113,10 +113,10 @@
 		background: none;
 		font: inherit;
 		color: var(--color-text-muted);
-		padding: var(--space-1);
+		padding: var(--space-1) var(--space-2);
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-		min-height: 2rem;
+		min-height: 2.25rem;
 	}
 	.crumb:hover {
 		background: var(--color-surface-sunken);
@@ -134,8 +134,8 @@
 		max-height: 18rem;
 		overflow-y: auto;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface-sunken);
 	}
 	.folder {
 		display: flex;
@@ -145,15 +145,22 @@
 		min-height: 2.75rem;
 		padding: 0 var(--space-3);
 		border: 0;
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
 		background: transparent;
 		font: inherit;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		color: var(--color-text);
 		text-align: left;
 		cursor: pointer;
+		transition: background var(--duration-fast) var(--ease-standard);
+	}
+	.folder > :global(svg:first-child) {
+		color: var(--color-accent);
 	}
 	.folder:hover:not(:disabled) {
-		background: var(--color-surface-sunken);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	.folder:disabled {
 		opacity: 0.5;

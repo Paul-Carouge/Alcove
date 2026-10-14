@@ -22,6 +22,7 @@
 <div class="split">
 	<aside class="brand-panel" aria-label={m.app_tagline()}>
 		<Logo name={health?.name} size={36} />
+		<span class="arches" aria-hidden="true"></span>
 		<div class="pitch">
 			<p class="headline">{m.brand_headline()}</p>
 			<p class="body">{m.brand_body()}</p>
@@ -43,7 +44,9 @@
 			<LanguageSelect />
 		</header>
 		<main id="main" tabindex="-1">
-			{@render children()}
+			<div class="sheet">
+				{@render children()}
+			</div>
 		</main>
 		<p class="mobile-credit"><Credit /></p>
 	</div>
@@ -52,7 +55,7 @@
 <style>
 	.split {
 		display: grid;
-		grid-template-columns: minmax(22rem, 34rem) 1fr;
+		grid-template-columns: minmax(24rem, 36rem) 1fr;
 		min-height: 100dvh;
 	}
 	.brand-panel {
@@ -62,39 +65,64 @@
 		flex-direction: column;
 		justify-content: space-between;
 		gap: var(--space-6);
-		padding: var(--space-6);
+		padding: var(--space-6) var(--space-7);
 		background:
-			radial-gradient(120% 80% at 0% 0%, var(--color-accent-subtle), transparent 60%),
-			radial-gradient(90% 70% at 100% 100%, var(--color-accent-subtle), transparent 55%),
-			var(--color-surface);
+			radial-gradient(90% 60% at 100% 100%, var(--color-accent-subtle), transparent 70%),
+			var(--color-surface-sunken);
 		border-right: 1px solid var(--color-border);
 	}
-	.brand-panel::after {
-		content: '';
+	/* Nested arches echo the logo: a quiet alcove drawn in hairlines. */
+	.arches,
+	.arches::before,
+	.arches::after {
 		position: absolute;
-		right: -6rem;
-		bottom: -6rem;
-		width: 22rem;
-		height: 22rem;
-		border: 1.5px solid var(--color-border);
-		border-radius: 50% 50% 0 0;
-		opacity: 0.8;
+		border: 1px solid var(--color-border-strong);
+		border-bottom: 0;
+		border-radius: var(--radius-full) var(--radius-full) 0 0;
+		opacity: 0.45;
+		pointer-events: none;
+	}
+	.arches {
+		right: -7rem;
+		bottom: 0;
+		width: 20rem;
+		height: 28rem;
+	}
+	.arches::before,
+	.arches::after {
+		content: '';
+		left: 50%;
+		bottom: 0;
+		transform: translateX(-50%);
+	}
+	.arches::before {
+		width: calc(100% - var(--space-7) * 2);
+		height: calc(100% - var(--space-7));
+	}
+	.arches::after {
+		width: calc(100% - var(--space-8) * 3);
+		height: calc(100% - var(--space-8) * 2);
+		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 	}
 	.pitch {
 		position: relative;
 		max-width: 26rem;
 	}
 	.headline {
-		margin: 0 0 var(--space-3);
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-semibold);
-		line-height: var(--leading-tight);
-		letter-spacing: -0.02em;
+		margin: 0 0 var(--space-4);
+		font-family: var(--font-display);
+		font-optical-sizing: auto;
+		font-size: calc(var(--text-3xl) * 1.25);
+		font-weight: var(--weight-regular);
+		line-height: 1.1;
+		letter-spacing: -0.025em;
+		text-wrap: balance;
 	}
 	.body {
-		margin: 0 0 var(--space-5);
+		margin: 0 0 var(--space-6);
 		color: var(--color-text-muted);
 		font-size: var(--text-lg);
+		max-width: 34ch;
 	}
 	ul {
 		list-style: none;
@@ -107,15 +135,16 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
+		font-size: var(--text-sm);
 	}
 	.ic {
 		display: grid;
 		place-items: center;
 		width: 2rem;
 		height: 2rem;
-		border-radius: var(--radius-md);
-		background: var(--color-surface-raised);
-		border: 1px solid var(--color-border);
+		border-radius: var(--radius-full);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 		color: var(--color-accent);
 	}
 	.foot {
@@ -153,6 +182,21 @@
 	main:focus {
 		outline: none;
 	}
+	.sheet {
+		display: grid;
+		justify-items: center;
+		width: min(100%, 28rem);
+		padding: var(--space-7) var(--space-6);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-md);
+	}
+	.sheet :global(a) {
+		justify-self: start;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
 	@media (max-width: 900px) {
 		.split {
 			grid-template-columns: 1fr;
@@ -168,7 +212,15 @@
 		}
 		main {
 			align-items: start;
-			padding-top: var(--space-6);
+			padding: var(--space-4) var(--space-4) var(--space-5);
+		}
+	}
+	@media (max-width: 600px) {
+		.top {
+			padding: var(--space-3) var(--space-4);
+		}
+		.sheet {
+			padding: var(--space-6) var(--space-5);
 		}
 	}
 </style>

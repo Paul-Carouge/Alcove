@@ -38,9 +38,9 @@
 	} = $props();
 
 	const locale = getLocale();
-	const GAP = 4;
+	const GAP = 6;
 	let width = $state(0);
-	const target = $derived(width < 600 ? 140 : 220);
+	const target = $derived(width < 600 ? 130 : 240);
 
 	const groups = $derived.by(() => {
 		if (!grouped) return [{ key: '', items }];
@@ -151,28 +151,41 @@
 
 <style>
 	.month {
-		margin-bottom: var(--space-5);
+		margin-bottom: var(--space-6);
 	}
 	.month h2 {
 		position: sticky;
-		top: 4rem;
+		top: 4.5rem;
 		z-index: 2;
 		margin: 0 0 var(--space-2);
 		padding: var(--space-2) 0;
-		font-size: var(--text-md);
-		background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+		font-size: var(--text-xl);
+		background: color-mix(in srgb, var(--color-bg) 90%, transparent);
+		backdrop-filter: blur(var(--space-2));
 	}
+	/* Row spacing matches GAP (6px) in the script. */
 	.row {
 		display: flex;
-		gap: 4px;
-		margin-bottom: 4px;
+		gap: calc(var(--space-1) + var(--space-1) / 2);
+		margin-bottom: calc(var(--space-1) + var(--space-1) / 2);
 	}
 	.tile {
 		position: relative;
 		flex: none;
 		overflow: hidden;
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
 		background: var(--color-surface-sunken);
+	}
+	.open:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: -2px;
+		border-radius: var(--radius-md);
+	}
+	@media (max-width: 900px) {
+		.month h2 {
+			top: 4rem;
+			font-size: var(--text-lg);
+		}
 	}
 	.open {
 		display: block;
@@ -191,14 +204,16 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform var(--duration-base) var(--ease-standard);
+		transition:
+			transform var(--duration-slow) var(--ease-standard),
+			filter var(--duration-base) var(--ease-standard);
 	}
 	.grid:not(.selecting) .tile:hover .open img {
-		transform: scale(1.03);
+		transform: scale(1.025);
 	}
 	.selected .open img {
-		transform: scale(0.9);
-		border-radius: var(--radius-sm);
+		transform: scale(0.88);
+		border-radius: var(--radius-md);
 	}
 	.selected {
 		background: var(--color-accent-subtle);
@@ -239,8 +254,9 @@
 		bottom: var(--space-2);
 		display: inline-flex;
 		align-items: center;
-		gap: 3px;
-		padding: 1px var(--space-2);
+		gap: var(--space-1);
+		padding: var(--space-0) var(--space-2);
+		backdrop-filter: blur(var(--space-1));
 		border-radius: var(--radius-full);
 		background: var(--color-stage-scrim);
 		color: var(--color-on-stage);
@@ -253,8 +269,8 @@
 		right: var(--space-1);
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		border: 0;
 		border-radius: var(--radius-full);
 		background: transparent;
@@ -277,8 +293,8 @@
 		left: var(--space-1);
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		border: 0;
 		border-radius: var(--radius-full);
 		background: transparent;
@@ -305,6 +321,7 @@
 		background: transparent;
 		color: var(--color-accent);
 		font: inherit;
+		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		cursor: pointer;

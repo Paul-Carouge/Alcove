@@ -255,6 +255,7 @@
 		background: var(--color-surface);
 		color: var(--color-text);
 		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		cursor: pointer;
 		user-select: none;
 		transition:
@@ -262,20 +263,23 @@
 			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 	.select.sm {
-		min-height: 2.25rem;
 		min-width: 6rem;
 		padding: 0 var(--space-2) 0 var(--space-3);
+		border-color: var(--color-border);
 	}
 	.select:hover {
 		border-color: var(--color-text-muted);
 	}
 	.select:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 1px;
+		outline: none;
+		border-color: var(--color-focus);
+		box-shadow:
+			0 0 0 1px var(--color-focus),
+			0 0 0 4px var(--color-accent-subtle);
 	}
 	.select[aria-expanded='true'] {
 		border-color: var(--color-accent);
-		box-shadow: 0 0 0 3px var(--color-accent-subtle);
+		box-shadow: 0 0 0 4px var(--color-accent-subtle);
 	}
 	.value {
 		overflow: hidden;
@@ -302,9 +306,9 @@
 		background: var(--color-surface-raised);
 		color: var(--color-text);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
-		animation: pop var(--duration-fast) var(--ease-emphasized);
+		animation: pop var(--duration-base) var(--ease-emphasized);
 		transform-origin: top left;
 	}
 	.list.up {
@@ -329,7 +333,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
-		min-height: 2.5rem;
+		min-height: 2.75rem;
 		padding: 0 var(--space-3);
 		border-radius: var(--radius-sm);
 		font-size: var(--text-sm);

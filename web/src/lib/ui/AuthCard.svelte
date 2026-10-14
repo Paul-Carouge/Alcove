@@ -14,9 +14,16 @@
 		width: min(100%, 24rem);
 		display: grid;
 		gap: var(--space-5);
+		animation: rise var(--duration-slow) var(--ease-emphasized);
+	}
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(var(--space-2));
+		}
 	}
 	h1 {
-		font-size: var(--text-2xl);
+		font-size: var(--text-3xl);
 		letter-spacing: -0.02em;
 	}
 	.card :global(form) {
@@ -25,5 +32,9 @@
 	}
 	.card :global(p) {
 		margin: 0;
+		color: var(--color-text-muted);
+	}
+	.card :global(form) {
+		margin-top: var(--space-1);
 	}
 </style>

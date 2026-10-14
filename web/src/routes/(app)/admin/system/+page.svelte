@@ -323,16 +323,18 @@
 
 <style>
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
-		margin: var(--space-2) 0 var(--space-5);
+		margin: 0 0 var(--space-6);
+		padding-top: var(--space-3);
 	}
 	.switch {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		gap: var(--space-3);
 		min-height: 2.75rem;
+		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
+		cursor: pointer;
 	}
 	.hint {
 		margin: var(--space-1) 0 0;
@@ -341,21 +343,23 @@
 	}
 	.card {
 		display: flex;
-		gap: var(--space-4);
+		gap: var(--space-5);
 		max-width: 48rem;
-		margin-bottom: var(--space-4);
-		padding: var(--space-5);
+		margin-bottom: var(--space-5);
+		padding: var(--space-6);
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-sm);
 	}
 	.icon {
 		display: grid;
 		place-items: center;
 		flex: none;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: var(--radius-md);
+		width: 3rem;
+		height: 3.5rem;
+		padding-top: var(--space-1);
+		border-radius: var(--radius-full) var(--radius-full) var(--radius-md) var(--radius-md);
 		background: var(--color-surface-sunken);
 		color: var(--color-text-muted);
 	}
@@ -370,7 +374,21 @@
 		gap: var(--space-3);
 	}
 	h2 {
-		font-size: var(--text-lg);
+		font-size: var(--text-xl);
+	}
+	@media (max-width: 600px) {
+		.card {
+			flex-direction: column;
+			gap: var(--space-4);
+			padding: var(--space-5) var(--space-4);
+		}
+		dl {
+			grid-template-columns: 1fr;
+			gap: 0;
+		}
+		dd + dt {
+			margin-top: var(--space-3);
+		}
 	}
 	p {
 		margin: 0;
@@ -390,8 +408,14 @@
 		gap: var(--space-2) var(--space-5);
 		margin: 0;
 	}
+	dl {
+		font-size: var(--text-sm);
+	}
 	dt {
 		color: var(--color-text-muted);
+	}
+	dd {
+		font-variant-numeric: tabular-nums;
 	}
 	dd {
 		margin: 0;
@@ -402,8 +426,8 @@
 	.notes {
 		max-height: 18rem;
 		overflow: auto;
-		padding: var(--space-3) var(--space-4);
-		border-radius: var(--radius-md);
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--radius-lg);
 		background: var(--color-surface-sunken);
 		font-size: var(--text-sm);
 	}
@@ -430,7 +454,8 @@
 		flex: 1;
 		min-width: 0;
 		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--color-border);
 		background: var(--color-surface-sunken);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);

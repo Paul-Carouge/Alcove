@@ -177,6 +177,9 @@
 		grid-template-columns: auto 1fr auto;
 		align-items: center;
 		gap: var(--space-1) var(--space-3);
+		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface-sunken);
 	}
 	/* Role under the name, so names are not cut short. */
 	.people li .role {

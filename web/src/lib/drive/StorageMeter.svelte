@@ -37,31 +37,36 @@
 <style>
 	.meter {
 		display: grid;
-		gap: var(--space-1);
-		padding: var(--space-3);
+		gap: var(--space-2);
+		padding: var(--space-4);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-surface-sunken);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	h2 {
+		font-family: var(--font-sans);
 		font-size: var(--text-xs);
 		font-weight: var(--weight-medium);
 		text-transform: uppercase;
-		letter-spacing: 0.04em;
+		letter-spacing: 0.08em;
 		color: var(--color-text-muted);
 	}
 	p {
 		margin: 0;
-		font-size: var(--text-xs);
+		font-size: var(--text-sm);
 		color: var(--color-text);
 		font-variant-numeric: tabular-nums;
+	}
+	.sub {
+		font-size: var(--text-xs);
 	}
 	.sub {
 		color: var(--color-text-muted);
 	}
 	progress {
 		width: 100%;
-		height: 6px;
+		height: var(--space-1);
 		appearance: none;
 		border: 0;
 		border-radius: var(--radius-full);

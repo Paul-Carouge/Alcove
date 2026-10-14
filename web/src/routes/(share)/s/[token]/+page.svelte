@@ -271,15 +271,22 @@
 		max-width: 80rem;
 	}
 	.album-view h1 {
-		margin-bottom: var(--space-1);
+		margin-bottom: var(--space-2);
 	}
 	.album-view > .muted {
-		margin: 0 0 var(--space-5);
+		margin: 0 0 var(--space-6);
 	}
 	.center {
 		display: grid;
 		place-items: center;
 		padding-top: var(--space-6);
+	}
+	.center > :global(.card) {
+		padding: var(--space-7) var(--space-6);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-md);
 	}
 	form {
 		display: grid;
@@ -290,21 +297,35 @@
 		margin: 0;
 	}
 	.eyebrow {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
 		margin: 0 0 var(--space-3);
-		font-size: var(--text-sm);
+		font-size: var(--text-xs);
 		font-weight: var(--weight-medium);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 		color: var(--color-accent);
 	}
+	.eyebrow::after {
+		content: '';
+		flex: 0 1 var(--space-8);
+		height: 1px;
+		background: currentColor;
+		opacity: 0.4;
+	}
 	h1 {
-		font-size: var(--text-2xl);
+		font-size: var(--text-3xl);
+		font-weight: var(--weight-regular);
 		letter-spacing: -0.02em;
 		overflow-wrap: anywhere;
 	}
 	.file-card {
 		display: grid;
+		max-width: 48rem;
 		overflow: hidden;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		background: var(--color-surface);
 		box-shadow: var(--shadow-md);
 	}
@@ -324,7 +345,10 @@
 		display: grid;
 		gap: var(--space-2);
 		justify-items: start;
-		padding: var(--space-5);
+		padding: var(--space-6);
+	}
+	.card-body h1 {
+		font-size: var(--text-2xl);
 	}
 	.download {
 		display: inline-flex;
@@ -336,8 +360,11 @@
 		border-radius: var(--radius-md);
 		background: var(--color-accent);
 		color: var(--color-accent-contrast);
+		box-shadow: var(--shadow-sm);
+		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		text-decoration: none;
+		transition: background var(--duration-fast) var(--ease-standard);
 	}
 	.download:hover {
 		background: var(--color-accent-hover);
@@ -357,9 +384,13 @@
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 		cursor: pointer;
-		min-height: 2rem;
-		padding: 0 var(--space-1);
+		min-height: 2.25rem;
+		padding: 0 var(--space-2);
 		border-radius: var(--radius-sm);
+	}
+	.crumb:hover {
+		color: var(--color-text);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 	}
 	.crumb[aria-current='location'] {
 		color: var(--color-text);
@@ -367,19 +398,20 @@
 	}
 	.items {
 		list-style: none;
-		margin: var(--space-4) 0 0;
+		margin: var(--space-5) 0 0;
 		padding: 0;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	.items li {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		padding: var(--space-2) var(--space-4);
+		padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
 		border-bottom: 1px solid var(--color-border);
-		min-height: 3.25rem;
+		min-height: 3.75rem;
 	}
 	.items li:last-child {
 		border-bottom: 0;
@@ -387,6 +419,7 @@
 	.name {
 		flex: 1;
 		min-width: 0;
+		font-weight: var(--weight-medium);
 		overflow-wrap: anywhere;
 	}
 	.as-link {
@@ -394,6 +427,7 @@
 		background: none;
 		padding: 0;
 		font: inherit;
+		font-weight: var(--weight-medium);
 		color: var(--color-text);
 		text-align: left;
 		cursor: pointer;
@@ -414,7 +448,12 @@
 		color: var(--color-text);
 	}
 	.icon-btn:hover {
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
+	}
+	@media (max-width: 600px) {
+		h1 {
+			font-size: var(--text-2xl);
+		}
 	}
 	.thumb {
 		flex: none;

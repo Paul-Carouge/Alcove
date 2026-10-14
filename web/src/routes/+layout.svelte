@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import '@fontsource-variable/inter';
+	import '@fontsource-variable/fraunces/opsz.css';
 	import '#lib/styles/tokens.css';
 	import '#lib/styles/base.css';
 	import favicon from '#lib/assets/favicon.svg';

@@ -22,7 +22,7 @@
 		padding: var(--space-6);
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-md);
 		display: grid;
 		gap: var(--space-3);
@@ -30,13 +30,16 @@
 	}
 	.code {
 		margin: 0;
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-semibold);
-		color: var(--color-text-muted);
+		font-family: var(--font-display);
+		font-size: calc(var(--text-3xl) * 2);
+		font-weight: var(--weight-regular);
+		line-height: 1;
+		letter-spacing: -0.03em;
+		color: var(--color-accent);
 		font-variant-numeric: tabular-nums;
 	}
 	h1 {
-		font-size: var(--text-xl);
+		font-size: var(--text-2xl);
 	}
 	a {
 		font-weight: var(--weight-medium);

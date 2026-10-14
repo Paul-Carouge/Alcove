@@ -165,9 +165,9 @@
 <Dialog bind:open={setupOpen} title={m.security_2fa_title()}>
 	{#if setup}
 		<p class="step">{m.security_scan()}</p>
-		<img class="qr" src={setup.qrCode} alt="QR code" width="192" height="192" />
+		<img class="qr" src={setup.qrCode} alt={m.security_qr_alt()} width="192" height="192" />
 		<p class="step muted small">{m.security_manual()}</p>
-		<code class="secret" aria-label="Secret key">{setup.secret}</code>
+		<code class="secret" aria-label={m.security_secret_label()}>{setup.secret}</code>
 		<form onsubmit={activate} novalidate>
 			<TextField
 				label={m.security_confirm_code()}
@@ -236,29 +236,30 @@
 
 <style>
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
-		margin: var(--space-2) 0 var(--space-5);
+		margin: 0 0 var(--space-6);
+		padding-top: var(--space-3);
 	}
 	.err {
 		margin-bottom: var(--space-4);
 	}
 	.card {
 		display: flex;
-		gap: var(--space-4);
+		gap: var(--space-5);
 		max-width: 44rem;
-		padding: var(--space-5);
+		padding: var(--space-6);
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-sm);
 	}
 	.icon {
 		display: grid;
 		place-items: center;
 		flex: none;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: var(--radius-md);
+		width: 3rem;
+		height: 3.5rem;
+		padding-top: var(--space-1);
+		border-radius: var(--radius-full) var(--radius-full) var(--radius-md) var(--radius-md);
 		background: var(--color-surface-sunken);
 		color: var(--color-text-muted);
 	}
@@ -271,7 +272,13 @@
 		gap: var(--space-2);
 	}
 	h2 {
-		font-size: var(--text-lg);
+		font-size: var(--text-xl);
+	}
+	@media (max-width: 600px) {
+		.card {
+			flex-direction: column;
+			padding: var(--space-5) var(--space-4);
+		}
 	}
 	p {
 		margin: 0;

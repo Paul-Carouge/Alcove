@@ -19,6 +19,7 @@
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ActionsMenu from '#lib/ui/ActionsMenu.svelte';
 	import { downloadNode, forEachNode, listChildren, moveNode, pathTo, trashNode } from './api.js';
 	import MoveDialog from './MoveDialog.svelte';
@@ -285,7 +286,7 @@
 				</li>
 				{#each path as node, i (node.id)}
 					<li>
-						<ChevronRight size={16} aria-hidden="true" />
+						<ChevronRight size={14} aria-hidden="true" />
 						<a
 							href={resolve('/(app)/folders/[id]', { id: node.id })}
 							aria-current={i === path.length - 1 ? 'page' : undefined}
@@ -301,7 +302,12 @@
 	{/if}
 
 	<div class="head">
-		<h1>{folderName}</h1>
+		<div class="title">
+			<h1>{folderName}</h1>
+			{#if view === 'ready' && sorted.length > 0}
+				<p class="count-line">{m.drive_item_count({ count: sorted.length })}</p>
+			{/if}
+		</div>
 		{#if selection.size > 0}
 			<div class="selbar" role="toolbar" aria-label={m.selected_count({ count: selection.size })}>
 				<span class="count">{m.selected_count({ count: selection.size })}</span>
@@ -365,15 +371,15 @@
 	{:else if view === 'error'}
 		<Alert>{m.error_load()}</Alert>
 	{:else if sorted.length === 0}
-		<section class="empty" aria-labelledby="empty-title">
-			<div class="art" aria-hidden="true">
-				<div class="sheet back"></div>
-				<div class="sheet mid"></div>
-				<div class="sheet front"><UploadIcon size={22} /></div>
-			</div>
-			<h2 id="empty-title">{folderId ? m.folder_empty_title() : m.files_empty_title()}</h2>
-			<p>{folderId ? m.folder_empty_body() : m.files_empty_body()}</p>
-		</section>
+		<EmptyState icon={UploadIcon} title={folderId ? m.folder_empty_title() : m.files_empty_title()}>
+			{folderId ? m.folder_empty_body() : m.files_empty_body()}
+			{#snippet action()}
+				<Button onclick={pickFiles}>
+					<UploadIcon size={18} aria-hidden="true" />
+					{m.upload_button()}
+				</Button>
+			{/snippet}
+		</EmptyState>
 	{:else}
 		{#if layout === 'grid'}
 			<ul class="grid" aria-label={folderName}>
@@ -533,6 +539,7 @@
 		align-items: center;
 		gap: var(--space-1);
 		margin: 0 0 var(--space-2);
+		margin-inline-start: calc(-1 * var(--space-2));
 		padding: 0;
 		list-style: none;
 		font-size: var(--text-sm);
@@ -544,14 +551,20 @@
 		color: var(--color-text-muted);
 	}
 	.crumbs a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2rem;
 		color: var(--color-text-muted);
 		text-decoration: none;
-		padding: var(--space-1) var(--space-1);
+		padding: 0 var(--space-2);
 		border-radius: var(--radius-sm);
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
 	}
 	.crumbs a:hover {
 		color: var(--color-text);
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 	}
 	.crumbs a[aria-current='page'] {
 		color: var(--color-text);
@@ -559,19 +572,30 @@
 	}
 	.head {
 		display: flex;
-		align-items: center;
+		align-items: flex-end;
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--space-4);
+		min-height: 3.5rem;
 		margin-bottom: var(--space-5);
 	}
+	.title {
+		display: grid;
+		gap: var(--space-1);
+		min-width: 0;
+	}
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
 		overflow-wrap: anywhere;
+	}
+	.count-line {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		font-variant-numeric: tabular-nums;
 	}
 	.actions {
 		display: flex;
+		align-items: center;
 		gap: var(--space-2);
 	}
 	.muted {
@@ -584,19 +608,20 @@
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
-		overflow: hidden;
+		box-shadow: var(--shadow-sm);
 	}
 	th {
 		text-align: left;
 		font-size: var(--text-xs);
 		font-weight: var(--weight-medium);
 		text-transform: uppercase;
-		letter-spacing: 0.04em;
+		letter-spacing: 0.08em;
 		color: var(--color-text-muted);
 		padding: var(--space-3) var(--space-4);
 		border-bottom: 1px solid var(--color-border);
 	}
 	td {
+		height: 3.75rem;
 		padding: var(--space-2) var(--space-4);
 		border-bottom: 1px solid var(--color-border);
 		font-size: var(--text-sm);
@@ -604,11 +629,17 @@
 	tbody tr:last-child td {
 		border-bottom: 0;
 	}
+	tbody tr:last-child td:first-child {
+		border-end-start-radius: var(--radius-lg);
+	}
+	tbody tr:last-child td:last-child {
+		border-end-end-radius: var(--radius-lg);
+	}
 	tbody tr {
 		transition: background var(--duration-fast) var(--ease-standard);
 	}
 	tbody tr:hover {
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-surface-sunken) 60%, transparent);
 	}
 	.num,
 	.date {
@@ -627,6 +658,7 @@
 	}
 	.name {
 		font-size: var(--text-md);
+		font-weight: var(--weight-medium);
 		color: var(--color-text);
 		text-decoration: none;
 		overflow-wrap: anywhere;
@@ -634,6 +666,7 @@
 	a.name:hover,
 	.as-link:hover {
 		text-decoration: underline;
+		text-decoration-color: var(--color-border-strong);
 	}
 	.as-link {
 		border: 0;
@@ -641,6 +674,8 @@
 		background: none;
 		font: inherit;
 		font-size: var(--text-md);
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
 		text-align: left;
 		cursor: pointer;
 	}
@@ -649,22 +684,19 @@
 		padding: 0 var(--space-2);
 		text-align: right;
 	}
-	.list {
-		overflow: visible;
-	}
 	.thumb {
 		display: grid;
 		place-items: center;
 		flex: none;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 2.5rem;
+		height: 2.5rem;
 		border-radius: var(--radius-md);
 		overflow: hidden;
 	}
 	.segmented {
 		display: inline-flex;
-		padding: 2px;
-		gap: 2px;
+		padding: var(--space-1);
+		gap: var(--space-1);
 		background: var(--color-surface-sunken);
 		border-radius: var(--radius-md);
 	}
@@ -672,16 +704,22 @@
 		display: grid;
 		place-items: center;
 		width: 2.75rem;
-		height: 2.5rem;
+		height: 2.25rem;
 		border: 0;
 		border-radius: var(--radius-sm);
 		background: transparent;
 		color: var(--color-text-muted);
 		cursor: pointer;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
+	}
+	.segmented button:hover {
+		color: var(--color-text);
 	}
 	.segmented button[aria-checked='true'] {
 		background: var(--color-surface);
-		color: var(--color-text);
+		color: var(--color-accent);
 		box-shadow: var(--shadow-sm);
 	}
 	.grid {
@@ -689,38 +727,45 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
 		gap: var(--space-4);
 	}
 	.tile {
 		position: relative;
 		display: grid;
+		gap: var(--space-1);
+		padding: var(--space-2);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
-		overflow: hidden;
+		box-shadow: var(--shadow-sm);
 		transition:
-			box-shadow var(--duration-fast) var(--ease-standard),
-			border-color var(--duration-fast) var(--ease-standard);
+			box-shadow var(--duration-base) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard),
+			transform var(--duration-base) var(--ease-standard);
 	}
 	.tile:hover {
 		box-shadow: var(--shadow-md);
+		transform: translateY(calc(-1 * var(--space-1) / 2));
 	}
 	.tile.selected {
 		border-color: var(--color-accent);
 		box-shadow: 0 0 0 1px var(--color-accent);
+		background: var(--color-accent-subtle);
 	}
 	.tile.drop {
 		outline: 2px dashed var(--color-accent);
 		outline-offset: -2px;
 		background: var(--color-accent-subtle);
 	}
+	/* The preview sits inset like a print on a mat. */
 	.preview {
 		position: relative;
 		display: grid;
 		place-items: center;
 		aspect-ratio: 4 / 3;
 		overflow: hidden;
+		border-radius: var(--radius-md);
 		background: var(--color-surface-sunken);
 	}
 	.preview :global(img) {
@@ -732,8 +777,8 @@
 	}
 	.meta {
 		display: grid;
-		gap: 2px;
-		padding: var(--space-2) var(--space-3) var(--space-3);
+		gap: var(--space-0);
+		padding: var(--space-1) var(--space-2) var(--space-1);
 		min-width: 0;
 	}
 	.tile-name {
@@ -750,21 +795,25 @@
 	}
 	.tile-check {
 		position: absolute;
-		top: var(--space-2);
-		left: var(--space-2);
+		top: var(--space-3);
+		left: var(--space-3);
 		width: 1.25rem;
 		height: 1.25rem;
-		accent-color: var(--color-accent);
 		cursor: pointer;
 		opacity: 0;
+		box-shadow: var(--shadow-sm);
+		transition: opacity var(--duration-fast) var(--ease-standard);
 	}
 	.tile-menu {
 		position: absolute;
-		top: var(--space-1);
-		right: var(--space-1);
+		top: var(--space-2);
+		right: var(--space-2);
 		border-radius: var(--radius-md);
-		background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+		background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+		backdrop-filter: blur(var(--space-1));
+		box-shadow: var(--shadow-sm);
 		opacity: 0;
+		transition: opacity var(--duration-fast) var(--ease-standard);
 	}
 	.tile:hover .tile-check,
 	.tile:hover .tile-menu,
@@ -787,11 +836,11 @@
 	.check input {
 		width: 1.125rem;
 		height: 1.125rem;
-		accent-color: var(--color-accent);
 		cursor: pointer;
 		vertical-align: middle;
 	}
-	tbody tr.selected {
+	tbody tr.selected,
+	tbody tr.selected:hover {
 		background: var(--color-accent-subtle);
 	}
 	tbody tr.drop,
@@ -805,13 +854,23 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
-		border-radius: var(--radius-md);
-		background: var(--color-accent-subtle);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-md);
+		animation: rise var(--duration-base) var(--ease-emphasized);
+	}
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(var(--space-1));
+		}
 	}
 	.count {
 		font-weight: var(--weight-medium);
 		color: var(--color-accent);
 		margin-right: var(--space-2);
+		font-variant-numeric: tabular-nums;
 	}
 	.icon-btn {
 		display: grid;
@@ -825,7 +884,7 @@
 		cursor: pointer;
 	}
 	.icon-btn:hover {
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 	}
 	.action-error {
 		margin-bottom: var(--space-4);
@@ -839,7 +898,15 @@
 		font-size: var(--text-xs);
 	}
 	@media (max-width: 600px) {
-		.actions,
+		.head {
+			align-items: stretch;
+		}
+		.actions {
+			width: 100%;
+		}
+		.actions :global(.btn) {
+			flex: 1;
+		}
 		.selbar {
 			flex-wrap: wrap;
 			width: 100%;
@@ -863,53 +930,16 @@
 		.list :global(.chip) {
 			display: none;
 		}
-	}
-	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		text-align: center;
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		margin: 0;
-		max-width: 28rem;
-		color: var(--color-text-muted);
-	}
-	.art {
-		position: relative;
-		width: 5.5rem;
-		height: 5rem;
-		margin-bottom: var(--space-4);
-	}
-	.sheet {
-		position: absolute;
-		inset: 0;
-		border-radius: var(--radius-md);
-		border: 1px solid var(--color-border);
-		background: var(--color-surface-raised);
-		box-shadow: var(--shadow-sm);
-	}
-	.back {
-		transform: rotate(-10deg) translate(-10px, 4px);
-		background: var(--color-surface-sunken);
-	}
-	.mid {
-		transform: rotate(6deg) translate(8px, 2px);
-	}
-	.front {
-		display: grid;
-		place-items: center;
-		color: var(--color-accent);
-		background: var(--color-accent-subtle);
-		border-color: transparent;
-		box-shadow: var(--shadow-md);
+		.check {
+			padding-left: var(--space-3);
+		}
+		td {
+			padding: var(--space-2) var(--space-2);
+		}
+		.grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-3);
+		}
 	}
 	.dropzone {
 		position: absolute;
@@ -920,13 +950,21 @@
 		justify-items: center;
 		gap: var(--space-2);
 		border: 2px dashed var(--color-accent);
-		border-radius: var(--radius-lg);
-		background: color-mix(in srgb, var(--color-accent-subtle) 85%, transparent);
+		border-radius: var(--radius-xl);
+		background: color-mix(in srgb, var(--color-accent-subtle) 88%, transparent);
+		backdrop-filter: blur(var(--space-1));
 		color: var(--color-accent);
-		font-weight: var(--weight-medium);
+		font-family: var(--font-display);
+		font-size: var(--text-xl);
 		pointer-events: none;
+		animation: rise var(--duration-base) var(--ease-emphasized);
 	}
 	.dropzone p {
 		margin: 0;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tile:hover {
+			transform: none;
+		}
 	}
 </style>

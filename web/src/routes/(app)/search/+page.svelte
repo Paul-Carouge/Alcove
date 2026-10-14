@@ -13,6 +13,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Alert from '#lib/ui/Alert.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 
 	const locale = getLocale();
 	const q = $derived(page.url.searchParams.get('q')?.trim() ?? '');
@@ -83,7 +84,9 @@
 {:else if results === null}
 	<p class="muted">{m.loading()}</p>
 {:else if q && results.length === 0}
-	<p class="muted">{m.search_none({ q })}</p>
+	<div class="results-empty">
+		<EmptyState icon={SearchIcon} title={m.search_none({ q })} compact />
+	</div>
 {:else if q}
 	<p class="muted" role="status">
 		{m.search_count({ count: results.length })}{#if inText}<span class="sep" aria-hidden="true"
@@ -125,79 +128,100 @@
 
 <style>
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
-		margin: var(--space-2) 0 var(--space-4);
+		margin: 0 0 var(--space-5);
+		padding-top: var(--space-3);
 	}
 	.search {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
-		max-width: 36rem;
-		min-height: 3rem;
-		margin-bottom: var(--space-4);
-		padding: 0 var(--space-4);
+		gap: var(--space-3);
+		max-width: 40rem;
+		min-height: 3.25rem;
+		margin-bottom: var(--space-5);
+		padding: 0 var(--space-5);
 		border: 1px solid var(--color-border-strong);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-full);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 		color: var(--color-text-muted);
+		transition:
+			border-color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 	.search:focus-within {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 1px;
+		border-color: var(--color-focus);
+		box-shadow:
+			0 0 0 1px var(--color-focus),
+			0 0 0 5px var(--color-accent-subtle);
 	}
 	.search input {
 		flex: 1;
+		min-height: 3rem;
 		border: 0;
 		background: transparent;
 		color: var(--color-text);
 		font: inherit;
+		font-size: var(--text-lg);
 		outline: none;
 	}
+	.search input::placeholder {
+		color: var(--color-text-muted);
+	}
+	.results,
+	.results-empty {
+		max-width: 52rem;
+	}
 	.results {
-		max-width: 48rem;
 		margin: 0;
 		padding: 0;
 		list-style: none;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	.results li {
 		display: flex;
-		align-items: center;
-		gap: var(--space-3);
+		align-items: flex-start;
+		gap: var(--space-4);
 		min-height: 3.5rem;
-		padding: var(--space-2) var(--space-4);
+		padding: var(--space-3) var(--space-5);
+	}
+	.results li > :global(.icon) {
+		margin-top: var(--space-1);
 	}
 	.results li + li {
 		border-top: 1px solid var(--color-border);
 	}
 	.text {
 		display: grid;
+		gap: var(--space-1);
 		min-width: 0;
+		padding: var(--space-1) 0;
 	}
 	.name {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		color: var(--color-text);
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
 		font-weight: var(--weight-medium);
+		line-height: var(--leading-tight);
 		text-decoration: none;
 	}
 	.name:hover {
 		text-decoration: underline;
+		text-decoration-color: var(--color-border-strong);
 	}
 	.muted {
+		margin: 0 0 var(--space-3);
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
 	}
 	.small {
+		margin: 0;
 		font-size: var(--text-xs);
-	}
-	.text {
-		gap: 2px;
-		padding: var(--space-1) 0;
 	}
 	.tags {
 		display: flex;
@@ -215,5 +239,16 @@
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 		font-weight: var(--weight-medium);
+	}
+	@media (max-width: 600px) {
+		.search {
+			padding: 0 var(--space-4);
+		}
+		.search input {
+			font-size: var(--text-md);
+		}
+		.results li {
+			padding: var(--space-3) var(--space-4);
+		}
 	}
 </style>

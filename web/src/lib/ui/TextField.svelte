@@ -36,11 +36,12 @@
 	.field {
 		min-width: 0;
 		display: grid;
-		gap: var(--space-1);
+		gap: var(--space-2);
 	}
 	label {
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
+		color: var(--color-text);
 	}
 	input {
 		width: 100%;
@@ -52,15 +53,34 @@
 		background: var(--color-surface);
 		border: 1px solid var(--color-border-strong);
 		border-radius: var(--radius-md);
-		transition: border-color var(--duration-fast) var(--ease-standard);
+		box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--color-text) 3%, transparent);
+		transition:
+			border-color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
+	}
+	input::placeholder {
+		color: var(--color-text-muted);
+	}
+	input:hover:not(:focus-visible) {
+		border-color: var(--color-text-muted);
 	}
 	input:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 0;
+		outline: none;
 		border-color: var(--color-focus);
+		box-shadow:
+			0 0 0 1px var(--color-focus),
+			0 0 0 4px var(--color-accent-subtle);
 	}
 	input[aria-invalid='true'] {
 		border-color: var(--color-danger);
+	}
+	input[aria-invalid='true']:focus-visible {
+		box-shadow: 0 0 0 1px var(--color-danger);
+	}
+	input:disabled {
+		background: var(--color-surface-sunken);
+		color: var(--color-text-muted);
+		cursor: not-allowed;
 	}
 	.hint,
 	.error {

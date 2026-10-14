@@ -113,7 +113,7 @@
 	}
 	.trigger:hover,
 	.trigger[aria-expanded='true'] {
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 		color: var(--color-text);
 	}
 	.menu {
@@ -121,30 +121,30 @@
 		right: 0;
 		top: calc(100% + var(--space-1));
 		z-index: 10;
-		min-width: 13rem;
+		min-width: 14rem;
 		padding: var(--space-1);
 		background: var(--color-surface-raised);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
 		display: grid;
-		animation: pop var(--duration-fast) var(--ease-emphasized);
+		animation: pop var(--duration-base) var(--ease-emphasized);
 		transform-origin: top right;
 	}
 	@keyframes pop {
 		from {
 			opacity: 0;
-			transform: scale(0.97);
+			transform: scale(0.96) translateY(calc(-1 * var(--space-1)));
 		}
 	}
 	[role='menuitem'] {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		min-height: 2.5rem;
+		min-height: 2.75rem;
 		padding: 0 var(--space-3);
 		border: 0;
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
 		background: transparent;
 		font: inherit;
 		font-size: var(--text-sm);
@@ -157,7 +157,17 @@
 		background: var(--color-surface-sunken);
 		outline: none;
 	}
-	.danger {
+	[role='menuitem'] :global(svg) {
+		flex: none;
+		color: var(--color-text-muted);
+	}
+	.danger,
+	.danger :global(svg) {
 		color: var(--color-danger);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.menu {
+			animation: none;
+		}
 	}
 </style>

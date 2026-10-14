@@ -138,6 +138,9 @@
 		text-align: left;
 		cursor: pointer;
 	}
+	.album {
+		transition: background var(--duration-fast) var(--ease-standard);
+	}
 	.album:hover,
 	.album:focus-visible {
 		background: var(--color-surface-sunken);
@@ -147,9 +150,10 @@
 		place-items: center;
 		flex: none;
 		width: 2.75rem;
-		height: 2.75rem;
+		height: 3.25rem;
 		overflow: hidden;
 		border-radius: var(--radius-sm);
+		box-shadow: var(--shadow-sm);
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 	}
@@ -164,7 +168,10 @@
 		min-width: 0;
 	}
 	.name {
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
 		font-weight: var(--weight-medium);
+		line-height: var(--leading-tight);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

@@ -745,5 +745,17 @@
 	"album_download": "Télécharger l’album",
 	"nav_group_library": "Bibliothèque",
 	"nav_group_more": "Partage",
-	"search_everywhere": "Rechercher fichiers, photos, documents…"
+	"search_everywhere": "Rechercher fichiers, photos, documents…",
+	"drive_item_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} élément",
+				"countPlural=other": "{count} éléments"
+			}
+		}
+	],
+	"security_qr_alt": "QR code à scanner avec votre application d’authentification",
+	"security_secret_label": "Clé secrète"
 }

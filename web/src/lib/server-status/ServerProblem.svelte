@@ -31,14 +31,14 @@
 		padding: var(--space-6);
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-md);
 		display: grid;
 		gap: var(--space-4);
 		justify-items: start;
 	}
 	h1 {
-		font-size: var(--text-xl);
+		font-size: var(--text-2xl);
 	}
 	p {
 		margin: 0;

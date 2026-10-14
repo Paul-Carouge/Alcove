@@ -5,6 +5,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		ArrowLeft,
+		BookImage,
 		CircleCheck,
 		Download,
 		ImagePlus,
@@ -45,6 +46,7 @@
 	import Alert from '#lib/ui/Alert.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
 
 	const id = $derived(routePage.params.id ?? '');
@@ -236,10 +238,9 @@
 >
 
 {#if gone}
-	<section class="empty">
-		<h1>{m.album_gone_title()}</h1>
-		<p>{m.album_gone_body()}</p>
-	</section>
+	<EmptyState icon={BookImage} level={1} title={m.album_gone_title()}>
+		{m.album_gone_body()}
+	</EmptyState>
 {:else if failed}
 	<Alert>{m.error_load()}</Alert>
 {:else if loaded}
@@ -300,7 +301,13 @@
 
 	{#if items.length === 0}
 		<section class="empty">
+			<span class="art" aria-hidden="true"><ImagePlus size={22} strokeWidth={1.75} /></span>
 			<p>{canAdd ? m.album_empty_owner() : m.album_empty_viewer()}</p>
+			{#if canAdd}
+				<Button onclick={addPhotos}>
+					<ImagePlus size={16} aria-hidden="true" />{m.album_add_photos()}
+				</Button>
+			{/if}
 		</section>
 	{:else}
 		<PhotoGrid
@@ -353,14 +360,22 @@
 	.back {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1);
-		min-height: 2.75rem;
+		gap: var(--space-2);
+		min-height: 2.25rem;
+		margin-inline-start: calc(-1 * var(--space-2));
+		padding: 0 var(--space-2);
+		border-radius: var(--radius-sm);
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		text-decoration: none;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
 	}
 	.back:hover {
 		color: var(--color-text);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 	}
 	.head {
 		display: flex;
@@ -368,14 +383,12 @@
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--space-4);
-		margin-bottom: var(--space-2);
+		margin: var(--space-1) 0 var(--space-3);
 	}
 	.title {
 		min-width: 0;
 	}
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
 		overflow-wrap: anywhere;
 	}
 	.meta {
@@ -383,7 +396,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1) var(--space-4);
-		margin: var(--space-1) 0 0;
+		margin: var(--space-2) 0 0;
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
 	}
@@ -414,21 +427,36 @@
 		font-size: var(--text-sm);
 	}
 	.empty {
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
+		display: grid;
+		justify-items: center;
+		gap: var(--space-3);
+		padding: var(--space-7) var(--space-5);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		background:
+			radial-gradient(60% 70% at 50% 0%, var(--color-accent-subtle), transparent 70%),
+			var(--color-surface);
 		color: var(--color-text-muted);
 		text-align: center;
 	}
-	.empty h1 {
-		color: var(--color-text);
-		font-size: var(--text-lg);
+	.empty p {
+		margin: 0;
+		max-width: 30rem;
+	}
+	.art {
+		display: grid;
+		place-items: center;
+		width: 3.5rem;
+		height: 4rem;
+		padding-top: var(--space-2);
+		border-radius: var(--radius-full) var(--radius-full) var(--radius-md) var(--radius-md);
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
 	}
 	.selection-bar {
 		/* Under the app header, above month headings (the upload panel owns the bottom corner). */
 		position: sticky;
-		top: calc(4rem + var(--space-2));
+		top: calc(4.5rem + var(--space-2));
 		z-index: 4;
 		display: flex;
 		align-items: center;
@@ -438,12 +466,31 @@
 		margin-bottom: var(--space-3);
 		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-xl);
 		background: var(--color-surface-raised);
 		box-shadow: var(--shadow-lg);
 	}
 	.count {
-		font-weight: var(--weight-medium);
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		font-variant-numeric: tabular-nums;
+	}
+	@media (max-width: 900px) {
+		.selection-bar {
+			top: calc(4rem + var(--space-2));
+		}
+	}
+	/* Phones: the buttons share the width evenly; the menu (a popover) stays beside them. */
+	@media (max-width: 600px) {
+		.head {
+			flex-direction: column;
+			flex-wrap: nowrap;
+			align-items: stretch;
+		}
+		/* Two buttons per row: Select and the menu share the second one. */
+		.tools :global(.btn) {
+			flex: 1 1 40%;
+		}
 	}
 	.bar-actions {
 		display: flex;

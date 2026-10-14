@@ -10,6 +10,7 @@
 	.chip {
 		display: inline-flex;
 		align-items: center;
+		gap: var(--space-1);
 		max-width: 12rem;
 		overflow: hidden;
 		border-radius: var(--radius-full);
@@ -18,12 +19,23 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	/* A small dot of the tag colour: the tone reads even at a glance. */
+	.chip::before {
+		content: '';
+		flex: none;
+		width: 0.375rem;
+		height: 0.375rem;
+		border-radius: var(--radius-full);
+		background: currentColor;
+		opacity: 0.8;
+	}
 	.sm {
 		padding: 0 var(--space-2);
 		font-size: var(--text-xs);
 	}
 	.md {
-		padding: 2px var(--space-3);
+		padding: var(--space-0) var(--space-3);
+		min-height: 1.75rem;
 		font-size: var(--text-sm);
 	}
 	.gray {

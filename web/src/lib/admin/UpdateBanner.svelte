@@ -54,8 +54,9 @@
 		align-items: center;
 		gap: var(--space-3);
 		margin: 0 var(--space-6) var(--space-3);
-		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
+		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+		border-radius: var(--radius-lg);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		background: var(--color-accent-subtle);
 		color: var(--color-text);
 		font-size: var(--text-sm);
@@ -71,11 +72,11 @@
 	.close {
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		margin-left: auto;
 		border: 0;
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
 		background: transparent;
 		color: var(--color-text-muted);
 		cursor: pointer;

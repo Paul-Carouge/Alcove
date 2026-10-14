@@ -341,7 +341,7 @@
 		display: flex;
 		justify-content: space-between;
 		gap: var(--space-2);
-		margin: var(--space-4) 0 var(--space-5);
+		margin: var(--space-4) 0 var(--space-6);
 		padding: 0;
 		list-style: none;
 		counter-reset: step;
@@ -361,8 +361,9 @@
 		top: 0.875rem;
 		left: calc(50% + 1.1rem);
 		right: calc(-50% + 1.1rem);
-		height: 2px;
-		background: var(--color-border);
+		height: 1px;
+		background: var(--color-border-strong);
+		transition: background var(--duration-slow) var(--ease-standard);
 	}
 	.stepper li.past:not(:last-child)::after {
 		background: var(--color-accent);
@@ -373,13 +374,20 @@
 		width: 1.75rem;
 		height: 1.75rem;
 		border-radius: var(--radius-full);
-		border: 2px solid var(--color-border-strong);
+		border: 1px solid var(--color-border-strong);
 		background: var(--color-surface);
+		font-family: var(--font-display);
+		font-size: var(--text-sm);
 		font-weight: var(--weight-semibold);
+		transition:
+			background var(--duration-base) var(--ease-standard),
+			border-color var(--duration-base) var(--ease-standard),
+			box-shadow var(--duration-base) var(--ease-standard);
 	}
 	.current .dot {
 		border-color: var(--color-accent);
 		color: var(--color-accent);
+		box-shadow: 0 0 0 4px var(--color-accent-subtle);
 	}
 	.past .dot {
 		border-color: var(--color-accent);
@@ -393,14 +401,22 @@
 	.card {
 		display: grid;
 		gap: var(--space-4);
-		padding: var(--space-6);
+		padding: var(--space-7) var(--space-6) var(--space-6);
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-md);
+		animation: rise var(--duration-slow) var(--ease-emphasized);
+	}
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(var(--space-2));
+		}
 	}
 	h1 {
-		font-size: var(--text-2xl);
+		font-size: var(--text-3xl);
+		font-weight: var(--weight-regular);
 		letter-spacing: -0.02em;
 	}
 	p {
@@ -417,6 +433,7 @@
 		display: flex;
 		justify-content: flex-end;
 		gap: var(--space-2);
+		margin-top: var(--space-2);
 	}
 	.toggle {
 		display: flex;
@@ -425,10 +442,13 @@
 		min-height: 2.75rem;
 		cursor: pointer;
 	}
+	.toggle {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
 	.toggle input {
 		width: 1.125rem;
 		height: 1.125rem;
-		accent-color: var(--color-accent);
 	}
 	.row {
 		display: grid;
@@ -446,9 +466,10 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		padding: var(--space-3);
-		border-radius: var(--radius-md);
+		padding: var(--space-3) var(--space-4);
+		border-radius: var(--radius-lg);
 		background: var(--color-surface-sunken);
+		font-size: var(--text-sm);
 	}
 	.summary li.bad {
 		color: var(--color-danger);
@@ -461,6 +482,12 @@
 	@media (max-width: 600px) {
 		.stepper .label {
 			display: none;
+		}
+		.card {
+			padding: var(--space-6) var(--space-4) var(--space-5);
+		}
+		h1 {
+			font-size: var(--text-2xl);
 		}
 	}
 </style>

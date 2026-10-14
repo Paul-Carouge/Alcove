@@ -39,15 +39,20 @@
 	});
 </script>
 
-<span class="icon {tone}" aria-hidden="true"><Icon {size} /></span>
+<span
+	class="icon {tone}"
+	aria-hidden="true"
+	style:--icon-box={size > 24 ? `${Math.round(size * 1.8)}px` : undefined}
+	><Icon {size} strokeWidth={1.75} /></span
+>
 
 <style>
 	.icon {
 		display: inline-grid;
 		place-items: center;
 		flex: none;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: var(--icon-box, 2.5rem);
+		height: var(--icon-box, 2.5rem);
 		border-radius: var(--radius-md);
 		background: var(--color-surface-sunken);
 		color: var(--color-text-muted);

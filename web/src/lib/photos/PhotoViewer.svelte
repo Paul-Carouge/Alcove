@@ -434,6 +434,8 @@
 		min-width: 0;
 	}
 	.name {
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
 		font-weight: var(--weight-medium);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -495,8 +497,11 @@
 		cursor: grab;
 	}
 	.stage img {
+		border-radius: var(--radius-sm);
+		box-shadow: var(--shadow-lg);
 		transition: transform var(--duration-fast) var(--ease-standard);
 		will-change: transform;
+		animation: fade var(--duration-base) var(--ease-standard);
 	}
 	.stage.zoomed img {
 		transition: none;
@@ -521,8 +526,10 @@
 		border: 0;
 		border-radius: var(--radius-full);
 		background: var(--color-stage-control);
+		backdrop-filter: blur(var(--space-2));
 		color: inherit;
 		cursor: pointer;
+		transition: background var(--duration-fast) var(--ease-standard);
 	}
 	.nav:hover {
 		background: color-mix(in srgb, var(--color-stage-control), var(--color-on-stage) 12%);
@@ -535,13 +542,14 @@
 	}
 	.info {
 		overflow-y: auto;
-		padding: var(--space-4) var(--space-5);
+		padding: var(--space-5);
 		background: var(--color-stage-panel);
 		border-left: 1px solid var(--color-stage-border);
+		animation: fade var(--duration-base) var(--ease-standard);
 	}
 	h2 {
-		font-size: var(--text-md);
-		margin-bottom: var(--space-4);
+		font-size: var(--text-xl);
+		margin-bottom: var(--space-3);
 	}
 	dl {
 		display: grid;
@@ -554,7 +562,7 @@
 		color: var(--color-on-stage-muted);
 		font-size: var(--text-xs);
 		text-transform: uppercase;
-		letter-spacing: 0.04em;
+		letter-spacing: 0.08em;
 	}
 	dd {
 		margin: 0;
@@ -575,6 +583,22 @@
 		}
 		.stage {
 			padding: var(--space-2);
+		}
+		/* Phones: the name gets its own line so every tool stays on screen. */
+		header {
+			flex-wrap: wrap;
+			gap: 0;
+			padding: var(--space-2) var(--space-2) var(--space-1) var(--space-4);
+		}
+		.title {
+			flex: 1 1 100%;
+			min-height: 2rem;
+			align-items: center;
+		}
+		.tools {
+			flex: 1 1 100%;
+			justify-content: space-between;
+			gap: 0;
 		}
 		.nav {
 			top: auto;

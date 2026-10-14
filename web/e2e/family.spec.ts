@@ -71,6 +71,9 @@ test('an administrator creates a family account, which then manages itself', asy
 	await expect(lea.getByRole('button', { name: /^Open / })).toHaveCount(1);
 
 	await lea.getByRole('navigation').getByRole('link', { name: 'Files', exact: true }).click();
+	// Wait for the navigation to finish: SvelteKit resets focus when it does, which would
+	// swallow the Enter key below.
+	await expect(lea.getByRole('heading', { name: 'My files', level: 1 })).toBeVisible();
 	await lea.getByRole('searchbox', { name: 'Search files' }).fill('LYON');
 	await lea.keyboard.press('Enter');
 	await expect(lea.getByRole('heading', { name: 'Search', level: 1 })).toBeVisible();

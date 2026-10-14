@@ -42,6 +42,7 @@
 	import PhotoViewer from '#lib/photos/PhotoViewer.svelte';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Select from '#lib/ui/Select.svelte';
 
 	let filter = $state<PhotoFilter>('all');
@@ -502,18 +503,19 @@
 {#if failed && items.length === 0}
 	<Alert>{m.error_load()}</Alert>
 {:else if !loading && items.length === 0 && page > 0}
-	<section class="empty" aria-labelledby="empty-title">
-		<span class="art" aria-hidden="true"><ImageIcon size={26} /></span>
-		<h2 id="empty-title">{m.photos_empty_title()}</h2>
-		<p>
-			{isRefined(refine)
-				? m.photos_filter_none()
-				: filter === 'favorites'
-					? m.photos_favorites_empty()
-					: m.photos_empty_body()}
-		</p>
-		{#if filter === 'all' && !isRefined(refine)}<a href={resolve('/(app)')}>{m.nav_files()}</a>{/if}
-	</section>
+	<EmptyState icon={ImageIcon} title={m.photos_empty_title()}>
+		{isRefined(refine)
+			? m.photos_filter_none()
+			: filter === 'favorites'
+				? m.photos_favorites_empty()
+				: m.photos_empty_body()}
+		{#snippet action()}
+			{#if filter === 'all' && !isRefined(refine)}<a
+					class="link-btn outline"
+					href={resolve('/(app)')}>{m.nav_files()}</a
+				>{/if}
+		{/snippet}
+	</EmptyState>
 {:else}
 	<PhotoGrid
 		{items}
@@ -559,15 +561,12 @@
 <style>
 	.head {
 		display: flex;
-		align-items: center;
+		align-items: flex-end;
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--space-4);
-		margin: var(--space-2) 0 var(--space-2);
-	}
-	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
+		min-height: 3.5rem;
+		margin: 0 0 var(--space-4);
 	}
 	.tools {
 		display: flex;
@@ -580,13 +579,15 @@
 		.head {
 			flex-direction: column;
 			align-items: stretch;
+			/* A wrapping column would stretch to its widest child, the scrolling tools row. */
+			flex-wrap: nowrap;
 		}
 		.tools {
 			flex-wrap: nowrap;
 			overflow-x: auto;
 			scrollbar-width: none;
 			margin-inline: calc(-1 * var(--space-4));
-			padding: 2px var(--space-4);
+			padding: var(--space-1) var(--space-4);
 		}
 		.tools > :global(*) {
 			flex-shrink: 0;
@@ -595,25 +596,31 @@
 	.chips {
 		display: inline-flex;
 		gap: var(--space-1);
-		padding: 2px;
+		padding: var(--space-1);
 		border-radius: var(--radius-full);
 		background: var(--color-surface-sunken);
 	}
 	.chips button {
-		min-height: 2.5rem;
+		min-height: 2.25rem;
 		padding: 0 var(--space-4);
 		border: 0;
 		border-radius: var(--radius-full);
 		background: transparent;
 		font: inherit;
 		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		color: var(--color-text-muted);
 		cursor: pointer;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
+	}
+	.chips button:hover {
+		color: var(--color-text);
 	}
 	.chips button[aria-checked='true'] {
 		background: var(--color-surface);
 		color: var(--color-text);
-		font-weight: var(--weight-medium);
 		box-shadow: var(--shadow-sm);
 	}
 	.badge {
@@ -638,25 +645,41 @@
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		text-decoration: none;
+		transition: background var(--duration-fast) var(--ease-standard);
 	}
 	.link-btn:hover {
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
+	}
+	.link-btn.outline {
+		padding: 0 var(--space-4);
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	.filters {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: flex-end;
 		gap: var(--space-3) var(--space-5);
-		margin-bottom: var(--space-3);
-		padding: var(--space-4);
+		margin-bottom: var(--space-4);
+		padding: var(--space-4) var(--space-5);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
+		animation: rise var(--duration-base) var(--ease-emphasized);
+	}
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(calc(-1 * var(--space-1)));
+		}
 	}
 	.filters .field {
 		display: grid;
-		gap: var(--space-1);
+		gap: var(--space-2);
 		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		color: var(--color-text-muted);
 	}
 	.filters label.check {
@@ -664,12 +687,12 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-height: 2.75rem;
+		font-size: var(--text-sm);
 		color: var(--color-text);
 	}
 	.filters input[type='checkbox'] {
 		width: 1.25rem;
 		height: 1.25rem;
-		accent-color: var(--color-accent);
 	}
 	.filters .field :global(.select) {
 		min-width: 11rem;
@@ -683,7 +706,7 @@
 	.selection-bar {
 		/* Under the app header, above month headings (the upload panel owns the bottom corner). */
 		position: sticky;
-		top: calc(4rem + var(--space-2));
+		top: calc(4.5rem + var(--space-2));
 		z-index: 4;
 		display: flex;
 		align-items: center;
@@ -693,16 +716,38 @@
 		margin-bottom: var(--space-3);
 		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-xl);
 		background: var(--color-surface-raised);
 		box-shadow: var(--shadow-lg);
+		animation: rise var(--duration-base) var(--ease-emphasized);
 	}
 	.count {
-		font-weight: var(--weight-medium);
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		font-variant-numeric: tabular-nums;
 	}
 	.bar-actions {
 		display: flex;
-		gap: var(--space-2);
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+	@media (max-width: 900px) {
+		.selection-bar {
+			top: calc(4rem + var(--space-2));
+		}
+	}
+	@media (max-width: 600px) {
+		.selection-bar {
+			padding: var(--space-2) var(--space-3);
+		}
+		.bar-actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			width: 100%;
+		}
+		.bar-actions > :global(:last-child) {
+			grid-column: 1 / -1;
+		}
 	}
 	.muted {
 		color: var(--color-text-muted);
@@ -710,68 +755,48 @@
 	.center {
 		text-align: center;
 	}
-	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		text-align: center;
-	}
-	.art {
-		display: grid;
-		place-items: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		margin-bottom: var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		margin: 0;
-		max-width: 30rem;
-		color: var(--color-text-muted);
-	}
 	.memories {
-		margin-bottom: var(--space-5);
+		margin-bottom: var(--space-6);
 	}
 	.memories h2 {
-		margin: 0 0 var(--space-2);
-		font-size: var(--text-md);
+		margin: 0 0 var(--space-3);
+		font-size: var(--text-xl);
 	}
 	.memories ul {
 		display: flex;
 		gap: var(--space-3);
 		margin: 0;
-		padding: 0 0 var(--space-1);
+		padding: 0 0 var(--space-2);
 		overflow-x: auto;
 		list-style: none;
 		scrollbar-width: thin;
+		scroll-snap-type: x proximity;
+	}
+	.memories li {
+		scroll-snap-align: start;
 	}
 	.memory {
 		position: relative;
 		display: block;
-		width: 10rem;
-		height: 13rem;
+		width: 11rem;
+		height: 14rem;
 		padding: 0;
 		overflow: hidden;
 		border: 0;
 		border-radius: var(--radius-lg);
 		background: var(--color-surface-sunken);
-		box-shadow: var(--shadow-sm);
+		box-shadow: var(--shadow-md);
 		cursor: pointer;
+		transition: transform var(--duration-base) var(--ease-standard);
+	}
+	.memory:hover {
+		transform: translateY(calc(-1 * var(--space-1)));
 	}
 	.memory img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform var(--duration-base) var(--ease-standard);
+		transition: transform var(--duration-slow) var(--ease-standard);
 	}
 	.memory:hover img {
 		transform: scale(1.04);
@@ -780,32 +805,37 @@
 		position: absolute;
 		inset: auto 0 0;
 		display: grid;
-		padding: var(--space-6) var(--space-3) var(--space-3);
+		gap: var(--space-0);
+		padding: var(--space-7) var(--space-4) var(--space-4);
 		background: linear-gradient(transparent, var(--color-stage-scrim));
 		color: var(--color-on-stage);
 		font-size: var(--text-xs);
 		text-align: left;
 	}
 	.memory-label strong {
-		font-size: var(--text-md);
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		font-weight: var(--weight-medium);
+		line-height: var(--leading-tight);
 	}
 	.years {
 		position: fixed;
-		right: var(--space-2);
+		right: var(--space-3);
 		top: 50%;
 		z-index: 5;
 		display: grid;
-		gap: 2px;
+		gap: var(--space-0);
 		padding: var(--space-1);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-full);
 		background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-		box-shadow: var(--shadow-sm);
+		backdrop-filter: blur(var(--space-2));
+		box-shadow: var(--shadow-md);
 		transform: translateY(-50%);
 	}
 	.years button {
 		min-width: 3.25rem;
-		min-height: 2rem;
+		min-height: 2.25rem;
 		padding: 0 var(--space-2);
 		border: 0;
 		border-radius: var(--radius-full);
@@ -813,16 +843,23 @@
 		color: var(--color-text-muted);
 		font: inherit;
 		font-size: var(--text-xs);
+		font-weight: var(--weight-medium);
 		font-variant-numeric: tabular-nums;
 		cursor: pointer;
 	}
 	.years button:hover {
-		background: var(--color-surface-sunken);
-		color: var(--color-text);
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
 	}
 	@media (max-width: 900px) {
 		.years {
 			display: none;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.memory:hover,
+		.memory:hover img {
+			transform: none;
 		}
 	}
 </style>

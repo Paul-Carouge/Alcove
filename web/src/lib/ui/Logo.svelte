@@ -21,15 +21,17 @@
 	.logo {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-3);
 	}
 	svg {
 		flex: none;
 	}
 	.name {
+		font-family: var(--font-display);
+		font-optical-sizing: auto;
 		font-weight: var(--weight-semibold);
-		font-size: var(--text-lg);
-		letter-spacing: -0.01em;
+		font-size: var(--text-xl);
+		letter-spacing: -0.015em;
 		color: var(--color-text);
 	}
 </style>

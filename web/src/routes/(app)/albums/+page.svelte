@@ -10,6 +10,7 @@
 	import AlbumNameDialog from '#lib/photos/AlbumNameDialog.svelte';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 
 	let albums = $state<AlbumSummary[] | null>(null);
 	let failed = $state(false);
@@ -83,11 +84,14 @@
 {:else if albums === null}
 	<p class="muted">{m.loading()}</p>
 {:else if albums.length === 0}
-	<section class="empty" aria-labelledby="empty-title">
-		<span class="art" aria-hidden="true"><BookImage size={26} /></span>
-		<h2 id="empty-title">{m.albums_empty_title()}</h2>
-		<p>{m.albums_empty_body()}</p>
-	</section>
+	<EmptyState icon={BookImage} title={m.albums_empty_title()}>
+		{m.albums_empty_body()}
+		{#snippet action()}
+			<Button onclick={() => (creating = true)}
+				><Plus size={16} aria-hidden="true" />{m.album_new()}</Button
+			>
+		{/snippet}
+	</EmptyState>
 {:else}
 	<ul class="grid">
 		{#each albums as a (a.id)}
@@ -123,46 +127,66 @@
 <style>
 	.head {
 		display: flex;
-		align-items: center;
+		align-items: flex-end;
 		justify-content: space-between;
 		gap: var(--space-4);
-		margin: var(--space-2) 0 var(--space-5);
-	}
-	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
+		min-height: 3.5rem;
+		margin: 0 0 var(--space-6);
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(14rem, 42vw), 1fr));
-		gap: var(--space-5) var(--space-4);
+		grid-template-columns: repeat(auto-fill, minmax(min(13rem, 40vw), 1fr));
+		gap: var(--space-6) var(--space-5);
 		margin: 0;
-		padding: 0;
+		padding: var(--space-4) 0 0;
 		list-style: none;
 	}
 	.card {
+		position: relative;
+		isolation: isolate;
 		display: grid;
 		gap: var(--space-1);
 		color: var(--color-text);
 		text-decoration: none;
 	}
+	/* An album reads as a small stack of prints: two sheets peek above the cover. */
+	.card::before,
+	.card::after {
+		content: '';
+		position: absolute;
+		height: var(--space-7);
+		border-radius: var(--radius-lg);
+		pointer-events: none;
+	}
+	.card::before {
+		z-index: -1;
+		top: calc(-1 * var(--space-2));
+		inset-inline: var(--space-3);
+		background: color-mix(in srgb, var(--color-border-strong) 50%, var(--color-surface));
+	}
+	.card::after {
+		z-index: -2;
+		top: calc(-1 * var(--space-4));
+		inset-inline: var(--space-5);
+		background: var(--color-border);
+	}
 	.cover {
 		display: grid;
 		place-items: center;
-		aspect-ratio: 1;
+		aspect-ratio: 4 / 5;
 		overflow: hidden;
-		margin-bottom: var(--space-2);
+		margin-bottom: var(--space-3);
 		border-radius: var(--radius-lg);
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
-		box-shadow: var(--shadow-sm);
+		box-shadow: var(--shadow-md);
 		transition:
 			box-shadow var(--duration-base) var(--ease-standard),
 			transform var(--duration-base) var(--ease-standard);
 	}
 	.card:hover .cover {
-		box-shadow: var(--shadow-md);
-		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg);
+		transform: translateY(calc(-1 * var(--space-1)));
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.cover,
@@ -177,20 +201,23 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform var(--duration-base) var(--ease-standard);
+		transition: transform var(--duration-slow) var(--ease-standard);
 	}
 	.card:hover .cover img {
-		transform: scale(1.04);
+		transform: scale(1.03);
 	}
 	.card:focus-visible {
 		outline: none;
 	}
 	.card:focus-visible .cover {
 		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		outline-offset: 3px;
 	}
 	.name {
-		font-weight: var(--weight-semibold);
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		font-weight: var(--weight-medium);
+		line-height: var(--leading-tight);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -207,36 +234,18 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
+		color: var(--color-accent);
 	}
 	.muted {
 		color: var(--color-text-muted);
 	}
-	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		text-align: center;
-	}
-	.art {
-		display: grid;
-		place-items: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		margin-bottom: var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		margin: 0;
-		max-width: 30rem;
-		color: var(--color-text-muted);
+	@media (max-width: 600px) {
+		.grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-5) var(--space-3);
+		}
+		.name {
+			font-size: var(--text-md);
+		}
 	}
 </style>

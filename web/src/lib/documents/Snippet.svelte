@@ -19,8 +19,8 @@
 		line-height: var(--leading-normal);
 	}
 	mark {
-		padding: 0 2px;
-		border-radius: 3px;
+		padding: 0 var(--space-1);
+		border-radius: var(--radius-sm);
 		background: var(--color-accent-subtle);
 		color: var(--color-text);
 		font-weight: var(--weight-medium);

@@ -8,10 +8,16 @@
 html {
 	font-family: var(--font-sans);
 	font-size: 100%;
+	/* Inter's calmer single-storey "a" and open digits. */
+	font-feature-settings: 'cv11', 'cv01';
 	line-height: var(--leading-normal);
 	background: var(--color-bg);
 	color: var(--color-text);
 	-webkit-text-size-adjust: 100%;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	scrollbar-color: var(--color-border-strong) transparent;
 }
 
 body {
@@ -19,16 +25,32 @@ body {
 	min-height: 100dvh;
 }
 
+/* "Lin": headings are set in the Fraunces serif, quiet and slightly tight. */
 h1,
 h2,
 h3 {
+	font-family: var(--font-display);
+	font-optical-sizing: auto;
 	line-height: var(--leading-tight);
-	font-weight: var(--weight-semibold);
+	font-weight: var(--weight-medium);
+	letter-spacing: -0.01em;
 	margin: 0;
+	text-wrap: balance;
+}
+
+p {
+	text-wrap: pretty;
 }
 
 a {
 	color: var(--color-accent);
+	text-underline-offset: 0.18em;
+	text-decoration-thickness: 1px;
+}
+
+::selection {
+	background: var(--color-accent-subtle);
+	color: var(--color-text);
 }
 
 :focus-visible {
@@ -148,4 +170,53 @@ a {
 }
 :where(input[type='checkbox'][role='switch']:checked)::after {
 	transform: translateX(1rem);
+}
+
+/* Data tables (shared links, trash, users): a card of rows. :where() keeps specificity at
+   zero so pages can size their columns. */
+:where(table.data-table) {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-sm);
+}
+:where(table.data-table) th {
+	text-align: left;
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--color-text-muted);
+	padding: var(--space-3) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+}
+:where(table.data-table) td {
+	height: 3.75rem;
+	padding: var(--space-2) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+	font-size: var(--text-sm);
+}
+:where(table.data-table) tbody tr {
+	transition: background var(--duration-fast) var(--ease-standard);
+}
+:where(table.data-table) tbody tr:hover {
+	background: color-mix(in srgb, var(--color-surface-sunken) 60%, transparent);
+}
+:where(table.data-table) tbody tr:last-child td {
+	border-bottom: 0;
+}
+:where(table.data-table) tbody tr:last-child td:first-child {
+	border-end-start-radius: var(--radius-lg);
+}
+:where(table.data-table) tbody tr:last-child td:last-child {
+	border-end-end-radius: var(--radius-lg);
+}
+@media (max-width: 600px) {
+	:where(table.data-table) td,
+	:where(table.data-table) th {
+		padding-inline: var(--space-3);
+	}
 }

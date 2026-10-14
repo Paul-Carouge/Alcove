@@ -166,31 +166,41 @@
 
 <style>
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
-		margin: var(--space-2) 0 var(--space-5);
+		margin: 0 0 var(--space-6);
+		padding-top: var(--space-3);
 	}
 	.card {
-		max-width: 36rem;
-		margin-bottom: var(--space-4);
-		padding: var(--space-5);
+		max-width: 40rem;
+		margin-bottom: var(--space-5);
+		padding: var(--space-6);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	h2 {
-		font-size: var(--text-lg);
-		margin-bottom: var(--space-3);
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-xl);
+		margin-bottom: var(--space-2);
 	}
 	.who {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		margin-bottom: var(--space-4);
+		margin: var(--space-4) 0 var(--space-5);
+		padding: var(--space-3);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface-sunken);
 	}
 	.muted {
+		margin: 0 0 var(--space-4);
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
+	}
+	.who .muted {
+		margin: 0;
 	}
 	.form {
 		display: grid;
@@ -201,14 +211,14 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-3);
+		margin-top: var(--space-1);
 	}
 	.ok {
 		color: var(--color-success);
 		font-size: var(--text-sm);
 	}
 	h2 :global(svg) {
-		vertical-align: -3px;
-		margin-right: var(--space-2);
+		flex: none;
 		color: var(--color-accent);
 	}
 	.download {
@@ -216,13 +226,16 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-height: 2.75rem;
-		margin: var(--space-3) 0;
+		margin: 0 0 var(--space-4);
 		padding: 0 var(--space-4);
 		border-radius: var(--radius-md);
 		background: var(--color-accent);
 		color: var(--color-accent-contrast);
+		box-shadow: var(--shadow-sm);
+		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		text-decoration: none;
+		transition: background var(--duration-fast) var(--ease-standard);
 	}
 	.version {
 		font-size: var(--text-xs);
@@ -232,7 +245,7 @@
 		background: var(--color-accent-hover);
 	}
 	.small {
-		margin: 0;
+		margin: 0 0 var(--space-1);
 		font-size: var(--text-xs);
 	}
 	.security {
@@ -241,6 +254,15 @@
 		gap: var(--space-2);
 		min-height: 2.75rem;
 		color: var(--color-accent);
+		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
+	}
+	@media (max-width: 600px) {
+		.card {
+			padding: var(--space-5) var(--space-4);
+		}
+		.actions :global(.btn) {
+			flex: 1;
+		}
 	}
 </style>

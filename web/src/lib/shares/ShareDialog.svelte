@@ -202,12 +202,19 @@
 	.chip {
 		display: inline-flex;
 		align-items: center;
-		min-height: 2.5rem;
-		padding: 0 var(--space-3);
-		border: 1px solid var(--color-border-strong);
+		min-height: 2.75rem;
+		padding: 0 var(--space-4);
+		border: 1px solid var(--color-border);
 		border-radius: var(--radius-full);
+		background: var(--color-surface);
 		font-size: var(--text-sm);
 		cursor: pointer;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard);
+	}
+	.chip:hover {
+		border-color: var(--color-border-strong);
 	}
 	.chip input {
 		position: absolute;
@@ -231,10 +238,13 @@
 		min-height: 2.75rem;
 		cursor: pointer;
 	}
+	.toggle {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
 	.toggle input {
 		width: 1.125rem;
 		height: 1.125rem;
-		accent-color: var(--color-accent);
 	}
 	.link-row {
 		display: flex;
@@ -249,8 +259,9 @@
 		min-height: 2.75rem;
 		color: var(--color-text);
 		background: var(--color-surface-sunken);
-		border: 1px solid var(--color-border-strong);
+		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
+		font-family: var(--font-mono);
 	}
 	.note {
 		margin: 0;
@@ -270,6 +281,11 @@
 	}
 	.existing h3 {
 		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-text-muted);
 	}
 	ul {
 		list-style: none;
@@ -283,6 +299,9 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
+		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+		border-radius: var(--radius-md);
+		background: var(--color-surface-sunken);
 	}
 	.info {
 		display: grid;
@@ -311,6 +330,6 @@
 		cursor: pointer;
 	}
 	.icon-btn:hover {
-		background: var(--color-surface-sunken);
+		background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 	}
 </style>

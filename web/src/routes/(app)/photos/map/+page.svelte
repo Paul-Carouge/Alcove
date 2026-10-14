@@ -202,9 +202,11 @@
 </svelte:head>
 
 <div class="head">
-	<a class="back" href={resolve('/(app)/photos')}
-		><ArrowLeft size={16} aria-hidden="true" />{m.photos_title()}</a
-	>
+	<span class="back-row">
+		<a class="back" href={resolve('/(app)/photos')}
+			><ArrowLeft size={16} aria-hidden="true" />{m.photos_title()}</a
+		>
+	</span>
 	<h1>{m.map_title()}</h1>
 	{#if count !== null}
 		<p class="muted"><MapPin size={14} aria-hidden="true" />{m.map_count({ count })}</p>
@@ -231,16 +233,25 @@
 	.back {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1);
-		flex-basis: 100%;
-		min-height: 2.75rem;
+		gap: var(--space-2);
+		min-height: 2.25rem;
+		margin-inline-start: calc(-1 * var(--space-2));
+		padding: 0 var(--space-2);
+		border-radius: var(--radius-sm);
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		text-decoration: none;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
 	}
-	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
+	.back:hover {
+		color: var(--color-text);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
+	}
+	.back-row {
+		flex-basis: 100%;
 	}
 	.muted {
 		display: inline-flex;
@@ -258,8 +269,9 @@
 		min-height: 22rem;
 		overflow: hidden;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		background: var(--color-accent-subtle);
+		box-shadow: var(--shadow-sm);
 		font: inherit;
 	}
 	.map :global(.leaflet-container) {

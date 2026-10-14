@@ -15,6 +15,7 @@
 	} from '#lib/photos/api.js';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
 
 	const locale = getLocale();
@@ -131,11 +132,9 @@
 {:else if groups === null}
 	<p class="muted">{m.loading()}</p>
 {:else if groups.length === 0}
-	<section class="empty">
-		<span class="art" aria-hidden="true"><Copy size={26} /></span>
-		<h2>{m.duplicates_none_title()}</h2>
-		<p>{m.duplicates_none_body()}</p>
-	</section>
+	<EmptyState icon={Copy} title={m.duplicates_none_title()}>
+		{m.duplicates_none_body()}
+	</EmptyState>
 {:else}
 	<ul class="groups">
 		{#each groups as g (keyOf(g))}
@@ -216,14 +215,22 @@
 	.back {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1);
-		min-height: 2.75rem;
+		gap: var(--space-2);
+		min-height: 2.25rem;
+		margin-inline-start: calc(-1 * var(--space-2));
+		padding: 0 var(--space-2);
+		border-radius: var(--radius-sm);
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		text-decoration: none;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
 	}
 	.back:hover {
 		color: var(--color-text);
+		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 	}
 	.head {
 		display: flex;
@@ -232,12 +239,8 @@
 		flex-wrap: wrap;
 		gap: var(--space-4);
 	}
-	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
-	}
 	.intro {
-		margin: var(--space-1) 0 0;
+		margin: var(--space-2) 0 0;
 		max-width: 40rem;
 		color: var(--color-text-muted);
 	}
@@ -255,10 +258,16 @@
 		list-style: none;
 	}
 	.group {
-		padding: var(--space-4) var(--space-5) var(--space-5);
+		padding: var(--space-5) var(--space-6) var(--space-6);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
+	}
+	@media (max-width: 600px) {
+		.group {
+			padding: var(--space-4);
+		}
 	}
 	.group-head {
 		display: flex;
@@ -269,7 +278,11 @@
 		margin-bottom: var(--space-3);
 	}
 	.group-head h2 {
-		font-size: var(--text-md);
+		font-size: var(--text-xl);
+	}
+	.group-head h2 .muted {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
 	}
 	.group-actions {
 		display: flex;
@@ -295,9 +308,10 @@
 		padding: 0;
 		overflow: hidden;
 		border: 2px solid transparent;
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		background: var(--color-surface-sunken);
 		cursor: pointer;
+		transition: border-color var(--duration-fast) var(--ease-standard);
 	}
 	.tile img {
 		display: block;
@@ -315,7 +329,7 @@
 	.tag,
 	.best {
 		position: absolute;
-		padding: 1px var(--space-2);
+		padding: var(--space-0) var(--space-2);
 		border-radius: var(--radius-full);
 		font-size: var(--text-xs);
 		font-weight: var(--weight-medium);
@@ -353,33 +367,6 @@
 	}
 	.meta .muted {
 		font-size: var(--text-xs);
-	}
-	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		text-align: center;
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		margin: 0;
-		color: var(--color-text-muted);
-	}
-	.art {
-		display: grid;
-		place-items: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		margin-bottom: var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
 	}
 	.confirm {
 		margin: 0 0 var(--space-5);

@@ -745,5 +745,17 @@
 	"album_download": "Download the album",
 	"nav_group_library": "Library",
 	"nav_group_more": "Sharing",
-	"search_everywhere": "Search files, photos, documents…"
+	"search_everywhere": "Search files, photos, documents…",
+	"drive_item_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item",
+				"countPlural=other": "{count} items"
+			}
+		}
+	],
+	"security_qr_alt": "QR code to scan with your authenticator app",
+	"security_secret_label": "Secret key"
 }

@@ -25,12 +25,22 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--space-3) var(--space-5);
+		gap: var(--space-3);
+		min-height: 4rem;
+		padding: var(--space-2) var(--space-5);
 	}
 	main {
-		max-width: 36rem;
+		max-width: 40rem;
 		margin: 0 auto;
-		padding: var(--space-5);
+		padding: var(--space-5) var(--space-5) var(--space-6);
+	}
+	@media (max-width: 600px) {
+		.top {
+			padding: var(--space-2) var(--space-4);
+		}
+		main {
+			padding: var(--space-4);
+		}
 	}
 	main:focus {
 		outline: none;

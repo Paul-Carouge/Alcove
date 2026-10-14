@@ -122,26 +122,26 @@
 		width: min(24rem, calc(100vw - 2 * var(--space-4)));
 		background: var(--color-surface-raised);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-lg);
 		overflow: hidden;
-		animation: rise var(--duration-base) var(--ease-emphasized);
+		animation: rise var(--duration-slow) var(--ease-emphasized);
 	}
 	@keyframes rise {
 		from {
 			opacity: 0;
-			transform: translateY(12px);
+			transform: translateY(var(--space-3));
 		}
 	}
 	header {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
 		border-bottom: 1px solid var(--color-border);
 	}
 	h2 {
-		font-size: var(--text-md);
+		font-size: var(--text-lg);
 	}
 	.summary {
 		margin-left: auto;
@@ -159,13 +159,13 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
 	}
 	.info {
 		flex: 1;
 		min-width: 0;
 		display: grid;
-		gap: 2px;
+		gap: var(--space-1);
 	}
 	.name {
 		overflow: hidden;
@@ -184,7 +184,7 @@
 	}
 	progress {
 		width: 100%;
-		height: 4px;
+		height: var(--space-1);
 		appearance: none;
 		border: 0;
 		border-radius: var(--radius-full);
@@ -219,6 +219,13 @@
 	.icon-btn:hover {
 		background: var(--color-surface-sunken);
 		color: var(--color-text);
+	}
+	@media (max-width: 600px) {
+		.panel {
+			right: var(--space-3);
+			bottom: var(--space-3);
+			width: calc(100vw - 2 * var(--space-3));
+		}
 	}
 	footer {
 		display: flex;

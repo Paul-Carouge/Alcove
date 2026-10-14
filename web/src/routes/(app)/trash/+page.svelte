@@ -11,6 +11,7 @@
 	import ActionsMenu from '#lib/ui/ActionsMenu.svelte';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
 
 	const locale = getLocale();
@@ -106,13 +107,11 @@
 {:else if view === 'error'}
 	<Alert>{m.error_load()}</Alert>
 {:else if items.length === 0}
-	<section class="empty" aria-labelledby="empty-title">
-		<span class="art" aria-hidden="true"><Trash2 size={24} /></span>
-		<h2 id="empty-title">{m.trash_empty_title()}</h2>
-		<p>{m.trash_empty_body()}</p>
-	</section>
+	<EmptyState icon={Trash2} title={m.trash_empty_title()}>
+		{m.trash_empty_body()}
+	</EmptyState>
 {:else}
-	<table class="list">
+	<table class="list data-table">
 		<thead>
 			<tr>
 				<th scope="col">{m.col_name()}</th>
@@ -185,15 +184,11 @@
 <style>
 	.head {
 		display: flex;
-		align-items: center;
+		align-items: flex-end;
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--space-3);
-		margin-top: var(--space-2);
-	}
-	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
+		min-height: 3.5rem;
 	}
 	.text {
 		display: grid;
@@ -204,7 +199,8 @@
 		font-size: var(--text-xs);
 	}
 	.note {
-		margin: var(--space-2) 0 var(--space-5);
+		max-width: 44rem;
+		margin: var(--space-2) 0 var(--space-6);
 		color: var(--color-text-muted);
 	}
 	.err {
@@ -212,32 +208,6 @@
 	}
 	.muted {
 		color: var(--color-text-muted);
-	}
-	.list {
-		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0;
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-	}
-	th {
-		text-align: left;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--color-text-muted);
-		padding: var(--space-3) var(--space-4);
-		border-bottom: 1px solid var(--color-border);
-	}
-	td {
-		padding: var(--space-2) var(--space-4);
-		border-bottom: 1px solid var(--color-border);
-		font-size: var(--text-sm);
-	}
-	tbody tr:last-child td {
-		border-bottom: 0;
 	}
 	.num,
 	.date {
@@ -257,15 +227,15 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
+		min-width: 0;
 	}
 	.name {
 		overflow: hidden;
 		font-size: var(--text-md);
+		font-weight: var(--weight-medium);
+		color: var(--color-text-muted);
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.name-cell {
-		min-width: 0;
 	}
 	/* Phones: size and date under the name, so the name gets the width. */
 	@media (max-width: 600px) {
@@ -279,34 +249,6 @@
 		.list {
 			table-layout: fixed;
 		}
-	}
-	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		text-align: center;
-	}
-	.art {
-		display: grid;
-		place-items: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		margin-bottom: var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--color-surface-sunken);
-		color: var(--color-text-muted);
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		margin: 0;
-		max-width: 28rem;
-		color: var(--color-text-muted);
 	}
 	.confirm {
 		margin: 0;

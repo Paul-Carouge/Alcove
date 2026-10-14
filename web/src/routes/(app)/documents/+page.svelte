@@ -18,6 +18,7 @@
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Alert from '#lib/ui/Alert.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
 	import TagChip from '#lib/tags/TagChip.svelte';
 	import TagsDialog from '#lib/tags/TagsDialog.svelte';
@@ -208,9 +209,9 @@
 	</ul>
 {:else if docs.length === 0}
 	<div class="empty">
-		<div class="empty-icon" aria-hidden="true"><FileText size={28} /></div>
-		<h2>{m.documents_empty_title()}</h2>
-		<p>{m.documents_empty()}</p>
+		<EmptyState icon={FileText} title={m.documents_empty_title()}>
+			{m.documents_empty()}
+		</EmptyState>
 	</div>
 {:else}
 	<p class="muted" role="status">{m.documents_count({ count: total })}</p>
@@ -327,11 +328,9 @@
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--space-4);
-		margin: var(--space-2) 0 var(--space-4);
-	}
-	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
+		min-height: 3.5rem;
+		align-items: flex-end;
+		margin: 0 0 var(--space-4);
 	}
 	.chips {
 		display: inline-flex;
@@ -340,13 +339,13 @@
 		scrollbar-width: none;
 		gap: var(--space-1);
 		margin-bottom: var(--space-4);
-		padding: 2px;
+		padding: var(--space-1);
 		border-radius: var(--radius-full);
 		background: var(--color-surface-sunken);
 	}
 	.chips button {
 		flex-shrink: 0;
-		min-height: 2.5rem;
+		min-height: 2.25rem;
 		padding: 0 var(--space-4);
 		border: 0;
 		border-radius: var(--radius-full);
@@ -356,6 +355,12 @@
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		cursor: pointer;
+		transition:
+			background var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
+	}
+	.chips button:hover {
+		color: var(--color-text);
 	}
 	.chips button.on {
 		background: var(--color-surface);
@@ -372,12 +377,18 @@
 	.tag-filter button {
 		display: inline-flex;
 		align-items: center;
-		min-height: 2.25rem;
+		min-height: 2.75rem;
 		padding: 0 var(--space-1);
-		border: 2px solid transparent;
+		border: 1px solid transparent;
 		border-radius: var(--radius-full);
 		background: none;
 		cursor: pointer;
+		transition:
+			border-color var(--duration-fast) var(--ease-standard),
+			background var(--duration-fast) var(--ease-standard);
+	}
+	.tag-filter button:hover {
+		border-color: var(--color-border);
 	}
 	.tag-filter .tag-all {
 		padding: 0 var(--space-3);
@@ -388,6 +399,8 @@
 	}
 	.tag-filter button.on {
 		border-color: var(--color-accent);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 	.tag-filter .tag-all.on {
 		color: var(--color-text);
@@ -396,7 +409,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-		margin: 2px 0 0;
+		margin: var(--space-1) 0 0;
 	}
 	.icon-btn {
 		display: grid;
@@ -441,13 +454,18 @@
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 		overflow: hidden;
 	}
 	.row {
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+		transition: background var(--duration-fast) var(--ease-standard);
+	}
+	.row:not(.skeleton):hover {
+		background: color-mix(in srgb, var(--color-surface-sunken) 60%, transparent);
 	}
 	.row-actions {
 		display: flex;
@@ -463,18 +481,19 @@
 		place-items: center;
 		flex: none;
 		width: 3.5rem;
-		height: 3.5rem;
+		height: 4.25rem;
 		padding: 0;
 		overflow: hidden;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-sm);
+		box-shadow: var(--shadow-sm);
 		background: var(--color-surface-sunken);
 		color: var(--color-text-muted);
 		cursor: pointer;
 	}
 	.main {
 		display: grid;
-		gap: 2px;
+		gap: var(--space-1);
 		flex: 1;
 		min-width: 0;
 	}
@@ -487,7 +506,10 @@
 		background: none;
 		color: var(--color-text);
 		font: inherit;
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
 		font-weight: var(--weight-medium);
+		line-height: var(--leading-tight);
 		text-align: left;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -495,6 +517,7 @@
 	}
 	.name:hover {
 		text-decoration: underline;
+		text-decoration-color: var(--color-border-strong);
 	}
 	.excerpt {
 		display: -webkit-box;
@@ -544,38 +567,14 @@
 		margin-top: var(--space-4);
 	}
 	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
 		max-width: 56rem;
-		padding: var(--space-8) var(--space-5);
-		border: 1px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		text-align: center;
-	}
-	.empty-icon {
-		display: grid;
-		place-items: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		border-radius: var(--radius-full);
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		max-width: 28rem;
-		margin: 0;
-		color: var(--color-text-muted);
 	}
 	.fulltext {
 		max-height: min(60vh, 32rem);
 		margin: 0;
-		padding: var(--space-4);
+		padding: var(--space-5);
 		overflow: auto;
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		background: var(--color-surface-sunken);
 		font: inherit;
 		font-size: var(--text-sm);
@@ -603,6 +602,8 @@
 		.head {
 			flex-direction: column;
 			align-items: stretch;
+			/* A wrapping column would stretch to its widest child, the scrolling tools row. */
+			flex-wrap: nowrap;
 		}
 		/* Icon only on phones; the label stays for screen readers. */
 		.row .text-label {

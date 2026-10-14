@@ -7,6 +7,7 @@
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { myShares, revokeShare, type ShareRecord } from '#lib/shares/api.js';
 	import Alert from '#lib/ui/Alert.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 
 	const locale = getLocale();
 	let items = $state<ShareRecord[]>([]);
@@ -50,13 +51,11 @@
 {:else if view === 'error'}
 	<Alert>{m.error_load()}</Alert>
 {:else if items.length === 0}
-	<section class="empty" aria-labelledby="empty-title">
-		<span class="art" aria-hidden="true"><LinkIcon size={24} /></span>
-		<h2 id="empty-title">{m.shared_empty_title()}</h2>
-		<p>{m.shared_empty_body()}</p>
-	</section>
+	<EmptyState icon={LinkIcon} title={m.shared_empty_title()}>
+		{m.shared_empty_body()}
+	</EmptyState>
 {:else}
-	<table class="list">
+	<table class="list data-table">
 		<thead>
 			<tr>
 				<th scope="col">{m.col_item()}</th>
@@ -123,15 +122,19 @@
 	.album-icon {
 		display: grid;
 		place-items: center;
+		flex: none;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: var(--radius-md);
+		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 	}
 	h1 {
-		font-size: var(--text-2xl);
-		letter-spacing: -0.02em;
-		margin-top: var(--space-2);
+		padding-top: var(--space-3);
 	}
 	.note {
-		margin: var(--space-2) 0 var(--space-5);
+		max-width: 44rem;
+		margin: var(--space-2) 0 var(--space-6);
 		color: var(--color-text-muted);
 	}
 	.err {
@@ -146,34 +149,10 @@
 		gap: var(--space-1);
 		font-size: var(--text-xs);
 	}
-	.list {
-		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0;
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-	}
-	th {
-		text-align: left;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--color-text-muted);
-		padding: var(--space-3) var(--space-4);
-		border-bottom: 1px solid var(--color-border);
-	}
-	td {
-		padding: var(--space-2) var(--space-4);
-		border-bottom: 1px solid var(--color-border);
-		font-size: var(--text-sm);
-	}
-	tbody tr:last-child td {
-		border-bottom: 0;
-	}
 	tr.expired .ids > :first-child {
 		color: var(--color-text-muted);
+		text-decoration: line-through;
+		text-decoration-color: var(--color-border-strong);
 	}
 	.name-cell {
 		display: flex;
@@ -186,12 +165,18 @@
 	.ids a,
 	.ids > span:first-child {
 		font-size: var(--text-md);
+		font-weight: var(--weight-medium);
 		color: var(--color-text);
 		text-decoration: none;
+	}
+	.ids a:hover {
+		text-decoration: underline;
+		text-decoration-color: var(--color-border-strong);
 	}
 	.date {
 		width: 10rem;
 		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
 	}
 	.act {
 		width: 3.5rem;
@@ -208,37 +193,10 @@
 		background: transparent;
 		color: var(--color-danger);
 		cursor: pointer;
+		transition: background var(--duration-fast) var(--ease-standard);
 	}
 	.icon-btn:hover {
-		background: var(--color-surface-sunken);
-	}
-	.empty {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		padding: var(--space-8) var(--space-5);
-		border: 1.5px dashed var(--color-border-strong);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		text-align: center;
-	}
-	.art {
-		display: grid;
-		place-items: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		margin-bottom: var(--space-2);
-		border-radius: var(--radius-full);
-		background: var(--color-surface-sunken);
-		color: var(--color-text-muted);
-	}
-	.empty h2 {
-		font-size: var(--text-lg);
-	}
-	.empty p {
-		margin: 0;
-		max-width: 28rem;
-		color: var(--color-text-muted);
+		background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 	}
 	.expiry {
 		display: none;

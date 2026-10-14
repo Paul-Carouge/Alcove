@@ -7,6 +7,19 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-10-14
+
+### Added
+- **Searchable PDFs**: turn a scan (PDF or image) into a copy whose text can be selected and searched in
+  any PDF reader, saved next to it as `<name> (OCR).pdf`, from the Documents page or a file's actions in
+  the app. `POST /api/v1/documents/{id}/searchable`. The OCR bundle gains `pdfunite`.
+- **Search by tag**: typing the start of a tag's name finds the files carrying it, on the web and in the
+  app; search results show tags.
+
+### Fixed
+- Mobile: uploads are no longer lost when the app is closed; they resume at the next start from where
+  they stopped.
+
 ## [0.22.0] - 2026-10-14
 
 ### Added

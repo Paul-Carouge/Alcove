@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.23.0](2026-10-14-v0.23.0.md) | 2026-10-14 | Text you can select |
 | [0.22.0](2026-10-14-v0.22.0.md) | 2026-10-14 | Labels that stay readable |
 | [0.21.0](2026-10-13-v0.21.0.md) | 2026-10-13 | The phone joins in |
 | [0.20.0](2026-10-13-v0.20.0.md) | 2026-10-13 | Finding the words |

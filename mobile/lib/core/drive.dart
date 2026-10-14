@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -79,7 +80,13 @@ enum UploadStatus { waiting, uploading, done, failed }
 
 /// One file sent from the phone.
 class UploadItem {
-  UploadItem({required this.name, required this.parent, required this.open});
+  UploadItem({
+    required this.name,
+    required this.parent,
+    required this.open,
+    this.path,
+    this.resumeUrl,
+  });
 
   final String name;
   final String parent;
@@ -87,24 +94,49 @@ class UploadItem {
   /// Gives a local file to send (copied from a content URI if needed).
   final Future<File> Function() open;
 
+  /// The queue's own copy of the file, which survives the app being closed.
+  String? path;
+
+  /// The tus upload to resume, once created.
+  String? resumeUrl;
+
   UploadStatus status = UploadStatus.waiting;
   int sent = 0;
   int total = 0;
   String error = '';
 
   double get fraction => total == 0 ? 0 : sent / total;
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'parent': parent,
+    'path': path,
+    'resume': resumeUrl,
+    'failed': status == UploadStatus.failed,
+  };
 }
 
-/// Sends files one at a time (tus, resumable within a session) and reports progress.
+/// Sends files one at a time (tus) and reports progress. Each file is first copied into the app's own
+/// storage and the queue is saved, so uploads interrupted by closing the app resume at the next start
+/// ([restore]), from where they stopped.
 class UploadQueue extends ChangeNotifier {
-  UploadQueue(this.session, {http.Client Function()? httpClient})
-    : _httpClient = httpClient ?? http.Client.new;
+  UploadQueue(
+    this.session, {
+    http.Client Function()? httpClient,
+    Future<Directory> Function()? storage,
+  }) : _httpClient = httpClient ?? http.Client.new,
+       _storage = storage ?? _defaultStorage;
 
   final Session session;
   final http.Client Function() _httpClient;
+  final Future<Directory> Function() _storage;
   final List<UploadItem> items = [];
   final _done = StreamController<String>.broadcast();
   bool _running = false;
+  bool _disposed = false;
+
+  static Future<Directory> _defaultStorage() async =>
+      Directory('${(await getApplicationSupportDirectory()).path}/uploads');
 
   /// Parent folder ids whose content changed (a file arrived).
   Stream<String> get completed => _done.stream;
@@ -114,26 +146,123 @@ class UploadQueue extends ChangeNotifier {
   int get finished => items.where((i) => i.status == UploadStatus.done).length;
   int get failedCount => items.where((i) => i.status == UploadStatus.failed).length;
 
+  void _changed() {
+    if (!_disposed) notifyListeners();
+  }
+
+  /// Queues files: they are copied into the app's storage first, then sent.
   void add(Iterable<UploadItem> files) {
-    items.addAll(files);
-    notifyListeners();
+    final list = files.toList();
+    items.addAll(list);
+    _changed();
+    unawaited(_stage(list));
+  }
+
+  Future<void> _stage(List<UploadItem> list) async {
+    final Directory dir;
+    try {
+      dir = await _storage();
+      await dir.create(recursive: true);
+    } catch (e) {
+      for (final item in list) {
+        item
+          ..status = UploadStatus.failed
+          ..error = e.toString();
+      }
+      _changed();
+      return;
+    }
+    for (final item in list) {
+      try {
+        final src = await item.open();
+        if (!src.path.startsWith(dir.path)) {
+          final safe = item.name.replaceAll(RegExp(r'[^\w.\- ]'), '_');
+          final copy = await src.copy('${dir.path}/${DateTime.now().microsecondsSinceEpoch}-$safe');
+          item.path = copy.path;
+        } else {
+          item.path = src.path;
+        }
+      } catch (e) {
+        item
+          ..status = UploadStatus.failed
+          ..error = e.toString();
+      }
+    }
+    await _save();
+    _changed();
     unawaited(_run());
   }
 
-  /// Forgets finished and failed items.
+  /// Picks up the uploads left by a previous run of the app.
+  Future<void> restore() async {
+    try {
+      final file = File('${(await _storage()).path}/queue.json');
+      if (!await file.exists()) return;
+      final list = jsonDecode(await file.readAsString()) as List<dynamic>;
+      for (final raw in list.cast<Map<String, dynamic>>()) {
+        final path = raw['path'] as String?;
+        if (path == null || !await File(path).exists()) continue;
+        final item = UploadItem(
+          name: raw['name'] as String,
+          parent: raw['parent'] as String? ?? '',
+          open: () async => File(path),
+          path: path,
+          resumeUrl: raw['resume'] as String?,
+        );
+        if (raw['failed'] == true) item.status = UploadStatus.failed;
+        items.add(item);
+      }
+    } catch (_) {
+      return; // a damaged queue file must not break the app
+    }
+    _changed();
+    unawaited(_run());
+  }
+
+  Future<void> _save() async {
+    try {
+      final dir = await _storage();
+      await dir.create(recursive: true);
+      final pending = items.where((i) => i.status != UploadStatus.done && i.path != null);
+      await File(
+        '${dir.path}/queue.json',
+      ).writeAsString(jsonEncode([for (final i in pending) i.toJson()]));
+    } catch (_) {
+      // Saving is best effort: the upload itself goes on.
+    }
+  }
+
+  Future<void> _discard(UploadItem item) async {
+    final path = item.path;
+    if (path == null) return;
+    try {
+      if (path.startsWith((await _storage()).path)) await File(path).delete();
+    } catch (_) {}
+  }
+
+  /// Forgets finished and failed items (and their copies).
   void clear() {
-    items.removeWhere((i) => i.status == UploadStatus.done || i.status == UploadStatus.failed);
-    notifyListeners();
+    final gone = items
+        .where((i) => i.status == UploadStatus.done || i.status == UploadStatus.failed)
+        .toList();
+    items.removeWhere(gone.contains);
+    _changed();
+    unawaited(() async {
+      for (final i in gone.where((i) => i.status == UploadStatus.failed)) {
+        await _discard(i);
+      }
+      await _save();
+    }());
   }
 
   void retryFailed() {
-    for (final i in items.where((i) => i.status == UploadStatus.failed)) {
+    for (final i in items.where((i) => i.status == UploadStatus.failed && i.path != null)) {
       i
         ..status = UploadStatus.waiting
         ..error = ''
         ..sent = 0;
     }
-    notifyListeners();
+    _changed();
     unawaited(_run());
   }
 
@@ -143,38 +272,49 @@ class UploadQueue extends ChangeNotifier {
     final client = _httpClient();
     final uploader = TusUploader(client: client);
     try {
-      while (true) {
-        final next = items.where((i) => i.status == UploadStatus.waiting).firstOrNull;
+      while (!_disposed) {
+        final next = items
+            .where((i) => i.status == UploadStatus.waiting && i.path != null)
+            .firstOrNull;
         if (next == null) break;
         next.status = UploadStatus.uploading;
-        notifyListeners();
+        _changed();
         try {
-          final file = await next.open();
+          final file = File(next.path!);
           next.total = await file.length();
           await uploader.upload(
             endpoint: session.pb.buildURL('/api/v1/uploads/'),
             token: session.pb.authStore.token,
             file: file,
             metadata: {'filename': next.name, 'parent': next.parent},
+            resumeUrl: next.resumeUrl,
+            onCreated: (url) {
+              next.resumeUrl = url;
+              unawaited(_save());
+            },
             onProgress: (sent, total) {
               next
                 ..sent = sent
                 ..total = total;
-              notifyListeners();
+              _changed();
             },
           );
           next.status = UploadStatus.done;
-          _done.add(next.parent);
+          await _discard(next);
+          if (!_done.isClosed) _done.add(next.parent);
         } on UploadException catch (e) {
           next
             ..status = UploadStatus.failed
             ..error = e.message;
+          // The server refused for good: start from scratch if retried.
+          if (e.permanent) next.resumeUrl = null;
         } catch (e) {
           next
             ..status = UploadStatus.failed
             ..error = e.toString();
         }
-        notifyListeners();
+        await _save();
+        _changed();
       }
     } finally {
       client.close();
@@ -184,6 +324,7 @@ class UploadQueue extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     unawaited(_done.close());
     super.dispose();
   }

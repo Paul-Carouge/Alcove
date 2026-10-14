@@ -315,7 +315,8 @@ void main() {
     addTearDown(() => dir.deleteSync(recursive: true));
     final a = File('${dir.path}/a.txt')..writeAsStringSync('hello');
     final b = File('${dir.path}/b.txt')..writeAsStringSync('world!');
-    final queue = UploadQueue(session, httpClient: () => client);
+    final store = Directory('${dir.path}/store');
+    final queue = UploadQueue(session, httpClient: () => client, storage: () async => store);
     final arrived = <String>[];
     queue.completed.listen(arrived.add);
     queue.add([
@@ -330,7 +331,34 @@ void main() {
     expect(queue.failedCount, 1);
     expect(arrived, ['n9', 'n9']);
     expect(drive.nodes.values.map((n) => n['name']), containsAll(['a.txt', 'b.txt']));
+    // Copies of sent files are removed; the failed one was never copied.
+    expect(store.listSync().whereType<File>().map((f) => f.path.split('/').last), ['queue.json']);
     queue.clear();
     expect(queue.items, isEmpty);
+  });
+
+  test('uploads left by a closed app resume at the next start', () async {
+    final drive = FakeDrive();
+    final client = MockClient((r) async => drive.handle(r));
+    final session = await _session(client);
+    final dir = Directory.systemTemp.createTempSync('resume');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final kept = File('${dir.path}/123-scan.pdf')..writeAsStringSync('%PDF-1.4 scan');
+    File('${dir.path}/queue.json').writeAsStringSync(
+      jsonEncode([
+        {'name': 'Scan 2026-10-14.pdf', 'parent': 'n5', 'path': kept.path, 'resume': null},
+        {'name': 'gone.pdf', 'parent': '', 'path': '${dir.path}/missing.pdf'},
+      ]),
+    );
+    final queue = UploadQueue(session, httpClient: () => client, storage: () async => dir);
+    await queue.restore();
+    expect(queue.items.map((i) => i.name), ['Scan 2026-10-14.pdf']); // the missing copy is dropped
+    while (queue.active) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(queue.finished, 1);
+    expect(drive.nodes.values.single['name'], 'Scan 2026-10-14.pdf');
+    expect(kept.existsSync(), isFalse);
+    expect(jsonDecode(File('${dir.path}/queue.json').readAsStringSync()), isEmpty);
   });
 }

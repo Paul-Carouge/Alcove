@@ -23,4 +23,6 @@ user asked for a complete Files tab and chose the dependencies.
 
 - ✅ Everything the web drive does day to day can be done from the phone.
 - ⚠️ Scanning depends on Google Play services; an F-Droid build would need another scanner.
-- ⚠️ Uploads stop if the app is closed (backups keep running in the background as before).
+- Uploads survive the app being closed (v0.23): each file is copied into the app's storage, the queue
+  is saved, and sending resumes at the next start from where tus left off. The copies take space until
+  sent.

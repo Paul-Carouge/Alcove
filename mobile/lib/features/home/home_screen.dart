@@ -44,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_updater.check());
+    // Files left unsent when the app was closed.
+    unawaited(_uploads.restore());
     widget
         .backupFactory(widget.session)
         .then((c) {

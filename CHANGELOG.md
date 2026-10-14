@@ -7,6 +7,24 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-10-14
+
+### Added
+- **Memories**: photos taken around today in previous years ("1 year ago"), above the timeline on the web
+  and in the app. `GET /api/v1/photos/memories`.
+- **ZIP downloads**: a photo selection, a folder (with its content), several files or a whole album
+  download as one ZIP. `POST /api/v1/zip`.
+- **Photo viewer (web)**: zoom with the wheel, a double click, a pinch or buttons, and pan; swipe between
+  photos on touch screens; slideshow; position counter; neighbours preloaded for instant navigation;
+  shortcuts `f` (favorite), `Delete` (trash), `Space` (slideshow), `+` `-` `0` (zoom), `Home` `End`.
+- **Timeline (web)**: select a range with Shift, select a whole month, start a selection from the circle on
+  a photo, jump between years.
+- **App**: pinch the grid to change its number of columns; in the viewer, double tap to zoom, drag down to
+  close, see the position, and save a photo or video to the phone's gallery.
+
+### Fixed
+- Web: the upload panel no longer covers the last rows of a list, even folded.
+
 ## [0.24.0] - 2026-10-14
 
 ### Added

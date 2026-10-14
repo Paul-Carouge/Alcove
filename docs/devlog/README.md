@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.25.0](2026-10-14-v0.25.0.md) | 2026-10-14 | The little things |
 | [0.24.0](2026-10-14-v0.24.0.md) | 2026-10-14 | The rooms nobody visits |
 | [0.23.0](2026-10-14-v0.23.0.md) | 2026-10-14 | Text you can select |
 | [0.22.0](2026-10-14-v0.22.0.md) | 2026-10-14 | Labels that stay readable |

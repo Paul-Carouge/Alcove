@@ -111,6 +111,18 @@ test('tags label files and filter documents', async ({ page }) => {
 	await expect(page.getByRole('button', { name: 'lease.pdf', exact: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'invoice.png', exact: true })).toHaveCount(0);
 
+	// Searching the tag's name finds the tagged file.
+	await page.getByRole('searchbox', { name: 'Search inside your documents' }).fill('contr');
+	await page.keyboard.press('Enter');
+	const hit = page.getByRole('listitem').filter({ hasText: 'lease.pdf' });
+	await expect(hit.getByText('Tag', { exact: true })).toBeVisible();
+	await expect(hit.getByText('Contrats')).toBeVisible();
+	await nav(page, 'Documents');
+	await page
+		.getByRole('radiogroup', { name: 'Tag' })
+		.getByRole('radio', { name: 'Contrats' })
+		.click();
+
 	// Rename the tag, then delete it: the file stays, untagged.
 	await page.getByRole('button', { name: 'Tags of lease.pdf' }).click();
 	const again = page.getByRole('dialog', { name: 'Tags of “lease.pdf”' });

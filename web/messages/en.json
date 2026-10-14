@@ -689,5 +689,6 @@
 	"tag_color_teal": "Teal",
 	"tag_color_blue": "Blue",
 	"tag_color_violet": "Violet",
-	"tag_color_pink": "Pink"
+	"tag_color_pink": "Pink",
+	"search_found_by_tag": "Tag"
 }

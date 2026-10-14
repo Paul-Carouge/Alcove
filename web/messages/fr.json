@@ -689,5 +689,6 @@
 	"tag_color_teal": "Turquoise",
 	"tag_color_blue": "Bleu",
 	"tag_color_violet": "Violet",
-	"tag_color_pink": "Rose"
+	"tag_color_pink": "Rose",
+	"search_found_by_tag": "Étiquette"
 }

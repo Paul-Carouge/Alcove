@@ -8,6 +8,8 @@
 	import type { DriveNode } from '#lib/drive/types.js';
 	import { search, type SearchHit } from '#lib/documents/api.js';
 	import Snippet from '#lib/documents/Snippet.svelte';
+	import TagChip from '#lib/tags/TagChip.svelte';
+	import { tags } from '#lib/tags/tags.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Alert from '#lib/ui/Alert.svelte';
@@ -38,6 +40,11 @@
 			});
 		return () => ctrl.abort();
 	});
+	$effect(() => {
+		tags.load().catch(() => {});
+	});
+	const tagsOf = (n: DriveNode) =>
+		(n.tags ?? []).map((id) => tags.byId.get(id)).filter((t) => t !== undefined);
 	const inText = $derived(results?.filter((h) => h.match === 'content').length ?? 0);
 
 	function submit(event: SubmitEvent) {
@@ -96,8 +103,14 @@
 					{#if match === 'content' && snippet?.length}
 						<Snippet segments={snippet} />
 					{/if}
+					{#if tagsOf(n).length}
+						<span class="tags"
+							>{#each tagsOf(n) as t (t.id)}<TagChip tag={t} />{/each}</span
+						>
+					{/if}
 					<span class="muted small">
 						{#if match === 'content'}<span class="badge">{m.search_found_in_text()}</span>{/if}
+						{#if match === 'tag'}<span class="badge">{m.search_found_by_tag()}</span>{/if}
 						{m.search_in({ folder: parentName(n) })}
 						{#if n.kind === 'file'}· {formatSize(n.size, locale)} · {formatDate(
 								n.updated,
@@ -185,6 +198,11 @@
 	.text {
 		gap: 2px;
 		padding: var(--space-1) 0;
+	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
 	}
 	.sep {
 		margin: 0 var(--space-1);

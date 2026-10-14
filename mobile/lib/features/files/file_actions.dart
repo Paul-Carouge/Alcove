@@ -10,6 +10,7 @@ import '../../core/drive.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 
 /// The message of a refused request, for a snackbar.
@@ -110,42 +111,31 @@ class _NameDialogState extends State<_NameDialog> {
 /// What the "+" button offers.
 enum AddAction { folder, upload, scan }
 
-Future<AddAction?> showAddSheet(BuildContext context, {required bool canScan}) {
+/// The M3 Expressive FAB menu of the "+" button, opened from the FAB at [fabKey].
+Future<AddAction?> showAddMenu(
+  BuildContext context, {
+  required GlobalKey fabKey,
+  required bool canScan,
+}) {
   final l = AppLocalizations.of(context);
-  return showModalBottomSheet<AddAction>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (context) => SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
-          child: InsetGroup(
-            children: [
-              GroupTile(
-                icon: Icons.create_new_folder_outlined,
-                title: l.newFolder,
-                onTap: () => Navigator.pop(context, AddAction.folder),
-              ),
-              GroupTile(
-                icon: Icons.upload_file_outlined,
-                title: l.uploadFiles,
-                subtitle: l.uploadFilesHint,
-                onTap: () => Navigator.pop(context, AddAction.upload),
-              ),
-              if (canScan)
-                GroupTile(
-                  icon: Icons.document_scanner_outlined,
-                  title: l.scanDocument,
-                  subtitle: l.scanDocumentHint,
-                  onTap: () => Navigator.pop(context, AddAction.scan),
-                ),
-            ],
-          ),
+  return showFabMenu<AddAction>(
+    context,
+    fabKey: fabKey,
+    closeLabel: MaterialLocalizations.of(context).closeButtonTooltip,
+    items: [
+      if (canScan)
+        FabMenuItem(
+          icon: Icons.document_scanner_outlined,
+          label: l.scanDocument,
+          value: AddAction.scan,
         ),
+      FabMenuItem(icon: Icons.upload_file_outlined, label: l.uploadFiles, value: AddAction.upload),
+      FabMenuItem(
+        icon: Icons.create_new_folder_outlined,
+        label: l.newFolder,
+        value: AddAction.folder,
       ),
-    ),
+    ],
   );
 }
 
@@ -170,36 +160,46 @@ Future<NodeAction?> showNodeSheet(BuildContext context, RecordModel node) {
         padding: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
-          child: InsetGroup(
-            title: node.getStringValue('name'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              GroupTile(
-                icon: Icons.drive_file_rename_outline,
-                title: l.rename,
-                onTap: () => Navigator.pop(context, NodeAction.rename),
-              ),
-              GroupTile(
-                icon: Icons.drive_file_move_outline,
-                title: l.move,
-                onTap: () => Navigator.pop(context, NodeAction.move),
-              ),
-              GroupTile(
-                icon: Icons.sell_outlined,
-                title: l.tags,
-                onTap: () => Navigator.pop(context, NodeAction.tags),
-              ),
-              if (_scanLike(node))
-                GroupTile(
-                  icon: Icons.find_in_page_outlined,
-                  title: l.searchableMake,
-                  subtitle: l.searchableHint,
-                  onTap: () => Navigator.pop(context, NodeAction.searchable),
-                ),
-              GroupTile(
-                icon: Icons.delete_outline,
-                title: l.trashConfirm,
-                danger: true,
-                onTap: () => Navigator.pop(context, NodeAction.trash),
+              SheetHeader(title: node.getStringValue('name')),
+              InsetGroup(
+                children: [
+                  GroupTile(
+                    icon: Icons.drive_file_rename_outline,
+                    title: l.rename,
+                    chevron: false,
+                    onTap: () => Navigator.pop(context, NodeAction.rename),
+                  ),
+                  GroupTile(
+                    icon: Icons.drive_file_move_outline,
+                    title: l.move,
+                    chevron: false,
+                    onTap: () => Navigator.pop(context, NodeAction.move),
+                  ),
+                  GroupTile(
+                    icon: Icons.sell_outlined,
+                    title: l.tags,
+                    chevron: false,
+                    onTap: () => Navigator.pop(context, NodeAction.tags),
+                  ),
+                  if (_scanLike(node))
+                    GroupTile(
+                      icon: Icons.find_in_page_outlined,
+                      title: l.searchableMake,
+                      subtitle: l.searchableHint,
+                      chevron: false,
+                      onTap: () => Navigator.pop(context, NodeAction.searchable),
+                    ),
+                  GroupTile(
+                    icon: Icons.delete_outline,
+                    title: l.trashConfirm,
+                    danger: true,
+                    chevron: false,
+                    onTap: () => Navigator.pop(context, NodeAction.trash),
+                  ),
+                ],
               ),
             ],
           ),
@@ -272,11 +272,11 @@ class _FolderPickerState extends State<_FolderPicker> {
       body: _failed
           ? EmptyState(icon: Icons.cloud_off_outlined, title: l.loadFailed)
           : folders == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: LoadingIndicator())
           : folders.isEmpty
           ? EmptyState(icon: Icons.folder_open_outlined, title: l.noSubfolders)
           : ListView(
-              padding: const EdgeInsets.only(top: AlcoveSpace.s3),
+              padding: const EdgeInsets.only(top: AlcoveSpace.s4),
               children: [
                 InsetGroup(
                   children: [
@@ -381,6 +381,7 @@ class UploadBanner extends StatelessWidget {
           top: false,
           child: Container(
             margin: const EdgeInsets.fromLTRB(AlcoveSpace.s3, 0, AlcoveSpace.s3, AlcoveSpace.s3),
+            constraints: const BoxConstraints(minHeight: 72),
             padding: const EdgeInsets.fromLTRB(
               AlcoveSpace.s4,
               AlcoveSpace.s3,
@@ -389,22 +390,23 @@ class UploadBanner extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: c.surfaceRaised,
-              borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+              borderRadius: BorderRadius.circular(AlcoveRadius.xl),
               border: Border.all(color: c.border),
-              boxShadow: c.shadowMD,
+              boxShadow: c.shadowLG,
             ),
             child: Row(
               children: [
                 SizedBox.square(
-                  dimension: 36,
+                  dimension: 40,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       CircularProgressIndicator(
                         value: active ? progress : 1,
-                        strokeWidth: 3,
+                        strokeWidth: 4,
+                        strokeCap: StrokeCap.round,
                         color: failed > 0 && !active ? c.danger : c.accent,
-                        backgroundColor: c.surfaceSunken,
+                        backgroundColor: c.accentSubtle,
                       ),
                       Icon(
                         active

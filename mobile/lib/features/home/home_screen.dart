@@ -6,6 +6,7 @@ import '../../core/app_update.dart';
 import '../../core/drive.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../theme/theme.dart';
 import '../account/account_screen.dart';
 import '../backup/backup_controller.dart';
 import '../backup/backup_screen.dart';
@@ -114,37 +115,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.photo_library_outlined),
-            selectedIcon: const Icon(Icons.photo_library),
-            label: l.tabPhotos,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.photo_album_outlined),
-            selectedIcon: const Icon(Icons.photo_album),
-            label: l.albumsTitle,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.folder_outlined),
-            selectedIcon: const Icon(Icons.folder),
-            label: l.tabFiles,
-          ),
-          NavigationDestination(
-            icon: ListenableBuilder(
-              listenable: _updater,
-              builder: (_, _) => Badge(
-                isLabelVisible: _updater.hasUpdate,
-                child: const Icon(Icons.person_outline),
-              ),
+      // A short navigation bar on paper, set apart from the content by a hairline.
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: context.colors.border)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _tab,
+          onDestinationSelected: (i) => setState(() => _tab = i),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.photo_library_outlined),
+              selectedIcon: const Icon(Icons.photo_library),
+              label: l.tabPhotos,
             ),
-            selectedIcon: const Icon(Icons.person),
-            label: l.tabAccount,
-          ),
-        ],
+            NavigationDestination(
+              icon: const Icon(Icons.photo_album_outlined),
+              selectedIcon: const Icon(Icons.photo_album),
+              label: l.albumsTitle,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.folder_outlined),
+              selectedIcon: const Icon(Icons.folder),
+              label: l.tabFiles,
+            ),
+            NavigationDestination(
+              icon: ListenableBuilder(
+                listenable: _updater,
+                builder: (_, _) => Badge(
+                  isLabelVisible: _updater.hasUpdate,
+                  child: const Icon(Icons.person_outline),
+                ),
+              ),
+              selectedIcon: const Icon(Icons.person),
+              label: l.tabAccount,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -13,6 +13,7 @@ import '../../core/server_url.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 
 /// First screen: the user enters (later: scans) the URL of their server,
@@ -133,10 +134,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const BrandHeader(name: kProductName),
-                  const SizedBox(height: AlcoveSpace.s8),
+                  const SizedBox(height: AlcoveSpace.s7),
                   Semantics(
                     header: true,
-                    child: Text(l.connectTitle, style: theme.textTheme.headlineSmall),
+                    child: Text(l.connectTitle, style: theme.textTheme.headlineMedium),
                   ),
                   const SizedBox(height: AlcoveSpace.s2),
                   Text(
@@ -163,27 +164,28 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     ),
                   ),
                   const SizedBox(height: AlcoveSpace.s4),
-                  FilledButton(
-                    key: const Key('checkButton'),
-                    onPressed: _checking ? null : _check,
-                    child: _checking
-                        ? Semantics(
-                            label: l.checking,
-                            child: const SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : Text(l.checkButton),
-                  ),
-                  const SizedBox(height: AlcoveSpace.s3),
-                  Tooltip(
-                    message: l.comingSoon,
-                    child: OutlinedButton.icon(
-                      onPressed: null,
-                      icon: const Icon(Icons.qr_code_scanner),
-                      label: Text(l.scanQrButton),
-                    ),
+                  // An M3 Expressive button group: the main action and the (upcoming) QR scan.
+                  ButtonGroup(
+                    flex: const [3, 1],
+                    children: [
+                      FilledButton(
+                        key: const Key('checkButton'),
+                        onPressed: _checking ? null : _check,
+                        child: _checking
+                            ? Semantics(
+                                label: l.checking,
+                                child: LoadingIndicator(size: 28, color: colors.textMuted),
+                              )
+                            : Text(l.checkButton),
+                      ),
+                      Tooltip(
+                        message: '${l.scanQrButton} · ${l.comingSoon}',
+                        child: OutlinedButton(
+                          onPressed: null,
+                          child: Icon(Icons.qr_code_scanner, semanticLabel: l.scanQrButton),
+                        ),
+                      ),
+                    ],
                   ),
                   if (result != null) ...[
                     const SizedBox(height: AlcoveSpace.s5),

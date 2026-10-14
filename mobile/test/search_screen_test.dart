@@ -86,9 +86,9 @@ void main() {
     await tester.enterText(find.byKey(const Key('searchField')), 'depot');
     await settle(tester);
     expect(queries, ['depot']); // debounced: one request
-    expect(find.text('FILES AND FOLDERS'), findsOneWidget);
-    expect(find.text('INSIDE DOCUMENTS'), findsOneWidget);
-    expect(find.text('BY TAG'), findsOneWidget);
+    expect(find.text('Files and folders'), findsOneWidget);
+    expect(find.text('Inside documents'), findsOneWidget);
+    expect(find.text('By tag'), findsOneWidget);
     expect(find.text('Tagged “Dépenses”'), findsOneWidget);
     expect(find.text('Contrats'), findsOneWidget);
     expect(find.text('bail.pdf'), findsOneWidget);

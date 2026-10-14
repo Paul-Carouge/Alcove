@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:alcove/l10n/gen/app_localizations.dart';
 import 'package:alcove/theme/theme.dart';
+import 'package:alcove/theme/tokens.g.dart';
 import 'package:alcove/ui/remote_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -21,8 +22,12 @@ final _pictures = [
 ];
 
 Future<void> loadFonts() async {
-  final inter = FontLoader('Inter')..addFont(rootBundle.load('assets/fonts/InterVariable.ttf'));
+  final inter = FontLoader(AlcoveFont.sans)
+    ..addFont(rootBundle.load('assets/fonts/InterVariable.ttf'));
   await inter.load();
+  final fraunces = FontLoader(AlcoveFont.display)
+    ..addFont(rootBundle.load('assets/fonts/FrauncesVariable.ttf'));
+  await fraunces.load();
   final icons = FontLoader('MaterialIcons')
     ..addFont(
       Future.value(

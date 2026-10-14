@@ -7,6 +7,7 @@ import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import '../backup/backup_controller.dart';
@@ -279,7 +280,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.all(AlcoveSpace.s5),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+            child: Center(child: LoadingIndicator(size: 40)),
           ),
         ),
       );
@@ -330,10 +331,10 @@ class _MonthHeader extends SliverPersistentHeaderDelegate {
   final Color background;
 
   @override
-  double get minExtent => 52;
+  double get minExtent => 60;
 
   @override
-  double get maxExtent => 52;
+  double get maxExtent => 60;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
@@ -342,11 +343,11 @@ class _MonthHeader extends SliverPersistentHeaderDelegate {
       color: background.withValues(alpha: overlapsContent ? 0.94 : 1),
       padding: const EdgeInsets.fromLTRB(
         AlcoveSpace.s4,
-        AlcoveSpace.s3,
         AlcoveSpace.s4,
-        AlcoveSpace.s2,
+        AlcoveSpace.s4,
+        AlcoveSpace.s3,
       ),
-      alignment: Alignment.bottomLeft,
+      alignment: AlignmentDirectional.bottomStart,
       child: Semantics(
         header: true,
         child: Text.rich(
@@ -356,9 +357,12 @@ class _MonthHeader extends SliverPersistentHeaderDelegate {
               if (year.isNotEmpty)
                 TextSpan(
                   text: '  $year',
-                  style: context.text.titleMedium?.copyWith(
+                  style: TextStyle(
+                    fontFamily: AlcoveFont.sans,
                     color: c.textMuted,
+                    fontSize: AlcoveFont.sizeSm + 1,
                     fontWeight: AlcoveFont.medium,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
             ],
@@ -394,34 +398,45 @@ class _BackupChip extends StatelessWidget {
         : (Icons.cloud_done_outlined, c.success);
     return Tooltip(
       message: l.backupTitle,
-      child: Material(
-        color: c.surface,
-        shape: StadiumBorder(side: BorderSide(color: c.border)),
+      child: Semantics(
+        button: true,
+        label: l.backupTitle,
         child: InkWell(
           customBorder: const StadiumBorder(),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AlcoveSpace.s3,
-              vertical: AlcoveSpace.s2,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 20, color: color),
-                if (running && p != null && p.total > 0) ...[
-                  const SizedBox(width: AlcoveSpace.s2),
-                  Text(
-                    '${p.processed}/${p.total}',
-                    style: TextStyle(
-                      fontSize: AlcoveFont.sizeXs,
-                      fontWeight: AlcoveFont.semibold,
-                      color: c.text,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: Center(
+              child: AnimatedContainer(
+                duration: AlcoveSprings.of(context, AlcoveSprings.medium),
+                curve: AlcoveSprings.spatial,
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s3),
+                decoration: ShapeDecoration(
+                  color: running ? c.accentSubtle : c.surface,
+                  shape: StadiumBorder(
+                    side: BorderSide(color: running ? c.accentSubtle : c.border),
                   ),
-                ],
-              ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 20, color: color),
+                    if (running && p != null && p.total > 0) ...[
+                      const SizedBox(width: AlcoveSpace.s2),
+                      Text(
+                        '${p.processed}/${p.total}',
+                        style: TextStyle(
+                          fontSize: AlcoveFont.sizeXs,
+                          fontWeight: AlcoveFont.semibold,
+                          color: c.text,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -459,10 +474,7 @@ class MediaTile extends StatelessWidget {
                   Center(
                     child: item.isReady
                         ? Icon(Icons.image_outlined, color: c.textMuted)
-                        : const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                        : const LoadingIndicator(size: 28),
                   ),
                 if (item.isVideo)
                   Positioned(
@@ -494,7 +506,7 @@ class MediaTile extends StatelessWidget {
                       Icons.favorite,
                       size: 18,
                       color: c.favorite,
-                      shadows: const [Shadow(blurRadius: 4, color: Color(0x66000000))],
+                      shadows: [Shadow(blurRadius: 4, color: c.stageScrim)],
                     ),
                   ),
               ],
@@ -516,7 +528,10 @@ class _Pill extends StatelessWidget {
       color: context.colors.stageScrim,
       borderRadius: BorderRadius.circular(AlcoveRadius.full),
     ),
-    child: Padding(padding: const EdgeInsets.fromLTRB(4, 2, 7, 2), child: child),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(AlcoveSpace.s1, 2, AlcoveSpace.s2, 2),
+      child: child,
+    ),
   );
 }
 
@@ -533,16 +548,16 @@ class _Memories extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final c = context.colors;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AlcoveSpace.s3),
+      padding: const EdgeInsets.only(top: AlcoveSpace.s2, bottom: AlcoveSpace.s2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s2),
-            child: Text(l.memories, style: context.text.titleMedium),
+          SectionHeader(
+            title: l.memories,
+            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s3),
           ),
           SizedBox(
-            height: 176,
+            height: 196,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s4),
@@ -557,9 +572,9 @@ class _Memories extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => onOpen(items),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+                      borderRadius: BorderRadius.circular(AlcoveRadius.xl),
                       child: SizedBox(
-                        width: 128,
+                        width: 144,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -572,7 +587,7 @@ class _Memories extends StatelessWidget {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     c.stage.withValues(alpha: 0),
-                                    c.stage.withValues(alpha: 0.75),
+                                    c.stage.withValues(alpha: 0.7),
                                   ],
                                 ),
                               ),
@@ -586,11 +601,7 @@ class _Memories extends StatelessWidget {
                                 children: [
                                   Text(
                                     l.yearsAgo(ago),
-                                    style: TextStyle(
-                                      color: c.onStage,
-                                      fontWeight: AlcoveFont.semibold,
-                                      fontSize: AlcoveFont.sizeMd,
-                                    ),
+                                    style: displayStyle(AlcoveFont.sizeLg, c.onStage),
                                   ),
                                   Text(
                                     '$year · ${items.length}',

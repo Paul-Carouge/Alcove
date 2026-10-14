@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
+import 'expressive.dart';
 
 /// The Alcove mark (an arch in a rounded square), drawn like the web's Logo.svelte.
 class AlcoveLogo extends StatelessWidget {
@@ -56,7 +57,38 @@ class _LogoPainter extends CustomPainter {
   bool shouldRepaint(_LogoPainter old) => old.bg != bg || old.fg != fg;
 }
 
-/// A rounded group of rows, like iOS settings and the web's cards.
+/// A section heading in the display serif, like a chapter title in a notebook.
+class SectionHeader extends StatelessWidget {
+  const SectionHeader({super.key, required this.title, this.trailing, this.padding});
+
+  final String title;
+  final Widget? trailing;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          padding ??
+          const EdgeInsetsDirectional.fromSTEB(AlcoveSpace.s1, 0, AlcoveSpace.s1, AlcoveSpace.s3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(title, style: context.text.titleMedium),
+            ),
+          ),
+          ?trailing,
+        ],
+      ),
+    );
+  }
+}
+
+/// A group of rows, M3 Expressive style: each row is its own surface, separated by a thin gap
+/// of paper; the group's outer corners are large and its inner corners small.
 class InsetGroup extends StatelessWidget {
   const InsetGroup({super.key, this.title, required this.children, this.footer});
 
@@ -64,62 +96,74 @@ class InsetGroup extends StatelessWidget {
   final List<Widget> children;
   final String? footer;
 
+  static const _outer = Radius.circular(AlcoveRadius.xl);
+  static const _inner = Radius.circular(AlcoveRadius.sm / 2);
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final n = children.length;
     return Padding(
       padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s5),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (title != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AlcoveSpace.s2, 0, 0, AlcoveSpace.s2),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  title!.toUpperCase(),
-                  style: TextStyle(
-                    color: c.textMuted,
-                    fontSize: AlcoveFont.sizeXs,
-                    fontWeight: AlcoveFont.semibold,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-            ),
-          DecoratedBox(
-            decoration: BoxDecoration(
+          if (title != null) SectionHeader(title: title!),
+          for (var i = 0; i < n; i++) ...[
+            if (i > 0) const SizedBox(height: 2),
+            Material(
               color: c.surface,
-              borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-              border: Border.all(color: c.border),
-              boxShadow: c.shadowSM,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  children: [
-                    for (var i = 0; i < children.length; i++) ...[
-                      if (i > 0) const Divider(indent: AlcoveSpace.s4 + 40 + AlcoveSpace.s3),
-                      children[i],
-                    ],
-                  ],
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
+                  top: i == 0 ? _outer : _inner,
+                  bottom: i == n - 1 ? _outer : _inner,
                 ),
               ),
+              child: children[i],
             ),
-          ),
+          ],
           if (footer != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(AlcoveSpace.s2, AlcoveSpace.s2, AlcoveSpace.s2, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AlcoveSpace.s2,
+                AlcoveSpace.s3,
+                AlcoveSpace.s2,
+                0,
+              ),
               child: Text(
                 footer!,
-                style: TextStyle(color: c.textMuted, fontSize: AlcoveFont.sizeXs),
+                style: TextStyle(
+                  color: c.textMuted,
+                  fontSize: AlcoveFont.sizeXs + 1,
+                  height: AlcoveFont.leadingNormal,
+                ),
               ),
             ),
         ],
       ),
+    );
+  }
+}
+
+/// An icon on a soft tinted square: the leading mark of list rows.
+class TintedIcon extends StatelessWidget {
+  const TintedIcon({super.key, required this.icon, required this.color, this.size = 40});
+
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(AlcoveRadius.md),
+      ),
+      child: Icon(icon, size: size * 0.55, color: color),
     );
   }
 }
@@ -135,8 +179,11 @@ class GroupTile extends StatelessWidget {
     this.onTap,
     this.tint,
     this.danger = false,
+    this.chevron = true,
   });
 
+  /// Shows a chevron on tappable rows that lead somewhere (not on actions in a sheet).
+  final bool chevron;
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -152,20 +199,12 @@ class GroupTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 60),
+        constraints: const BoxConstraints(minHeight: 64),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s4, vertical: AlcoveSpace.s3),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AlcoveRadius.md),
-                ),
-                child: Icon(icon, size: 22, color: color),
-              ),
+              TintedIcon(icon: icon, color: color),
               const SizedBox(width: AlcoveSpace.s3),
               Expanded(
                 child: Column(
@@ -176,6 +215,7 @@ class GroupTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: AlcoveFont.sizeMd,
                         fontWeight: AlcoveFont.medium,
+                        height: 1.3,
                         color: danger ? c.danger : c.text,
                       ),
                     ),
@@ -186,7 +226,7 @@ class GroupTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: AlcoveFont.sizeSm,
                           color: c.textMuted,
-                          height: 1.35,
+                          height: 1.4,
                         ),
                       ),
                     ],
@@ -196,11 +236,63 @@ class GroupTile extends StatelessWidget {
               if (trailing != null) ...[
                 const SizedBox(width: AlcoveSpace.s2),
                 trailing!,
-              ] else if (onTap != null && !danger)
-                Icon(Icons.chevron_right, color: c.textMuted),
+              ] else if (onTap != null && !danger && chevron)
+                Icon(Icons.chevron_right, color: c.borderStrong),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The title (and optional line of context) at the top of a bottom sheet.
+class SheetHeader extends StatelessWidget {
+  const SheetHeader({super.key, required this.title, this.subtitle, this.leading});
+
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AlcoveSpace.s5,
+        AlcoveSpace.s1,
+        AlcoveSpace.s5,
+        AlcoveSpace.s4,
+      ),
+      child: Row(
+        children: [
+          if (leading != null) ...[leading!, const SizedBox(width: AlcoveSpace.s3)],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.text.titleLarge,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: AlcoveSpace.s1),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: c.textMuted, fontSize: AlcoveFont.sizeSm),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -222,24 +314,31 @@ class EmptyState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AlcoveSpace.s6),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
+          constraints: const BoxConstraints(maxWidth: 340),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(color: c.accentSubtle, shape: BoxShape.circle),
-                child: Icon(icon, size: 32, color: c.accent),
+                width: 96,
+                height: 96,
+                decoration: ShapeDecoration(
+                  color: c.accentSubtle,
+                  shape: const PolarShapeBorder(PolarShape.sunny),
+                ),
+                child: Icon(icon, size: 36, color: c.accent),
               ),
-              const SizedBox(height: AlcoveSpace.s4),
-              Text(title, textAlign: TextAlign.center, style: context.text.titleMedium),
+              const SizedBox(height: AlcoveSpace.s5),
+              Text(title, textAlign: TextAlign.center, style: context.text.titleLarge),
               if (body != null) ...[
                 const SizedBox(height: AlcoveSpace.s2),
                 Text(
                   body!,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: c.textMuted, height: 1.45),
+                  style: TextStyle(
+                    color: c.textMuted,
+                    fontSize: AlcoveFont.sizeSm + 1,
+                    height: AlcoveFont.leadingNormal,
+                  ),
                 ),
               ],
               if (action != null) ...[const SizedBox(height: AlcoveSpace.s5), action!],
@@ -251,7 +350,7 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// A softly pulsing placeholder block while content loads.
+/// A softly pulsing placeholder block while content loads (still when motion is reduced).
 class Skeleton extends StatefulWidget {
   const Skeleton({super.key, this.radius = AlcoveRadius.sm});
 
@@ -291,12 +390,19 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
 
 /// A circular progress ring with content in the middle.
 class ProgressRing extends StatelessWidget {
-  const ProgressRing({super.key, required this.value, required this.child, this.size = 112});
+  const ProgressRing({
+    super.key,
+    required this.value,
+    required this.child,
+    this.size = 112,
+    this.stroke = 6,
+  });
 
   /// 0..1, or null for indeterminate.
   final double? value;
   final Widget child;
   final double size;
+  final double stroke;
 
   @override
   Widget build(BuildContext context) {
@@ -307,11 +413,11 @@ class ProgressRing extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           if (value == null)
-            SizedBox.expand(child: CircularProgressIndicator(strokeWidth: 8, color: c.accent))
+            LoadingIndicator(size: size * 0.6)
           else
             CustomPaint(
               size: Size.square(size),
-              painter: _RingPainter(value!.clamp(0, 1), c.accent, c.accentSubtle),
+              painter: _RingPainter(value!.clamp(0, 1), c.accent, c.accentSubtle, stroke),
             ),
           child,
         ],
@@ -321,14 +427,14 @@ class ProgressRing extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter(this.value, this.fg, this.bg);
+  _RingPainter(this.value, this.fg, this.bg, this.stroke);
   final double value;
   final Color fg;
   final Color bg;
+  final double stroke;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 8.0;
     final rect = (Offset.zero & size).deflate(stroke / 2);
     canvas.drawArc(
       rect,
@@ -340,6 +446,7 @@ class _RingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke,
     );
+    if (value <= 0) return;
     canvas.drawArc(
       rect,
       -math.pi / 2,
@@ -354,10 +461,11 @@ class _RingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.value != value || old.fg != fg;
+  bool shouldRepaint(_RingPainter old) =>
+      old.value != value || old.fg != fg || old.bg != bg || old.stroke != stroke;
 }
 
-/// User initials on a soft accent circle.
+/// User initials, set in the serif, on a soft accent "cookie" (an Expressive shape).
 class AlcoveAvatar extends StatelessWidget {
   const AlcoveAvatar({super.key, required this.name, required this.email, this.size = 40});
 
@@ -378,54 +486,110 @@ class AlcoveAvatar extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: c.accentSubtle, shape: BoxShape.circle),
-      child: Text(
-        initials,
-        style: TextStyle(color: c.accent, fontWeight: AlcoveFont.semibold, fontSize: size * 0.36),
+      decoration: ShapeDecoration(
+        color: c.accentSubtle,
+        shape: const PolarShapeBorder(PolarShape.cookie),
       ),
+      child: Text(initials, style: displayStyle(size * 0.38, c.accent)),
     );
   }
 }
 
-/// The header of a main screen: a large title that shrinks into the app bar as the content scrolls.
+/// The header of a main screen, like M3 Expressive's large flexible top app bar: a large serif
+/// title (and optional subtitle) that settles into the bar as the content scrolls, with a
+/// hairline once content passes under it.
 class LargeTitleAppBar extends StatelessWidget {
-  const LargeTitleAppBar({super.key, required this.title, this.actions = const [], this.leading});
+  const LargeTitleAppBar({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.actions = const [],
+    this.leading,
+  });
 
   final String title;
+  final String? subtitle;
   final List<Widget> actions;
   final Widget? leading;
+
+  static const double _expanded = 132;
+  static const double _subtitleHeight = 24;
+  static const double _bigSize = AlcoveFont.sizeXxxl - 2;
+  static const double _smallSize = AlcoveFont.sizeLg + 1;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final hasLeading = leading != null || (ModalRoute.of(context)?.impliesAppBarDismissal ?? false);
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 116,
+      expandedHeight: _expanded + (subtitle == null ? 0 : _subtitleHeight),
       leading: leading,
       automaticallyImplyLeading: leading == null,
       backgroundColor: c.bg,
+      titleSpacing: 0,
       actions: [
         ...actions,
         const SizedBox(width: AlcoveSpace.s2),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsetsDirectional.only(
-          start: leading == null && !Navigator.of(context).canPop() ? AlcoveSpace.s4 : 56,
-          bottom: AlcoveSpace.s3 + 2,
-        ),
-        expandedTitleScale: 1.55,
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontFamily: AlcoveFont.sans,
-            fontSize: 21,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-            color: c.text,
-          ),
-        ),
+      flexibleSpace: Builder(
+        builder: (context) {
+          final s = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>()!;
+          final range = s.maxExtent - s.minExtent;
+          final t = range <= 0
+              ? 0.0
+              : ((s.currentExtent - s.minExtent) / range).clamp(0.0, 1.0).toDouble();
+          final size = _smallSize + (_bigSize - _smallSize) * t;
+          final collapsedStart = hasLeading ? 56.0 : AlcoveSpace.s4;
+          final collapsedEnd = AlcoveSpace.s4 + actions.length * 52.0;
+          final below = subtitle == null ? 0.0 : _subtitleHeight * t;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              PositionedDirectional(
+                start: collapsedStart + (AlcoveSpace.s4 - collapsedStart) * t,
+                end: collapsedEnd + (AlcoveSpace.s4 - collapsedEnd) * t,
+                bottom:
+                    (kToolbarHeight - size * AlcoveFont.leadingTight) / 2 * (1 - t) +
+                    AlcoveSpace.s3 * t +
+                    below,
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: displayStyle(size, c.text),
+                  ),
+                ),
+              ),
+              if (subtitle != null)
+                PositionedDirectional(
+                  start: AlcoveSpace.s4,
+                  end: AlcoveSpace.s4,
+                  bottom: AlcoveSpace.s3,
+                  child: Opacity(
+                    opacity: ((t - 0.5) * 2).clamp(0.0, 1.0).toDouble(),
+                    child: Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: c.textMuted, fontSize: AlcoveFont.sizeSm + 1),
+                    ),
+                  ),
+                ),
+              PositionedDirectional(
+                start: 0,
+                end: 0,
+                bottom: 0,
+                child: Opacity(
+                  opacity: (1 - t * 4).clamp(0.0, 1.0).toDouble(),
+                  child: Divider(height: 1, color: c.border),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -441,29 +605,9 @@ class BrandHeader extends StatelessWidget {
     final c = context.colors;
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(AlcoveSpace.s2),
-          decoration: BoxDecoration(
-            color: c.surface,
-            borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-            border: Border.all(color: c.border),
-            boxShadow: c.shadowSM,
-          ),
-          child: const AlcoveLogo(size: 36),
-        ),
+        const AlcoveLogo(size: 36),
         const SizedBox(width: AlcoveSpace.s3),
-        ExcludeSemantics(
-          child: Text(
-            name,
-            style: TextStyle(
-              fontFamily: AlcoveFont.sans,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-              color: c.text,
-            ),
-          ),
-        ),
+        ExcludeSemantics(child: Text(name, style: displayStyle(AlcoveFont.sizeXl + 2, c.text))),
       ],
     );
   }

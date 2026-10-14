@@ -7,6 +7,7 @@ import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import 'media.dart';
 import 'photo_viewer.dart';
+import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import 'photos_screen.dart';
@@ -81,7 +82,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
           itemCount: 4,
           itemBuilder: (_, _) => const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [AspectRatio(aspectRatio: 1, child: Skeleton(radius: AlcoveRadius.lg))],
+            children: [AspectRatio(aspectRatio: 1, child: Skeleton(radius: AlcoveRadius.xl))],
           ),
         ),
       );
@@ -130,11 +131,11 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                       aspectRatio: 1,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-                          boxShadow: colors.shadowMD,
+                          borderRadius: BorderRadius.circular(AlcoveRadius.xl),
+                          boxShadow: colors.shadowSM,
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+                          borderRadius: BorderRadius.circular(AlcoveRadius.xl),
                           child: ColoredBox(
                             color: colors.accentSubtle,
                             child: Stack(
@@ -149,14 +150,14 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                                     top: AlcoveSpace.s2,
                                     right: AlcoveSpace.s2,
                                     child: Container(
-                                      padding: const EdgeInsets.all(5),
-                                      decoration: BoxDecoration(
+                                      padding: const EdgeInsets.all(AlcoveSpace.s2 - 2),
+                                      decoration: ShapeDecoration(
                                         color: colors.stageScrim,
-                                        shape: BoxShape.circle,
+                                        shape: const PolarShapeBorder(PolarShape.cookie),
                                       ),
                                       child: Icon(
                                         Icons.people_alt_outlined,
-                                        size: 14,
+                                        size: 16,
                                         color: colors.onStage,
                                       ),
                                     ),
@@ -167,15 +168,12 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: AlcoveSpace.s2 + 2),
+                    const SizedBox(height: AlcoveSpace.s3),
                     Text(
                       a['name'] as String,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: AlcoveFont.semibold,
-                        fontSize: AlcoveFont.sizeMd,
-                      ),
+                      style: displayStyle(AlcoveFont.sizeLg, colors.text),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -211,7 +209,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     maxCrossAxisExtent: 240,
     mainAxisSpacing: AlcoveSpace.s5,
     crossAxisSpacing: AlcoveSpace.s4,
-    childAspectRatio: 0.74,
+    childAspectRatio: 0.72,
   );
 }
 
@@ -303,17 +301,13 @@ class _AlbumScreenState extends State<AlbumScreen> {
       ];
     } else {
       content = [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s3),
-            child: Text(
-              l.albumCount(items.length),
-              style: TextStyle(color: context.colors.textMuted),
-            ),
-          ),
-        ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(AlcoveSpace.s2, 0, AlcoveSpace.s2, AlcoveSpace.s7),
+          padding: const EdgeInsets.fromLTRB(
+            AlcoveSpace.s2,
+            AlcoveSpace.s3,
+            AlcoveSpace.s2,
+            AlcoveSpace.s7,
+          ),
           sliver: SliverGrid.builder(
             gridDelegate: grid,
             itemCount: items.length,
@@ -336,7 +330,10 @@ class _AlbumScreenState extends State<AlbumScreen> {
         edgeOffset: 120,
         child: CustomScrollView(
           slivers: [
-            LargeTitleAppBar(title: widget.name),
+            LargeTitleAppBar(
+              title: widget.name,
+              subtitle: items == null ? null : l.albumCount(items.length),
+            ),
             ...content,
           ],
         ),

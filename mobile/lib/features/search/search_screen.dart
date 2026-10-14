@@ -138,7 +138,8 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: c.bg,
       appBar: AppBar(
-        titleSpacing: 0,
+        titleSpacing: Navigator.of(context).canPop() ? 0 : AlcoveSpace.s4,
+        toolbarHeight: 72,
         title: TextField(
           key: const Key('searchField'),
           controller: _query,
@@ -159,10 +160,24 @@ class _SearchScreenState extends State<SearchScreen> {
                       _search();
                     },
                   ),
-            isDense: true,
+            filled: true,
+            fillColor: c.surface,
+            contentPadding: const EdgeInsets.symmetric(vertical: AlcoveSpace.s4),
+            border: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(AlcoveRadius.full)),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(AlcoveRadius.full)),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: const BorderRadius.all(Radius.circular(AlcoveRadius.full)),
+              borderSide: BorderSide(color: c.focus, width: 1.5),
+            ),
           ),
         ),
-        actions: const [SizedBox(width: AlcoveSpace.s3)],
+        actions: const [SizedBox(width: AlcoveSpace.s4)],
         bottom: _loading
             ? const PreferredSize(
                 preferredSize: Size.fromHeight(2),
@@ -179,7 +194,7 @@ class _SearchScreenState extends State<SearchScreen> {
         null => EmptyState(icon: Icons.manage_search, title: l.searchTitle, body: l.searchPrompt),
         [] => EmptyState(icon: Icons.search_off, title: l.searchNone(_query.text.trim())),
         _ => ListView(
-          padding: const EdgeInsets.only(top: AlcoveSpace.s3, bottom: AlcoveSpace.s6),
+          padding: const EdgeInsets.only(top: AlcoveSpace.s4, bottom: AlcoveSpace.s6),
           children: [
             if (byName.isNotEmpty)
               InsetGroup(title: l.searchByName, children: [for (final h in byName) row(h)]),

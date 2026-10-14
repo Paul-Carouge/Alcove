@@ -12,6 +12,8 @@ import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/expressive.dart';
+import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import 'media.dart';
 
@@ -140,38 +142,44 @@ class _PhotoViewerState extends State<PhotoViewer> {
       isScrollControlled: true,
       builder: (context) => SafeArea(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.75),
           child: ListView(
             shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(AlcoveSpace.s5, 0, AlcoveSpace.s5, AlcoveSpace.s5),
+            padding: const EdgeInsets.only(bottom: AlcoveSpace.s2),
             children: [
-              Text(l.details, style: context.text.titleLarge),
-              const SizedBox(height: AlcoveSpace.s3),
-              for (final (label, value) in rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AlcoveSpace.s2),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 112,
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: context.colors.textMuted,
-                            fontSize: AlcoveFont.sizeSm,
+              SheetHeader(title: l.details),
+              InsetGroup(
+                children: [
+                  for (final (label, value) in rows)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AlcoveSpace.s4,
+                        vertical: AlcoveSpace.s3,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: TextStyle(
+                              color: context.colors.textMuted,
+                              fontSize: AlcoveFont.sizeXs + 1,
+                              fontWeight: AlcoveFont.medium,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 2),
+                          SelectableText(
+                            value,
+                            style: const TextStyle(
+                              fontSize: AlcoveFont.sizeMd,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: SelectableText(
-                          value,
-                          style: const TextStyle(fontWeight: AlcoveFont.medium),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
@@ -258,7 +266,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
           fit: StackFit.expand,
           children: [
             if (_token.isEmpty)
-              const Center(child: CircularProgressIndicator())
+              Center(child: LoadingIndicator(color: colors.onStage))
             else
               PageView.builder(
                 controller: _pages,
@@ -339,11 +347,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
                                         : DateFormat.yMMMMd(locale).format(taken),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: colors.onStage,
-                                      fontWeight: AlcoveFont.semibold,
-                                      fontSize: AlcoveFont.sizeMd,
-                                    ),
+                                    style: displayStyle(AlcoveFont.sizeLg + 1, colors.onStage),
                                   ),
                                   if (taken != null || widget.items.length > 1)
                                     Text(
@@ -381,55 +385,48 @@ class _PhotoViewerState extends State<PhotoViewer> {
                 child: AnimatedOpacity(
                   opacity: _chrome ? 1 : 0,
                   duration: fade,
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: AlcoveSpace.s4),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s2),
-                          decoration: BoxDecoration(
-                            color: colors.stagePanel.withValues(alpha: 0.92),
-                            borderRadius: BorderRadius.circular(AlcoveRadius.full),
-                            border: Border.all(color: colors.stageBorder),
-                          ),
-                          child: IconTheme(
-                            data: IconThemeData(color: colors.onStage),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_mine(item))
-                                  IconButton(
-                                    tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
-                                    onPressed: _toggleFavorite,
-                                    icon: Icon(
-                                      item.favorite ? Icons.favorite : Icons.favorite_border,
-                                      color: item.favorite ? colors.favorite : null,
-                                    ),
-                                  ),
+                  child: AnimatedSlide(
+                    offset: _chrome ? Offset.zero : const Offset(0, 0.6),
+                    duration: AlcoveSprings.of(context, AlcoveSprings.medium),
+                    curve: AlcoveSprings.spatial,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: AlcoveSpace.s4),
+                        child: Center(
+                          child: FloatingToolbar(
+                            color: colors.stagePanel.withValues(alpha: 0.94),
+                            foreground: colors.onStage,
+                            border: colors.stageBorder,
+                            children: [
+                              if (_mine(item))
                                 IconButton(
-                                  tooltip: l.details,
-                                  onPressed: _details,
-                                  icon: const Icon(Icons.info_outline),
-                                ),
-                                IconButton(
-                                  tooltip: l.saveToPhone,
-                                  onPressed: _saving ? null : _saveToPhone,
-                                  icon: _saving
-                                      ? const SizedBox.square(
-                                          dimension: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : const Icon(Icons.download_outlined),
-                                ),
-                                if (widget.onTrashed != null && _mine(item))
-                                  IconButton(
-                                    tooltip: l.trashConfirm,
-                                    onPressed: _trash,
-                                    icon: const Icon(Icons.delete_outline),
+                                  tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
+                                  onPressed: _toggleFavorite,
+                                  icon: Icon(
+                                    item.favorite ? Icons.favorite : Icons.favorite_border,
+                                    color: item.favorite ? colors.favorite : null,
                                   ),
-                              ],
-                            ),
+                                ),
+                              IconButton(
+                                tooltip: l.details,
+                                onPressed: _details,
+                                icon: const Icon(Icons.info_outline),
+                              ),
+                              IconButton(
+                                tooltip: l.saveToPhone,
+                                onPressed: _saving ? null : _saveToPhone,
+                                icon: _saving
+                                    ? LoadingIndicator(size: 24, color: colors.onStage)
+                                    : const Icon(Icons.download_outlined),
+                              ),
+                              if (widget.onTrashed != null && _mine(item))
+                                IconButton(
+                                  tooltip: l.trashConfirm,
+                                  onPressed: _trash,
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
+                            ],
                           ),
                         ),
                       ),
@@ -582,7 +579,7 @@ class _VideoPageState extends State<_VideoPage> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    if (!_ready) return const Center(child: CircularProgressIndicator());
+    if (!_ready) return Center(child: LoadingIndicator(color: colors.onStage));
     return GestureDetector(
       onTap: () => setState(() {
         _controller.value.isPlaying ? _controller.pause() : _controller.play();

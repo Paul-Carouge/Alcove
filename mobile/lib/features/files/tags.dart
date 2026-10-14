@@ -62,7 +62,7 @@ class TagChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (fg, bg) = tagPalette(context.colors, tag.getStringValue('color'));
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s2, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AlcoveRadius.full)),
       child: Text(
         tag.getStringValue('name'),
@@ -138,22 +138,14 @@ class _TagPickerState extends State<_TagPicker> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AlcoveSpace.s5,
-                  0,
-                  AlcoveSpace.s5,
-                  AlcoveSpace.s3,
-                ),
-                child: Text(
-                  l.tagsOf(widget.node.getStringValue('name')),
-                  style: context.text.titleLarge,
-                ),
-              ),
+              SheetHeader(title: l.tagsOf(widget.node.getStringValue('name'))),
               if (tags.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s5),
-                  child: Text(l.tagsEmpty, style: TextStyle(color: c.textMuted)),
+                  child: Text(
+                    l.tagsEmpty,
+                    style: TextStyle(color: c.textMuted, height: AlcoveFont.leadingNormal),
+                  ),
                 )
               else
                 ConstrainedBox(
@@ -204,6 +196,7 @@ class _TagPickerState extends State<_TagPicker> {
                     IconButton.filledTonal(
                       tooltip: l.tagAdd,
                       onPressed: _busy ? null : _add,
+                      style: IconButton.styleFrom(minimumSize: const Size(56, 56)),
                       icon: const Icon(Icons.add),
                     ),
                   ],

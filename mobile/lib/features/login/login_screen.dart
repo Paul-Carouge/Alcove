@@ -5,6 +5,7 @@ import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 
 /// Email and password, then the second factor when the account has one (authenticator app or
@@ -103,10 +104,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const BrandHeader(name: kProductName),
-                    const SizedBox(height: AlcoveSpace.s8),
-                    Text(title, style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: AlcoveSpace.s7),
+                    Text(title, style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: AlcoveSpace.s2),
-                    Text(body, style: TextStyle(color: colors.textMuted)),
+                    Text(
+                      body,
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: AlcoveFont.sizeMd,
+                        height: AlcoveFont.leadingNormal,
+                      ),
+                    ),
                     const SizedBox(height: AlcoveSpace.s6),
                     if (_step == _Step.password) ...[
                       TextField(
@@ -152,10 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     FilledButton(
                       onPressed: _busy ? null : _submit,
                       child: _busy
-                          ? const SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? LoadingIndicator(size: 28, color: colors.textMuted)
                           : Text(_step == _Step.password ? l.signInButton : l.verifyButton),
                     ),
                     const SizedBox(height: AlcoveSpace.s2),

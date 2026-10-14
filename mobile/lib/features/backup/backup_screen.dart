@@ -157,23 +157,28 @@ class _StatusCard extends StatelessWidget {
         AlcoveSpace.s5,
       ),
       child: Container(
-        padding: const EdgeInsets.all(AlcoveSpace.s5),
+        padding: const EdgeInsets.fromLTRB(
+          AlcoveSpace.s5,
+          AlcoveSpace.s6,
+          AlcoveSpace.s5,
+          AlcoveSpace.s5,
+        ),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-          border: Border.all(color: c.border),
-          boxShadow: c.shadowSM,
+          borderRadius: BorderRadius.circular(AlcoveRadius.xl),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
               child: ProgressRing(
+                size: 128,
+                stroke: 8,
                 value: !s.enabled ? 0 : (running ? fraction : 1),
                 child: running && fraction != null
                     ? Text(
                         '${(fraction * 100).round()} %',
-                        style: context.text.titleLarge,
+                        style: context.text.headlineSmall,
                         semanticsLabel: l.backupTitle,
                       )
                     : Icon(
@@ -187,13 +192,17 @@ class _StatusCard extends StatelessWidget {
                       ),
               ),
             ),
-            const SizedBox(height: AlcoveSpace.s4),
+            const SizedBox(height: AlcoveSpace.s5),
             Semantics(
               liveRegion: true,
               child: Text(
                 BackupScreen.status(context, controller),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: c.text, fontWeight: AlcoveFont.medium),
+                style: TextStyle(
+                  color: c.text,
+                  fontWeight: AlcoveFont.medium,
+                  height: AlcoveFont.leadingNormal,
+                ),
               ),
             ),
             if (!running && failed > 0) ...[
@@ -205,7 +214,7 @@ class _StatusCard extends StatelessWidget {
               ),
             ],
             if (s.enabled) ...[
-              const SizedBox(height: AlcoveSpace.s4),
+              const SizedBox(height: AlcoveSpace.s5),
               running
                   ? OutlinedButton(onPressed: controller.cancel, child: Text(l.backupStop))
                   : FilledButton.icon(

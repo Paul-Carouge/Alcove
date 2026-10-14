@@ -103,6 +103,31 @@ http.Response fakeAlcove(http.Request req) {
       ],
     });
   }
+  if (path.startsWith('/api/v1/albums/') && path.endsWith('/items')) {
+    final media = fakeMedia().sublist(0, 14);
+    return _json({
+      'items': [
+        for (final m in media)
+          {...m, 'addedBy': 'u1', 'name': 'IMG_${m['id']}.jpg', 'size': 2400000},
+      ],
+    });
+  }
+  if (path == '/api/collections/tags/records') {
+    return _json({
+      'page': 1,
+      'perPage': 1000,
+      'totalItems': 3,
+      'totalPages': 1,
+      'items': [
+        for (final (id, name, color) in [
+          ('t1', 'Factures', 'green'),
+          ('t2', 'Logement', 'blue'),
+          ('t3', 'Impôts', 'orange'),
+        ])
+          {'id': id, 'collectionId': 'tags', 'name': name, 'color': color, 'owner': 'u1'},
+      ],
+    });
+  }
   if (path == '/api/v1/photos/memories') {
     final media = fakeMedia();
     return _json({
@@ -171,6 +196,7 @@ http.Response fakeAlcove(http.Request req) {
             'mime': mime,
             'size': size,
             'blob': kind == 'file' ? 'blob.bin' : '',
+            'tags': id == 'f1' ? ['t1', 't2'] : <String>[],
             'updated': '2026-10-0${id.hashCode % 9 + 1} 10:00:00.000Z',
           },
       ],

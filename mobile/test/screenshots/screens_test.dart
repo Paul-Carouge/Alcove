@@ -14,6 +14,7 @@ import 'package:alcove/features/connect/connect_screen.dart';
 import 'package:alcove/features/files/files_screen.dart';
 import 'package:alcove/features/home/home_screen.dart';
 import 'package:alcove/features/login/login_screen.dart';
+import 'package:alcove/features/photos/albums_screen.dart';
 import 'package:alcove/features/photos/media.dart';
 import 'package:alcove/features/photos/photo_viewer.dart';
 import 'package:alcove/features/search/search_screen.dart';
@@ -169,6 +170,50 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const Key('addButton')));
       await shoot(tester, 'add-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('album $suffix', (tester) async {
+      await pump(tester, (s) => AlbumScreen(session: s, id: 'al0', name: 'Été en Provence'));
+      await shoot(tester, 'album-$suffix');
+    }, skip: skipShots != false);
+
+    Future<void> openActions(WidgetTester tester) async {
+      await pump(tester, (s) => FilesScreen(session: s, uploads: UploadQueue(s)));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+      await tester.longPress(find.text('Contrat de location.pdf'));
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('actions $suffix', (tester) async {
+      await openActions(tester);
+      await shoot(tester, 'actions-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('tags $suffix', (tester) async {
+      await openActions(tester);
+      await tester.tap(find.byIcon(Icons.sell_outlined));
+      await tester.pump(const Duration(milliseconds: 400));
+      await shoot(tester, 'tags-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('details $suffix', (tester) async {
+      await pump(
+        tester,
+        (s) => PhotoViewer(
+          session: s,
+          items: [for (final m in fakeMedia().take(3)) MediaItem(RecordModel.fromJson(m))],
+          initial: 0,
+          onTrashed: (_) {},
+        ),
+      );
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.info_outline));
+      await tester.pump(const Duration(milliseconds: 400));
+      await shoot(tester, 'details-$suffix');
     }, skip: skipShots != false);
 
     testWidgets('search $suffix', (tester) async {

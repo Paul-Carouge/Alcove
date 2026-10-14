@@ -42,6 +42,7 @@ class _FilesScreenState extends State<FilesScreen> {
   late final Drive _drive = Drive(widget.session);
   late final TagBook _tags = TagBook(widget.session);
   StreamSubscription<String>? _arrivals;
+  final _fab = GlobalKey();
 
   String get _here => widget.folder?.id ?? '';
 
@@ -71,7 +72,7 @@ class _FilesScreenState extends State<FilesScreen> {
     final l = AppLocalizations.of(context);
     final uploads = widget.uploads!;
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final action = await showAddSheet(context, canScan: Platform.isAndroid);
+    final action = await showAddMenu(context, fabKey: _fab, canScan: Platform.isAndroid);
     if (!mounted || action == null) return;
     try {
       switch (action) {
@@ -212,7 +213,7 @@ class _FilesScreenState extends State<FilesScreen> {
           itemCount: 6,
           itemBuilder: (_, _) => const Padding(
             padding: EdgeInsets.symmetric(horizontal: AlcoveSpace.s4, vertical: AlcoveSpace.s2),
-            child: SizedBox(height: 52, child: Skeleton(radius: AlcoveRadius.md)),
+            child: SizedBox(height: 64, child: Skeleton(radius: AlcoveRadius.lg)),
           ),
         ),
       ];
@@ -268,11 +269,14 @@ class _FilesScreenState extends State<FilesScreen> {
       backgroundColor: colors.bg,
       floatingActionButton: widget.uploads == null
           ? null
-          : FloatingActionButton(
-              key: const Key('addButton'),
-              tooltip: l.addTooltip,
-              onPressed: _add,
-              child: const Icon(Icons.add),
+          : KeyedSubtree(
+              key: _fab,
+              child: FloatingActionButton(
+                key: const Key('addButton'),
+                tooltip: l.addTooltip,
+                onPressed: _add,
+                child: const Icon(Icons.add),
+              ),
             ),
       bottomNavigationBar: widget.uploads == null ? null : UploadBanner(queue: widget.uploads!),
     );
@@ -377,20 +381,27 @@ class NodeRow extends StatelessWidget {
       onTap: onTap,
       onLongPress: onMore,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s4, vertical: AlcoveSpace.s3),
+        padding: EdgeInsetsDirectional.fromSTEB(
+          AlcoveSpace.s4,
+          AlcoveSpace.s3,
+          onMore != null ? AlcoveSpace.s1 : AlcoveSpace.s4,
+          AlcoveSpace.s3,
+        ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AlcoveRadius.md),
-              child: Container(
-                width: 40,
-                height: 40,
-                color: tint.withValues(alpha: 0.12),
-                child: thumb != null
-                    ? RemoteImage(url: thumb!, cacheWidth: 120)
-                    : Icon(icon, color: tint, size: 22),
-              ),
-            ),
+            if (thumb != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AlcoveRadius.md),
+                child: SizedBox.square(
+                  dimension: 40,
+                  child: ColoredBox(
+                    color: c.surfaceSunken,
+                    child: RemoteImage(url: thumb!, cacheWidth: 120),
+                  ),
+                ),
+              )
+            else
+              TintedIcon(icon: icon, color: tint),
             const SizedBox(width: AlcoveSpace.s3),
             Expanded(
               child: Column(
@@ -436,7 +447,7 @@ class NodeRow extends StatelessWidget {
                 onPressed: onMore,
               )
             else if (folder)
-              Icon(Icons.chevron_right, color: c.textMuted),
+              Icon(Icons.chevron_right, color: c.borderStrong),
           ],
         ),
       ),

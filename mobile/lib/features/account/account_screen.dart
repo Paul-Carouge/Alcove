@@ -6,6 +6,7 @@ import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
+import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../backup/backup_controller.dart';
 import '../backup/backup_screen.dart';
@@ -42,13 +43,13 @@ class AccountScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               AlcoveSpace.s4,
-              AlcoveSpace.s2,
+              AlcoveSpace.s3,
               AlcoveSpace.s4,
-              AlcoveSpace.s5,
+              AlcoveSpace.s6,
             ),
             child: Row(
               children: [
-                AlcoveAvatar(name: name, email: email, size: 64),
+                AlcoveAvatar(name: name, email: email, size: 72),
                 const SizedBox(width: AlcoveSpace.s4),
                 Expanded(
                   child: Column(
@@ -57,7 +58,10 @@ class AccountScreen extends StatelessWidget {
                       Text(name.isNotEmpty ? name : email, style: context.text.titleLarge),
                       if (name.isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Text(email, style: TextStyle(color: c.textMuted)),
+                        Text(
+                          email,
+                          style: TextStyle(color: c.textMuted, fontSize: AlcoveFont.sizeSm + 1),
+                        ),
                       ],
                       const SizedBox(height: AlcoveSpace.s2),
                       if (server != null) _ServerChip(server: server),
@@ -114,10 +118,7 @@ class AccountScreen extends StatelessWidget {
                       _ => l.updateUpToDate,
                     },
                     trailing: u.phase == UpdatePhase.checking
-                        ? const SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const LoadingIndicator(size: 28)
                         : null,
                     onTap: u.phase == UpdatePhase.checking ? null : u.check,
                   ),
@@ -166,10 +167,10 @@ class _ServerChip extends StatelessWidget {
     final c = context.colors;
     final secure = server.scheme == 'https';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s2 + 2, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.surfaceSunken,
-        borderRadius: BorderRadius.circular(AlcoveRadius.full),
+      padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s3, vertical: AlcoveSpace.s1),
+      decoration: ShapeDecoration(
+        color: c.surface,
+        shape: StadiumBorder(side: BorderSide(color: c.border)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -210,56 +211,54 @@ class _UpdateCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AlcoveSpace.s4, 0, AlcoveSpace.s4, AlcoveSpace.s5),
       child: Container(
-        padding: const EdgeInsets.all(AlcoveSpace.s4),
+        padding: const EdgeInsets.all(AlcoveSpace.s5),
         decoration: BoxDecoration(
-          color: c.accent,
-          borderRadius: BorderRadius.circular(AlcoveRadius.lg),
-          boxShadow: c.shadowMD,
+          color: c.accentSubtle,
+          borderRadius: BorderRadius.circular(AlcoveRadius.xl),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Icon(Icons.auto_awesome, color: c.accentContrast),
-                const SizedBox(width: AlcoveSpace.s2),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: ShapeDecoration(
+                    color: c.accent,
+                    shape: const PolarShapeBorder(PolarShape.softBurst),
+                  ),
+                  child: Icon(Icons.auto_awesome, color: c.accentContrast, size: 22),
+                ),
+                const SizedBox(width: AlcoveSpace.s3),
                 Expanded(
                   child: Text(
                     l.updateAvailable(u.latest!),
-                    style: TextStyle(
-                      color: c.accentContrast,
-                      fontWeight: AlcoveFont.semibold,
-                      fontSize: AlcoveFont.sizeMd,
-                    ),
+                    style: displayStyle(AlcoveFont.sizeLg + 1, c.text),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AlcoveSpace.s2),
+            const SizedBox(height: AlcoveSpace.s3),
             Text(
               u.phase == UpdatePhase.failed ? l.updateFailed : l.updateBody,
               style: TextStyle(
-                color: c.accentContrast.withValues(alpha: 0.85),
-                fontSize: AlcoveFont.sizeSm,
+                color: u.phase == UpdatePhase.failed ? c.danger : c.text,
+                fontSize: AlcoveFont.sizeSm + 1,
+                height: AlcoveFont.leadingNormal,
               ),
             ),
             const SizedBox(height: AlcoveSpace.s4),
             if (busy)
-              ClipRRect(
+              LinearProgressIndicator(
+                value: u.progress > 0 ? u.progress : null,
+                minHeight: 8,
                 borderRadius: BorderRadius.circular(AlcoveRadius.full),
-                child: LinearProgressIndicator(
-                  value: u.progress > 0 ? u.progress : null,
-                  minHeight: 6,
-                  color: c.accentContrast,
-                  backgroundColor: c.accentContrast.withValues(alpha: 0.25),
-                ),
+                color: c.accent,
+                backgroundColor: c.surface,
               )
             else
               FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: c.accentContrast,
-                  foregroundColor: c.accent,
-                ),
                 onPressed: u.phase == UpdatePhase.readyToInstall ? u.install : u.downloadAndInstall,
                 child: Text(u.phase == UpdatePhase.readyToInstall ? l.updateInstall : l.updateNow),
               ),

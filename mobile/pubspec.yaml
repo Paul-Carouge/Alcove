@@ -76,9 +76,12 @@ flutter:
   uses-material-design: true
 
   fonts:
-    - family: Inter
+    - family: Inter Variable
       fonts:
         - asset: assets/fonts/InterVariable.ttf
+    - family: Fraunces Variable
+      fonts:
+        - asset: assets/fonts/FrauncesVariable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

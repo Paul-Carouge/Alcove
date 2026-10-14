@@ -32,7 +32,10 @@ class PublicApi {
   ///
   /// * [String] inline:
   ///   Same passive-type rules as `/api/v1/nodes/{nodeId}/download`.
-  Future<Response> downloadSharedFileWithHttpInfo(String token, String nodeId, { String? access, String? inline, }) async {
+  ///
+  /// * [String] thumb:
+  ///   The generated JPEG thumbnail of a photo or video instead of the file (404 if none).
+  Future<Response> downloadSharedFileWithHttpInfo(String token, String nodeId, { String? access, String? inline, String? thumb, }) async {
     // ignore: prefer_const_declarations
     final path = r'/api/v1/public/shares/{token}/files/{nodeId}'
       .replaceAll('{token}', token)
@@ -50,6 +53,9 @@ class PublicApi {
     }
     if (inline != null) {
       queryParams.addAll(_queryParams('', 'inline', inline));
+    }
+    if (thumb != null) {
+      queryParams.addAll(_queryParams('', 'thumb', thumb));
     }
 
     const contentTypes = <String>[];
@@ -80,8 +86,11 @@ class PublicApi {
   ///
   /// * [String] inline:
   ///   Same passive-type rules as `/api/v1/nodes/{nodeId}/download`.
-  Future<MultipartFile?> downloadSharedFile(String token, String nodeId, { String? access, String? inline, }) async {
-    final response = await downloadSharedFileWithHttpInfo(token, nodeId,  access: access, inline: inline, );
+  ///
+  /// * [String] thumb:
+  ///   The generated JPEG thumbnail of a photo or video instead of the file (404 if none).
+  Future<MultipartFile?> downloadSharedFile(String token, String nodeId, { String? access, String? inline, String? thumb, }) async {
+    final response = await downloadSharedFileWithHttpInfo(token, nodeId,  access: access, inline: inline, thumb: thumb, );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

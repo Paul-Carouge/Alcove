@@ -220,6 +220,11 @@ paths:
         required: false
         description: Same passive-type rules as `/api/v1/nodes/{nodeId}/download`.
         schema: { type: string, enum: ["1"] }
+      - name: thumb
+        in: query
+        required: false
+        description: The generated JPEG thumbnail of a photo or video instead of the file (404 if none).
+        schema: { type: string, enum: ["1"] }
     get:
       tags: [public]
       operationId: downloadSharedFile

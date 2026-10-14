@@ -20,6 +20,7 @@ import (
 
 	"github.com/Paul-Carouge/Alcove/server/internal/albums"
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
+	"github.com/Paul-Carouge/Alcove/server/internal/media"
 )
 
 const (
@@ -325,7 +326,36 @@ func downloadFile(e *core.RequestEvent) error {
 	if _, ok := within(e.App, root, node); !ok {
 		return e.NotFoundError("", nil)
 	}
+	// Photos and videos of a shared folder can be listed with their thumbnail (no metadata in it).
+	if e.Request.URL.Query().Get("thumb") == "1" {
+		rec, err := e.App.FindFirstRecordByData(media.Collection, "node", node.Id)
+		if err != nil {
+			return e.NotFoundError("", nil)
+		}
+		return serveDerivative(e, rec, "thumb")
+	}
 	return drive.Serve(e, node, e.Request.URL.Query().Get("inline") == "1")
+}
+
+// serveDerivative sends a media record's generated JPEG (thumb or preview).
+func serveDerivative(e *core.RequestEvent, rec *core.Record, variant string) error {
+	file := rec.GetString(variant)
+	if file == "" {
+		return e.NotFoundError("", nil)
+	}
+	fsys, err := e.App.NewFilesystem()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = fsys.Close() }()
+	h := e.Response.Header()
+	h.Set("Content-Type", "image/jpeg")
+	h.Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	h.Set("Cache-Control", "private, max-age=300")
+	if err := fsys.Serve(e.Response, e.Request, rec.BaseFilesPath()+"/"+file, variant+".jpg"); err != nil {
+		return e.NotFoundError("", err)
+	}
+	return nil
 }
 
 func isAlbum(r *core.Record) bool { return r.Collection().Name == albums.Collection }
@@ -371,23 +401,7 @@ func sharedMedia(e *core.RequestEvent) error {
 		}
 		return drive.Serve(e, node, true)
 	case "thumb", "preview":
-		file := rec.GetString(variant)
-		if file == "" {
-			return e.NotFoundError("", nil)
-		}
-		fsys, err := e.App.NewFilesystem()
-		if err != nil {
-			return err
-		}
-		defer func() { _ = fsys.Close() }()
-		h := e.Response.Header()
-		h.Set("Content-Type", "image/jpeg")
-		h.Set("Content-Security-Policy", "default-src 'none'; sandbox")
-		h.Set("Cache-Control", "private, max-age=300")
-		if err := fsys.Serve(e.Response, e.Request, rec.BaseFilesPath()+"/"+file, variant+".jpg"); err != nil {
-			return e.NotFoundError("", err)
-		}
-		return nil
+		return serveDerivative(e, rec, variant)
 	}
 	return e.NotFoundError("", nil)
 }

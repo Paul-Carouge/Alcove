@@ -122,6 +122,8 @@ export interface paths {
         access?: components["parameters"]["ShareAccess"];
         /** @description Same passive-type rules as `/api/v1/nodes/{nodeId}/download`. */
         inline?: "1";
+        /** @description The generated JPEG thumbnail of a photo or video instead of the file (404 if none). */
+        thumb?: "1";
       };
       header?: never;
       path: {
@@ -1459,6 +1461,8 @@ export interface operations {
         access?: components["parameters"]["ShareAccess"];
         /** @description Same passive-type rules as `/api/v1/nodes/{nodeId}/download`. */
         inline?: "1";
+        /** @description The generated JPEG thumbnail of a photo or video instead of the file (404 if none). */
+        thumb?: "1";
       };
       header?: never;
       path: {

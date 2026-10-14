@@ -186,3 +186,28 @@ func TestAlbumLinkPasswordExpiryAndDeletion(t *testing.T) {
 		t.Errorf("link survived its album: %d", s)
 	}
 }
+
+func TestFolderLinkShowsThumbnails(t *testing.T) {
+	e := albumSetup(t)
+	trip := testutil.Node(t, e.app, e.alice, "", "Trip", drive.KindFolder)
+	node, _ := e.app.FindRecordById(drive.Collection, e.photo.GetString("node"))
+	node.Set("parent", trip.Id)
+	if err := e.app.Save(node); err != nil {
+		t.Fatal(err)
+	}
+	notes := testutil.Node(t, e.app, e.alice, trip.Id, "notes.txt", drive.KindFile)
+	token := e.share(t, map[string]any{"node": trip.Id})
+
+	status, body, h := e.get(t, "/api/v1/public/shares/"+token+"/files/"+node.Id+"?thumb=1")
+	if status != 200 || h.Get("Content-Type") != "image/jpeg" || len(body) == 0 {
+		t.Fatalf("thumb: %d %s", status, h.Get("Content-Type"))
+	}
+	for name, id := range map[string]string{
+		"a file without a thumbnail": notes.Id,
+		"a photo outside the share":  e.gone.GetString("node"),
+	} {
+		if status, _, _ := e.get(t, "/api/v1/public/shares/"+token+"/files/"+id+"?thumb=1"); status != 404 {
+			t.Errorf("%s: %d", name, status)
+		}
+	}
+}

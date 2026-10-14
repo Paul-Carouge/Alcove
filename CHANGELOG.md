@@ -7,6 +7,14 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-10-14
+
+### Changed
+- **Web design**: a search field in the top bar on every page, with `⌘K` / `Ctrl+K` or `/`, instead of
+  separate search boxes; the sidebar groups Library and Sharing; file icons are tinted by type (folders,
+  PDFs, images, videos, music, archives…) like in the app; album cards are larger and lift on hover.
+- On phones, file lists and documents keep names on one line, with size, date and actions below.
+
 ## [0.26.0] - 2026-10-14
 
 ### Changed

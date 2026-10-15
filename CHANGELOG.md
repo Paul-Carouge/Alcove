@@ -7,6 +7,27 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-15
+
+### Added
+- **Notes**, on the web and in the app: Markdown notes saved as you type, synced live between devices,
+  pinned notes first, tags, search (also from the global search on the web), a preview on the web, and a
+  trash kept 30 days, on both. Notes live in the database ([ADR 0027](docs/adr/0027-notes-in-the-database.md));
+  `/health` lists the `notes` module. An unsaved note is never dropped silently: the editor keeps it, says
+  so, and asks before you leave.
+- **A real app icon**: the Alcove arch on sage, as an adaptive Android icon with a themed (monochrome)
+  layer for Android 13+. The web favicon and home-screen icon use the same mark.
+
+### Changed
+- **Selection bar at the bottom** (web): selecting files, photos or album items now shows a floating bar at
+  the bottom of the screen (a panel on phones) instead of replacing the page header. Escape clears the
+  selection.
+
+### Fixed
+- App: the Android back button now goes back inside the Files, Albums and Notes tabs instead of leaving
+  the app.
+- Web: "3 sélectionné(s)" now uses a proper French plural.
+
 ## [0.28.0] - 2026-10-14
 
 ### Changed

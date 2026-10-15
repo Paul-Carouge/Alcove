@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import {
 		BookImage,
+		CalendarDays,
 		FileText,
 		Folder,
 		Image,
@@ -47,6 +48,13 @@
 			group: 0
 		},
 		{ label: m.nav_notes, icon: NotebookPen, href: resolve('/(app)/notes'), ready: true, group: 0 },
+		{
+			label: m.nav_calendar,
+			icon: CalendarDays,
+			href: resolve('/(app)/calendar'),
+			ready: true,
+			group: 0
+		},
 		{ label: m.nav_shared, icon: Share2, href: resolve('/(app)/shared'), ready: true, group: 1 },
 		{ label: m.nav_trash, icon: Trash2, href: resolve('/(app)/trash'), ready: true, group: 1 }
 	];

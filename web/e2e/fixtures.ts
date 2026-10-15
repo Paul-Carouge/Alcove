@@ -22,6 +22,7 @@ export const MAP_USER = { email: 'map@e2e.test', password: 'e2e-map-password-123
 /** Documents: text of PDFs, text files and scans. */
 export const DOC_USER = { email: 'docs@e2e.test', password: 'e2e-docs-password-123' };
 export const NOTES_USER = { email: 'notes@e2e.test', password: 'e2e-notes-password-123' };
+export const CAL_USER = { email: 'calendar@e2e.test', password: 'e2e-calendar-password-123' };
 export const FAKE_RELEASES_PORT = 8099;
 
 /** Picks an option in a Select (#lib/ui/Select.svelte) the way a pointer user would. */

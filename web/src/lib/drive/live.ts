@@ -40,6 +40,8 @@ const albumChannel = channel<RecordModel>('albums');
 const albumItemChannel = channel<RecordModel>('album_items');
 const documentChannel = channel<RecordModel>('documents');
 const noteChannel = channel<RecordModel>('notes');
+const calendarChannel = channel<RecordModel>('calendars');
+const eventChannel = channel<RecordModel>('events');
 
 export const onNodeChange = (h: Handler<DriveNode>) => nodes.on(h);
 export const onMediaChange = <T extends RecordModel>(h: Handler<T>) =>
@@ -50,6 +52,10 @@ export const onAlbumItemChange = (h: Handler<RecordModel>) => albumItemChannel.o
 export const onDocumentChange = (h: Handler<RecordModel>) => documentChannel.on(h);
 export const onNoteChange = <T extends RecordModel>(h: Handler<T>) =>
 	noteChannel.on(h as Handler<RecordModel>);
+export const onCalendarChange = <T extends RecordModel>(h: Handler<T>) =>
+	calendarChannel.on(h as Handler<RecordModel>);
+export const onEventChange = <T extends RecordModel>(h: Handler<T>) =>
+	eventChannel.on(h as Handler<RecordModel>);
 
 /** Closes every subscription (on sign-out). */
 export async function stopLiveUpdates() {
@@ -59,6 +65,8 @@ export async function stopLiveUpdates() {
 		albumChannel.close(),
 		albumItemChannel.close(),
 		documentChannel.close(),
-		noteChannel.close()
+		noteChannel.close(),
+		calendarChannel.close(),
+		eventChannel.close()
 	]);
 }

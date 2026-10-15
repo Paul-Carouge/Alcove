@@ -386,7 +386,16 @@ void main() {
     final queue = UploadQueue(session, httpClient: () => client, storage: () async => dir);
     await queue.restore();
     expect(queue.items.map((i) => i.name), ['Scan 2026-10-14.pdf']); // the missing copy is dropped
-    while (queue.active) {
+    // The copy is deleted and the queue saved after the item turns done: wait for that too.
+    final queueFile = File('${dir.path}/queue.json');
+    for (
+      var i = 0;
+      i < 500 &&
+          (queue.active ||
+              kept.existsSync() ||
+              (jsonDecode(queueFile.readAsStringSync()) as List).isNotEmpty);
+      i++
+    ) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
     expect(queue.finished, 1);

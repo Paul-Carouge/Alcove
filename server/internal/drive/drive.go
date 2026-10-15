@@ -153,7 +153,7 @@ func beforeSave(app core.App, node *core.Record) error {
 		node.Set("sha256", meta.sha256)
 	}
 
-	if err := checkTags(app, node); err != nil {
+	if err := CheckTags(app, node); err != nil {
 		return err
 	}
 	if !node.IsNew() && node.Original().GetString("parent") != node.GetString("parent") {
@@ -164,9 +164,9 @@ func beforeSave(app core.App, node *core.Record) error {
 
 var errForeignTag = validation.Errors{"tags": validation.NewError("validation_tags_owner", "Unknown tag.")}
 
-// checkTags makes sure every tag on a node belongs to the node's owner: tag ids are not secret, and
-// the relation field alone would accept anyone's.
-func checkTags(app core.App, node *core.Record) error {
+// CheckTags makes sure every tag on a record (a node or a note) belongs to its owner: tag ids are
+// not secret, and the relation field alone would accept anyone's.
+func CheckTags(app core.App, node *core.Record) error {
 	ids := node.GetStringSlice("tags")
 	if len(ids) == 0 {
 		return nil

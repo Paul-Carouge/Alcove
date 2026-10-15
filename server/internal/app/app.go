@@ -20,6 +20,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/health"
 	"github.com/Paul-Carouge/Alcove/server/internal/maps"
 	"github.com/Paul-Carouge/Alcove/server/internal/media"
+	"github.com/Paul-Carouge/Alcove/server/internal/notes"
 	"github.com/Paul-Carouge/Alcove/server/internal/secrets"
 	"github.com/Paul-Carouge/Alcove/server/internal/security"
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
@@ -63,8 +64,9 @@ func Wire(app core.App, cfg config.Config) {
 	})
 	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
 	archive.Register(app)
+	notes.Register(app)
 	// Face recognition (ALCOVE_MODULES=faces) is not implemented yet.
-	health.Register(app, []string{drive.Module, media.Module}, documents.Modules)
+	health.Register(app, []string{drive.Module, media.Module, notes.Module}, documents.Modules)
 	webui.Register(app)
 }
 

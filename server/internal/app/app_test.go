@@ -23,6 +23,7 @@ func TestFullWiringServes(t *testing.T) {
 		"/api/v1/uploads/":               http.StatusNotFound, // no GET on the tus endpoint
 		"/api/nope":                      http.StatusNotFound,
 		"/api/collections/nodes/records": http.StatusOK,
+		"/api/collections/notes/records": http.StatusOK,
 	} {
 		res, err := http.Get(srv.URL + path)
 		if err != nil {

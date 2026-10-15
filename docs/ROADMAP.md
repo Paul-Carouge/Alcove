@@ -72,11 +72,13 @@ optional UnifiedPush/ntfy notifications, Play Store release (and F-Droid if feas
 
 ## Phase 5: Notes and calendar (in progress)
 
-- **Notes** (next release): Markdown notes stored in the database ([ADR 0027](adr/0027-notes-in-the-database.md)),
+- **Notes** (v0.29.0): Markdown notes stored in the database ([ADR 0027](adr/0027-notes-in-the-database.md)),
   realtime sync across devices, autosave, pinning, tags, search, trash; on the web and in the app.
   Markdown export later.
-- **Calendar**: first inside Alcove (web and app, stored in the database), then CalDAV in a later release
-  so native apps (DAVx⁵, iOS, Thunderbird) work out of the box.
+- **Calendar** (next release): inside Alcove first (web and app, stored in the database,
+  [ADR 0028](adr/0028-calendar-model.md)): month and agenda views, several calendars with colours, all-day,
+  multi-day and repeating events, realtime sync. Then CalDAV in a later release so native apps (DAVx⁵, iOS,
+  Thunderbird) work out of the box.
 
 Contacts (CardDAV) are not planned for now.
 

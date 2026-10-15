@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:alcove/core/secure_store.dart';
 import 'package:alcove/core/server_checker.dart';
@@ -52,6 +53,25 @@ void main() {
     await tester.enterText(find.byKey(const Key('serverUrl')), 'cloud.example.com');
     await tester.tap(find.byKey(const Key('checkButton')));
     await tester.pumpAndSettle();
+    expect(find.text('Connected to Alcove 0.1.0'), findsOneWidget);
+  });
+
+  testWidgets('falls back to http for a home-network address typed without a scheme', (
+    tester,
+  ) async {
+    final asked = <String>[];
+    final checker = ServerChecker(
+      client: MockClient((req) async {
+        asked.add(req.url.scheme);
+        if (req.url.scheme == 'https') throw const HandshakeException('wrong version number');
+        return (await okChecker.client!.get(req.url));
+      }),
+    );
+    await tester.pumpWidget(app(checker));
+    await tester.enterText(find.byKey(const Key('serverUrl')), '192.168.1.20:8090');
+    await tester.tap(find.byKey(const Key('checkButton')));
+    await tester.pumpAndSettle();
+    expect(asked, ['https', 'http']);
     expect(find.text('Connected to Alcove 0.1.0'), findsOneWidget);
   });
 

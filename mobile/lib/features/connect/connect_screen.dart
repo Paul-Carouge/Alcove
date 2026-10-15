@@ -73,13 +73,21 @@ class _ConnectScreenState extends State<ConnectScreen> {
       });
       return;
     }
-    final uri = (parsed as ValidServerUrl).uri;
+    var uri = (parsed as ValidServerUrl).uri;
     setState(() {
       _urlError = null;
       _result = null;
       _checking = true;
     });
-    final result = await widget.checker.check(uri);
+    var result = await widget.checker.check(uri);
+    // No scheme typed and a home-network host: servers there usually speak plain http.
+    if (result case ServerCheckFailed(
+      failure: ServerFailure.tls,
+    ) when !_controller.text.contains('://') && isPrivateHost(uri.host)) {
+      final plain = uri.replace(scheme: 'http');
+      final retry = await widget.checker.check(plain);
+      if (retry is! ServerCheckFailed) (uri, result) = (plain, retry);
+    }
     if (!mounted) return;
     setState(() {
       _checking = false;

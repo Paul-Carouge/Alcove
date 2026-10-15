@@ -24,7 +24,10 @@ class SystemApi {
   ///
   /// * [String] token (required):
   ///   A file token (from `POST /api/files/token`), so the URL works in a plain link.
-  Future<Response> downloadAndroidAppWithHttpInfo(String token,) async {
+  ///
+  /// * [String] abi:
+  ///   The device's preferred ABI (ADR 0029). Gives the smaller APK built for it when the release has one; absent or unknown values give the universal APK. 
+  Future<Response> downloadAndroidAppWithHttpInfo(String token, { String? abi, }) async {
     // ignore: prefer_const_declarations
     final path = r'/api/v1/app/android.apk';
 
@@ -36,6 +39,9 @@ class SystemApi {
     final formParams = <String, String>{};
 
       queryParams.addAll(_queryParams('', 'token', token));
+    if (abi != null) {
+      queryParams.addAll(_queryParams('', 'abi', abi));
+    }
 
     const contentTypes = <String>[];
 
@@ -57,8 +63,11 @@ class SystemApi {
   ///
   /// * [String] token (required):
   ///   A file token (from `POST /api/files/token`), so the URL works in a plain link.
-  Future<MultipartFile?> downloadAndroidApp(String token,) async {
-    final response = await downloadAndroidAppWithHttpInfo(token,);
+  ///
+  /// * [String] abi:
+  ///   The device's preferred ABI (ADR 0029). Gives the smaller APK built for it when the release has one; absent or unknown values give the universal APK. 
+  Future<MultipartFile?> downloadAndroidApp(String token, { String? abi, }) async {
+    final response = await downloadAndroidAppWithHttpInfo(token,  abi: abi, );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

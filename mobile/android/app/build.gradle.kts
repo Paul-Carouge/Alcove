@@ -45,6 +45,18 @@ android {
     }
 }
 
+// Flutter gives per-ABI APKs (--split-per-abi) the versionCode 1000 × ABI + code, a Play Store
+// convention. Alcove's APKs are sideloaded and interchangeable with the universal one, so they keep its
+// code: otherwise a phone updated with a per-ABI APK would refuse the next universal APK as a downgrade
+// (ADR 0029). This callback is registered after the Flutter plugin's, so it runs last.
+@Suppress("DEPRECATION")
+android.applicationVariants.configureEach {
+    val code = versionCode
+    outputs.configureEach {
+        (this as com.android.build.gradle.api.ApkVariantOutput).versionCodeOverride = code
+    }
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17

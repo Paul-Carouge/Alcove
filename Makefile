@@ -79,6 +79,8 @@ test-packages:
 
 test-mobile:
 	cd mobile && flutter gen-l10n && flutter test
+	# Calendar dates must not depend on the device's time zone.
+	cd mobile && for tz in Pacific/Honolulu Asia/Tokyo Europe/Paris America/New_York; do TZ=$$tz flutter test test/calendar_test.dart || exit 1; done
 
 test-e2e: build ## Browser tests against the built binary (Playwright)
 	pnpm --filter @alcove/web exec playwright install chromium
@@ -97,11 +99,11 @@ build-server: build-web
 	cd server && CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/alcove .
 	@echo "built server/bin/alcove ($(VERSION))"
 
-dist: ## Release archives for all platforms + SHA256SUMS (signed if ALCOVE_SIGNING_KEY is set)
+dist: ## Release archives for all platforms + SHA256SUMS (signed if ALCOVE_SIGNING_KEY is set; ANDROID_APKS=1 adds the APKs)
 	scripts/dist.sh $(VERSION)
 
-build-apk: ## Build a release Android APK
-	cd mobile && flutter build apk --release
+build-apk: ## Release Android APKs, universal + per ABI (mobile/build/dist)
+	scripts/android-dist.sh mobile/build/dist
 
 docker: ## Build the Docker image
 	docker build -f deploy/Dockerfile --build-arg VERSION=$(VERSION) -t ghcr.io/paul-carouge/alcove:dev .

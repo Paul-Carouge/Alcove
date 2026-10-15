@@ -23,6 +23,12 @@ bool isNewer(String a, String b) {
   return false;
 }
 
+/// ABIs with their own APK in a release (ADR 0029); see server/internal/appdist.
+const releaseAbis = ['arm64-v8a', 'armeabi-v7a', 'x86_64'];
+
+/// The APK to ask for, from the device's ABIs (preferred first): null means the universal APK.
+String? pickAbi(List<String> supported) => supported.where(releaseAbis.contains).firstOrNull;
+
 enum UpdatePhase { idle, checking, available, downloading, readyToInstall, failed }
 
 /// In-app updates (ADR 0024): the app follows its server's version. The server serves the APK of its
@@ -33,12 +39,19 @@ class AppUpdater extends ChangeNotifier {
     this.currentVersion = kAppVersion,
     MethodChannel? channel,
     this.httpClient,
-  }) : _channel = channel ?? const MethodChannel('alcove/update');
+    Future<Directory> Function()? cacheDir,
+    this.stallTimeout = const Duration(seconds: 60),
+  }) : _channel = channel ?? const MethodChannel('alcove/update'),
+       _cacheDir = cacheDir ?? getTemporaryDirectory;
 
   final Session session;
   final String currentVersion;
   final MethodChannel _channel;
   final http.Client? httpClient;
+  final Future<Directory> Function() _cacheDir;
+
+  /// A download whose body receives nothing for this long fails (and can be retried) instead of hanging.
+  final Duration stallTimeout;
 
   UpdatePhase phase = UpdatePhase.idle;
   String? latest;
@@ -72,24 +85,36 @@ class AppUpdater extends ChangeNotifier {
     final client = httpClient ?? http.Client();
     try {
       final token = await session.fileToken();
-      final url = session.pb.buildURL('/api/v1/app/android.apk', {'token': token});
-      final res = await client.send(http.Request('GET', url));
+      // Servers up to 0.29.0 ignore `abi` and send the universal APK.
+      final abi = pickAbi(await _channel.invokeListMethod<String>('abis') ?? const []);
+      final url = session.pb.buildURL('/api/v1/app/android.apk', {
+        'token': token,
+        'abi': ?abi,
+      });
+      // The server may first fetch the APK from its release (tens of MB): wait for that, then
+      // [stallTimeout] applies between chunks.
+      final res = await client.send(http.Request('GET', url)).timeout(const Duration(minutes: 10));
       if (res.statusCode != 200) throw HttpException('HTTP ${res.statusCode}');
-      final dir = Directory('${(await getTemporaryDirectory()).path}/updates');
+      final dir = Directory('${(await _cacheDir()).path}/updates');
+      // APKs of earlier updates are useless once installed (tens of MB each).
+      if (await dir.exists()) await dir.delete(recursive: true);
       await dir.create(recursive: true);
       final file = File('${dir.path}/alcove-$latest.apk');
       final sink = file.openWrite();
       final total = res.contentLength ?? 0;
       var received = 0;
-      await for (final chunk in res.stream) {
-        sink.add(chunk);
-        received += chunk.length;
-        if (total > 0) {
-          progress = received / total;
-          notifyListeners();
+      try {
+        await for (final chunk in res.stream.timeout(stallTimeout)) {
+          sink.add(chunk);
+          received += chunk.length;
+          if (total > 0) {
+            progress = received / total;
+            notifyListeners();
+          }
         }
+      } finally {
+        await sink.close();
       }
-      await sink.close();
       _path = file.path;
       phase = UpdatePhase.readyToInstall;
       notifyListeners();

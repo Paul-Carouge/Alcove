@@ -37,7 +37,8 @@ jobs:
           path: dist/
           retention-days: 7
 
-  # The Android app, signed with the Alcove release key (secrets), attached to every release.
+  # The Android app, signed with the Alcove release key (secrets), attached to every release: the
+  # universal alcove-android.apk (apps up to 0.29.0 update with it) and one APK per ABI (ADR 0029).
   android:
     runs-on: ubuntu-latest
     steps:
@@ -46,8 +47,7 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - uses: subosito/flutter-action@v2
         with: { channel: stable, flutter-version: 3.44.8, cache: true }
-      - name: Build the signed APK
-        working-directory: mobile
+      - name: Build the signed APKs
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ALCOVE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -55,16 +55,19 @@ jobs:
           test -n "$KEYSTORE_B64" || { echo "ANDROID_KEYSTORE_B64 secret missing"; exit 1; }
           export ALCOVE_ANDROID_KEYSTORE="$RUNNER_TEMP/alcove.jks"
           echo "$KEYSTORE_B64" | base64 -d > "$ALCOVE_ANDROID_KEYSTORE"
-          flutter pub get
-          flutter build apk --release
-          mkdir -p ../dist-android
-          cp build/app/outputs/flutter-apk/app-release.apk ../dist-android/alcove-android.apk
-          rm -f "$ALCOVE_ANDROID_KEYSTORE"
+          trap 'rm -f "$ALCOVE_ANDROID_KEYSTORE"' EXIT
+          scripts/android-dist.sh dist-android android-symbols
       - uses: actions/upload-artifact@v4
         with:
           name: android
           path: dist-android/
           retention-days: 7
+      # Dart symbols, to read stack traces of release builds (`flutter symbolize`); not published.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-symbols
+          path: android-symbols/
+          retention-days: 90
 
   publish:
     needs: [binaries, android]
@@ -123,5 +126,6 @@ jobs:
           [ -n "$devlog" ] && printf '\n---\nThe story behind this release: [devlog](%s)\n\n**Docker:** `ghcr.io/paul-carouge/alcove:%s`\n' \
             "https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/${devlog}" "$V" >> notes.md
           printf '\n**Install:** `curl -fsSL https://github.com/%s/releases/latest/download/install.sh | sh`\n' "$GITHUB_REPOSITORY" >> notes.md
-          printf '\n**Android app:** [alcove-android.apk](https://github.com/%s/releases/download/%s/alcove-android.apk)\n' "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" >> notes.md
+          dl="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME"
+          printf '\n**Android app:** [alcove-android.apk](%s/alcove-android.apk) (any phone), or smaller: [arm64-v8a](%s/alcove-android-arm64-v8a.apk) (most phones), [armeabi-v7a](%s/alcove-android-armeabi-v7a.apk) (older 32-bit phones), [x86_64](%s/alcove-android-x86_64.apk) (emulators, Chromebooks)\n' "$dl" "$dl" "$dl" "$dl" >> notes.md
           gh release create "$GITHUB_REF_NAME" --title "Alcove $GITHUB_REF_NAME" --notes-file notes.md dist/*

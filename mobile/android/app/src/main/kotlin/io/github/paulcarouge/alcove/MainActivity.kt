@@ -16,6 +16,8 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "alcove/update").setMethodCallHandler { call, result ->
             when (call.method) {
+                // The device's ABIs, preferred first: the updater picks the matching APK (ADR 0029).
+                "abis" -> result.success(Build.SUPPORTED_ABIS.toList())
                 "canInstall" -> result.success(
                     Build.VERSION.SDK_INT < Build.VERSION_CODES.O || packageManager.canRequestPackageInstalls(),
                 )

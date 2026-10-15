@@ -3,6 +3,8 @@
 # (and SHA256SUMS.sig when ALCOVE_SIGNING_KEY is set).
 #   scripts/dist.sh 0.9.0
 # FFMPEG_BUNDLES=1 also builds the Linux ffmpeg and OCR bundles (needs Docker with QEMU, ADR 0017, 0025).
+# ANDROID_APKS=1 also builds the Android APKs (needs Flutter, ADR 0029); they are not in SHA256SUMS:
+# Android checks their signature itself (ADR 0023).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VERSION="${1:?usage: scripts/dist.sh X.Y.Z}"
@@ -42,6 +44,10 @@ if [ -n "${FFMPEG_BUNDLES:-}" ]; then
 		scripts/ffmpeg-bundle.sh "$arch" dist
 		scripts/ocr-bundle.sh "$arch" dist
 	done
+fi
+
+if [ -n "${ANDROID_APKS:-}" ]; then
+	scripts/android-dist.sh dist
 fi
 
 (cd dist && shopt -s nullglob && files=(alcove_* ffmpeg_* ocr_*) &&

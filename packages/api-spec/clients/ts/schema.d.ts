@@ -2325,6 +2325,11 @@ export interface operations {
       query: {
         /** @description A file token (from `POST /api/files/token`), so the URL works in a plain link. */
         token: string;
+        /**
+         * @description The device's preferred ABI (ADR 0029). Gives the smaller APK built for it when the release has
+         *     one; absent or unknown values give the universal APK.
+         */
+        abi?: "arm64-v8a" | "armeabi-v7a" | "x86_64";
       };
       header?: never;
       path?: never;

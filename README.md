@@ -58,8 +58,10 @@ files from the phone, **scan documents** into PDFs (read by OCR on your server),
 move, trash and search inside documents.
 
 **Android:** download `alcove-android.apk` from the [latest release](https://github.com/Paul-Carouge/Alcove/releases/latest)
-(or from the web app: Account → Alcove on your phone). It then **updates itself from your server**: update
-Alcove and phones offer the matching version at their next launch. The iPhone app comes later.
+(or from the web app: Account → Alcove on your phone). It works on any phone; the release also has smaller
+APKs per processor type, e.g. `alcove-android-arm64-v8a.apk` for most recent phones. It then
+**updates itself from your server**: update Alcove and phones offer the matching version at their next
+launch. The iPhone app comes later.
 
 ## Roadmap
 

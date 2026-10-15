@@ -218,8 +218,9 @@ warning. The iPhone app comes later.
 
 The app **updates itself from your server** ([ADR 0024](adr/0024-in-app-updates.md)): after you update
 Alcove, phones show a badge on the Account tab and an **Update now** button at their next launch. The
-server downloads the matching APK from the GitHub release once (kept in `pb_data/app`), and Android only
-installs it if it carries the same signature as the installed app. The first time, Android asks to allow
+server downloads the matching APK from the GitHub release once (kept in `pb_data/app`), the one built for
+the phone's processor when the release has it (about a third of the universal APK, [ADR 0029](adr/0029-per-abi-android-apks.md)),
+and Android only installs it if it carries the same signature as the installed app. The first time, Android asks to allow
 installing apps from Alcove.
 
 **Documents.** Alcove reads the text of PDFs and text files and, with OCR, of scanned PDFs and

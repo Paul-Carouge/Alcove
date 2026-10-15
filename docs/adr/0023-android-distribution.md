@@ -1,6 +1,6 @@
 # 0023. Android app: signed APK in every release, http on private networks
 
-- Status: Accepted (2026-10-12). iOS distribution is deferred (needs an Apple Developer account).
+- Status: Accepted (2026-10-12). iOS distribution is deferred (needs an Apple Developer account). Amended by [ADR 0029](0029-per-abi-android-apks.md) (per-ABI APKs).
 
 ## Context
 

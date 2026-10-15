@@ -33,5 +33,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0026](0026-mobile-files-and-scanning.md) | Mobile: sending files with the system picker, scanning with ML Kit | Accepted |
 | [0027](0027-notes-in-the-database.md) | Notes are stored in the database, not as Markdown files | Accepted |
 | [0028](0028-calendar-model.md) | Calendar: events in the database, shaped like iCalendar; CalDAV later | Accepted |
+| [0029](0029-per-abi-android-apks.md) | Android: one APK per ABI, the universal APK kept | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

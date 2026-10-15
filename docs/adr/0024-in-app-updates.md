@@ -1,6 +1,6 @@
 # 0024. Mobile app updates itself from its server
 
-- Status: Accepted (2026-10-12). Android only; iOS updates will go through the App Store.
+- Status: Accepted (2026-10-12). Android only; iOS updates will go through the App Store. Amended by [ADR 0029](0029-per-abi-android-apks.md) (per-ABI APKs).
 
 ## Context
 

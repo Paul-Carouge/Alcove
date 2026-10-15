@@ -2,11 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { Search as SearchIcon } from '@lucide/svelte';
+	import { NotebookPen, Search as SearchIcon } from '@lucide/svelte';
 	import FileIcon from '#lib/drive/FileIcon.svelte';
 	import { formatDate, formatSize } from '#lib/drive/format.js';
 	import type { DriveNode } from '#lib/drive/types.js';
 	import { search, type SearchHit } from '#lib/documents/api.js';
+	import { excerpt, searchNotes, type Note } from '#lib/notes/notes.svelte.js';
 	import Snippet from '#lib/documents/Snippet.svelte';
 	import TagChip from '#lib/tags/TagChip.svelte';
 	import { tags } from '#lib/tags/tags.svelte.js';
@@ -40,6 +41,20 @@
 				if (!ctrl.signal.aborted) failed = !!err;
 			});
 		return () => ctrl.abort();
+	});
+	// Notes whose title or text contains what was typed (ADR 0027).
+	let notes = $state<Note[]>([]);
+	$effect(() => {
+		const query = q.slice(0, 200);
+		notes = [];
+		if (!query) return;
+		let live = true;
+		searchNotes(query)
+			.then((found) => live && (notes = found))
+			.catch(() => {});
+		return () => {
+			live = false;
+		};
 	});
 	$effect(() => {
 		tags.load().catch(() => {});
@@ -83,16 +98,40 @@
 	<Alert>{m.error_load()}</Alert>
 {:else if results === null}
 	<p class="muted">{m.loading()}</p>
-{:else if q && results.length === 0}
+{:else if q && results.length === 0 && notes.length === 0}
 	<div class="results-empty">
 		<EmptyState icon={SearchIcon} title={m.search_none({ q })} compact />
 	</div>
 {:else if q}
 	<p class="muted" role="status">
-		{m.search_count({ count: results.length })}{#if inText}<span class="sep" aria-hidden="true"
-				>·</span
-			>{m.search_in_text_count({ count: inText })}{/if}
+		{[
+			results.length ? m.search_count({ count: results.length }) : '',
+			inText ? m.search_in_text_count({ count: inText }) : '',
+			notes.length ? m.notes_count({ count: notes.length }) : ''
+		]
+			.filter(Boolean)
+			.join(' · ')}
 	</p>
+	{#if notes.length}
+		<h2 class="section">{m.nav_notes()}</h2>
+		<ul class="results notes">
+			{#each notes as n (n.id)}
+				<li>
+					<NotebookPen size={20} strokeWidth={1.75} aria-hidden="true" />
+					<div class="text">
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus a query -->
+						<a class="name" href={`${resolve('/(app)/notes')}?n=${encodeURIComponent(n.id)}`}
+							>{n.title.trim() || excerpt(n.body, 60) || m.notes_untitled()}</a
+						>
+						{#if n.title.trim() && excerpt(n.body)}
+							<span class="muted small">{excerpt(n.body)}</span>
+						{/if}
+					</div>
+				</li>
+			{/each}
+		</ul>
+		{#if results.length}<h2 class="section">{m.nav_files()}</h2>{/if}
+	{/if}
 	<ul class="results">
 		{#each results as { node: n, match, snippet } (n.id)}
 			<li>
@@ -171,6 +210,21 @@
 	.results-empty {
 		max-width: 52rem;
 	}
+	.results:empty {
+		display: none;
+	}
+	.notes {
+		margin-bottom: var(--space-5);
+	}
+	.notes li > :global(svg) {
+		flex: none;
+		margin-top: var(--space-2);
+		color: var(--color-accent);
+	}
+	.section {
+		margin: 0 0 var(--space-3);
+		font-size: var(--text-lg);
+	}
 	.results {
 		margin: 0;
 		padding: 0;
@@ -227,9 +281,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-	}
-	.sep {
-		margin: 0 var(--space-1);
 	}
 	.badge {
 		display: inline-block;

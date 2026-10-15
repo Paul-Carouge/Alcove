@@ -8,6 +8,7 @@
 		Folder,
 		Image,
 		Menu,
+		NotebookPen,
 		Search as SearchIcon,
 		Share2,
 		Trash2,
@@ -45,6 +46,7 @@
 			ready: true,
 			group: 0
 		},
+		{ label: m.nav_notes, icon: NotebookPen, href: resolve('/(app)/notes'), ready: true, group: 0 },
 		{ label: m.nav_shared, icon: Share2, href: resolve('/(app)/shared'), ready: true, group: 1 },
 		{ label: m.nav_trash, icon: Trash2, href: resolve('/(app)/trash'), ready: true, group: 1 }
 	];
@@ -199,9 +201,9 @@
 
 <style>
 	.shell {
-		display: grid;
 		/* Read by fixed overlays (selection bar) to centre on the content column. */
 		--sidebar-width: 16.5rem;
+		display: grid;
 		grid-template-columns: var(--sidebar-width) 1fr;
 		min-height: 100dvh;
 	}

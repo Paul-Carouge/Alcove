@@ -12,10 +12,14 @@
 	let {
 		open = $bindable(false),
 		node,
+		save: persist = (ids) => setNodeTags(node!.id, ids),
 		onsaved
 	}: {
 		open?: boolean;
-		node: (DriveNode & { tags?: string[] }) | null;
+		/** A file or folder, or anything else carrying tags (a note: `name` is its title). */
+		node: (Pick<DriveNode, 'id' | 'name'> & { tags?: string[] }) | null;
+		/** Stores the chosen tags; files and folders by default. */
+		save?: (tagIds: string[]) => Promise<unknown>;
 		onsaved?: (tagIds: string[]) => void;
 	} = $props();
 
@@ -110,7 +114,7 @@
 		saving = true;
 		error = '';
 		try {
-			await setNodeTags(node.id, selected);
+			await persist(selected);
 			onsaved?.(selected);
 			open = false;
 		} catch {

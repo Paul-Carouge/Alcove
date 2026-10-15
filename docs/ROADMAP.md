@@ -70,10 +70,15 @@ Full scope: mobile login, drive browser, viewer, offline favorites, **automatic 
 tasks, Wi-Fi/charging constraints, resumable, deduplicated), QR-code server pairing, share sheet,
 optional UnifiedPush/ntfy notifications, Play Store release (and F-Droid if feasible).
 
-## Phase 5: Notes and calendar
+## Phase 5: Notes and calendar (in progress)
 
-Markdown notes with realtime sync, and calendars (CalDAV) so native apps (DAVx⁵, iOS, Thunderbird) work
-out of the box. Contacts (CardDAV) are not planned for now.
+- **Notes** (next release): Markdown notes stored in the database ([ADR 0027](adr/0027-notes-in-the-database.md)),
+  realtime sync across devices, autosave, pinning, tags, search, trash; on the web and in the app.
+  Markdown export later.
+- **Calendar**: first inside Alcove (web and app, stored in the database), then CalDAV in a later release
+  so native apps (DAVx⁵, iOS, Thunderbird) work out of the box.
+
+Contacts (CardDAV) are not planned for now.
 
 ## Phase 6: Desktop sync
 

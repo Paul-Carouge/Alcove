@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:alcove/core/secure_store.dart';
@@ -149,6 +150,89 @@ void main() {
     handler = (_) => throw const SocketExceptionLike();
     await s.refreshIfStale(maxAge: Duration.zero);
     expect(s.isSignedIn, isTrue);
+  });
+
+  test('a slow server does not hold the start; its late refusal still signs out', () async {
+    handler = (_) => _json(200, {'token': _token, 'record': _user});
+    final s = newSession();
+    await s.useServer(Uri.parse('https://cloud.example.com'));
+    await s.signIn('paul@example.com', 'secret');
+
+    final answer = Completer<http.Response>();
+    final slow = Session(
+      store: SecureStore(const FlutterSecureStorage()),
+      httpClientFactory: () => MockClient((_) => answer.future),
+    );
+    await slow.restore(wait: const Duration(milliseconds: 50));
+    expect(slow.isSignedIn, isTrue);
+
+    answer.complete(_json(401, {'status': 401}));
+    await pumpEventQueue();
+    expect(slow.isSignedIn, isFalse);
+  });
+
+  group('late answers of an older session', () {
+    late Completer<http.Response> refresh;
+    late Session slow;
+
+    // Signed in on the server, then the app restarts and the refresh answers only when told.
+    Future<void> restoreSlowly() async {
+      handler = (_) => _json(200, {'token': _token, 'record': _user});
+      final s = newSession();
+      await s.useServer(Uri.parse('https://cloud.example.com'));
+      await s.signIn('paul@example.com', 'secret');
+      refresh = Completer<http.Response>();
+      slow = Session(
+        store: SecureStore(const FlutterSecureStorage()),
+        httpClientFactory: () => MockClient(
+          (req) =>
+              req.url.path.endsWith('/auth-refresh') ? refresh.future : Future.value(handler(req)),
+        ),
+      );
+      await slow.restore(wait: const Duration(milliseconds: 20));
+      expect(slow.isSignedIn, isTrue);
+    }
+
+    test('a refresh that succeeds after sign-out does not sign in again', () async {
+      await restoreSlowly();
+      await slow.signOut();
+      refresh.complete(_json(200, {'token': _token, 'record': _user}));
+      await pumpEventQueue();
+      expect(slow.isSignedIn, isFalse);
+      expect(await slow.store.readAuth(), isNull);
+    });
+
+    test('a late refusal does not sign out the account signed in since', () async {
+      await restoreSlowly();
+      await slow.signOut();
+      expect(await slow.signIn('paul@example.com', 'secret'), isA<SignedIn>());
+      refresh.complete(_json(401, {'status': 401}));
+      await pumpEventQueue();
+      expect(slow.isSignedIn, isTrue);
+    });
+
+    test("an old server's answer is not saved for the new server", () async {
+      await restoreSlowly();
+      await slow.useServer(Uri.parse('https://other.example.com'));
+      refresh.complete(_json(200, {'token': _token, 'record': _user}));
+      await pumpEventQueue();
+      expect(slow.isSignedIn, isFalse);
+      expect(await slow.store.readAuth(), isNull);
+      expect(await slow.store.readServerUrl(), Uri.parse('https://other.example.com'));
+    });
+  });
+
+  test('a server that never answers fails as a network error', () async {
+    final s = Session(
+      store: SecureStore(const FlutterSecureStorage()),
+      httpClientFactory: () => MockClient((_) => Completer<http.Response>().future),
+      responseTimeout: const Duration(milliseconds: 50),
+    );
+    await s.useServer(Uri.parse('https://cloud.example.com'));
+    expect(
+      await s.signIn('paul@example.com', 'secret'),
+      isA<SignInFailed>().having((f) => f.failure, 'failure', SignInFailure.network),
+    );
   });
 }
 

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'secure_store.dart';
@@ -37,12 +39,27 @@ final class SignInFailed extends SignInResult {
 
 /// The signed-in state of the app: one server, one account. Tokens live in [SecureStore] only.
 class Session extends ChangeNotifier {
-  Session({required this.store, this.httpClientFactory});
+  Session({
+    required this.store,
+    this.httpClientFactory,
+    this.responseTimeout = const Duration(seconds: 30),
+  });
 
   final SecureStore store;
 
   /// Injected in tests.
   final http.Client Function()? httpClientFactory;
+
+  /// How long an API call waits for the server to start answering (uploads and app downloads use
+  /// their own clients). Realtime streams answer their headers at once, so they are not cut.
+  final Duration responseTimeout;
+
+  /// Bumped by every sign-in, sign-out and server change: an answer that arrives after one of them
+  /// belongs to an older session and is ignored.
+  int _epoch = 0;
+
+  /// Identifies the current PocketBase client: late auth writes of a replaced one never reach the store.
+  Object _owner = Object();
 
   PocketBase? _pb;
   Uri? _server;
@@ -54,14 +71,21 @@ class Session extends ChangeNotifier {
   bool get isSignedIn => _pb?.authStore.isValid ?? false;
   RecordModel? get user => _pb?.authStore.record;
 
-  /// Loads the saved server and account, refreshing the token when the server answers.
-  Future<void> restore() async {
+  /// Loads the saved server and account, refreshing the token when the server answers. A slow or
+  /// unreachable server does not hold the app on its splash screen: after [wait] the saved session is
+  /// used and the refresh goes on (a revoked token still signs out when the answer comes).
+  Future<void> restore({Duration wait = const Duration(seconds: 3)}) async {
     final url = await store.readServerUrl();
     if (url == null) return;
     await _connect(url, initialAuth: await store.readAuth());
     if (!isSignedIn) return;
-    await _refresh();
+    await _refresh().timeout(wait, onTimeout: () {});
   }
+
+  /// One connection pool per server (keep-alive saves a TLS handshake per request, about 75 ms on a
+  /// fast link), and an unreachable server fails within seconds instead of the OS's minutes.
+  static http.Client _defaultClient() =>
+      IOClient(HttpClient()..connectionTimeout = const Duration(seconds: 15));
 
   DateTime? _refreshedAt;
 
@@ -75,10 +99,23 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> _refresh() async {
+    final epoch = _epoch;
+    final client = pb;
     try {
-      await pb.collection('users').authRefresh();
+      // Sent by hand (not authRefresh) so that a late answer cannot save its token after a sign-out,
+      // another sign-in or a server change.
+      final res = await client.send<Map<String, dynamic>>(
+        '/api/collections/users/auth-refresh',
+        method: 'POST',
+      );
+      if (epoch != _epoch) return;
+      client.authStore.save(
+        res['token'] as String,
+        RecordModel.fromJson(res['record'] as Map<String, dynamic>),
+      );
       _refreshedAt = DateTime.now();
     } on ClientException catch (e) {
+      if (epoch != _epoch) return;
       // Revoked or expired token: sign in again. Offline: keep the saved session.
       if (e.statusCode == 401 || e.statusCode == 403) await signOut();
     }
@@ -95,22 +132,32 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> _connect(Uri url, {String? initialAuth}) async {
+    _epoch++;
     await _authChanges?.cancel();
+    _pb?.close();
     _server = url;
+    final owner = _owner = Object();
+    final factory = httpClientFactory ?? _defaultClient;
     _pb = PocketBase(
       url.toString(),
       authStore: AsyncAuthStore(
-        save: store.writeAuth,
-        clear: store.clearAuth,
+        save: (data) async {
+          if (identical(_owner, owner)) await store.writeAuth(data);
+        },
+        clear: () async {
+          if (identical(_owner, owner)) await store.clearAuth();
+        },
         initial: initialAuth,
       ),
-      httpClientFactory: httpClientFactory,
+      reuseHTTPClient: true,
+      httpClientFactory: () => TimeoutClient(factory(), responseTimeout),
     );
     _authChanges = _pb!.authStore.onChange.listen((_) => notifyListeners());
   }
 
   /// Email and password, plus the authenticator code once the server asked for it.
   Future<SignInResult> signIn(String email, String password, {String? totp}) async {
+    _epoch++;
     try {
       await pb
           .collection('users')
@@ -140,6 +187,7 @@ class Session extends ChangeNotifier {
 
   /// The code received by email (second factor).
   Future<SignInResult> verifyEmailCode(EmailCodeSent step, String code) async {
+    _epoch++;
     try {
       await pb
           .collection('users')
@@ -151,6 +199,7 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    _epoch++;
     _pb?.authStore.clear();
     await store.clearAuth();
     notifyListeners();
@@ -179,6 +228,23 @@ class Session extends ChangeNotifier {
   @override
   void dispose() {
     unawaited(_authChanges?.cancel());
+    _pb?.close();
     super.dispose();
   }
+}
+
+/// Fails a request whose answer does not start within [timeout] (a server that accepts the connection
+/// but never answers), instead of a spinner forever. The body is read without a limit.
+class TimeoutClient extends http.BaseClient {
+  TimeoutClient(this._inner, this.timeout);
+
+  final http.Client _inner;
+  final Duration timeout;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      _inner.send(request).timeout(timeout);
+
+  @override
+  void close() => _inner.close();
 }

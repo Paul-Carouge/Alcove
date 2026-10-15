@@ -7,6 +7,36 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-15
+
+### Added
+- **Calendar**, on the web and in the app: several calendars with colours (shown or hidden on the web),
+  timed, all-day and multi-day events with a place and a description, and repeating events (every day,
+  week, month or year, until a date or a number of times). The web shows a month grid and an agenda of the
+  coming 30 days (the agenda first on phones); the app shows an agenda grouped by day and a month grid, with
+  the system date and time pickers. Changes sync live between devices. Editing a repeating event changes the
+  whole series. Events are stored in UTC and shown in your time zone; all-day events stay on their date
+  everywhere. The model is shaped like iCalendar so CalDAV can come in a later release
+  ([ADR 0028](docs/adr/0028-calendar-model.md)); `/health` lists the `calendar` module.
+
+### Changed
+- **A much smaller app download**: each release now ships one APK per processor type next to the universal
+  one. A recent phone downloads about 21.5 MB instead of 62 MB, and in-app updates pick the right APK by
+  themselves ([ADR 0029](docs/adr/0029-per-abi-android-apks.md)). Older apps and servers keep using the
+  universal APK, so updating from 0.29 works as before.
+- App: requests reuse one connection (about 5 times faster per request over HTTPS), and the app opens
+  without waiting for a slow server.
+
+### Fixed
+- App: typing a home-network address without `http://` (for example `192.168.1.20:8090`) no longer fails
+  with a certificate error; the app falls back to http for local servers.
+- App: a server that never answers no longer leaves a spinner forever; an update download that stalls now
+  fails instead of hanging; an update served by a slow server no longer restarts from zero on every try.
+- App: a late answer from an old session can no longer sign you back in after signing out, or sign out the
+  next account.
+- App: the photo timeline shows a Retry button when the next page fails to load, and the photo backup stops
+  cleanly when you switch servers.
+
 ## [0.29.0] - 2026-10-15
 
 ### Added

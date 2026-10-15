@@ -36,6 +36,10 @@ class _PhotosScreenState extends State<PhotosScreen> {
   bool _failed = false;
   String _token = '';
 
+  /// [_items] by month, recomputed only when the list changes (not on every pinch or spinner).
+  List<(String, List<MediaItem>)>? _groups;
+  List<(String, List<MediaItem>)> get _byMonth => _groups ??= groupByMonth(_items);
+
   /// Columns added or removed by pinching the grid.
   int _density = 0;
   final Map<int, Offset> _pointers = {};
@@ -48,7 +52,8 @@ class _PhotosScreenState extends State<PhotosScreen> {
   void initState() {
     super.initState();
     _scroll.addListener(() {
-      if (_scroll.position.extentAfter < 1200) _loadMore();
+      // After a failed page, only the Retry button asks again (not every scroll event).
+      if (!_failed && _scroll.position.extentAfter < 1200) _loadMore();
     });
     _reload();
     _loadMemories();
@@ -110,7 +115,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
           session: widget.session,
           items: items,
           initial: 0,
-          onChanged: () => setState(() {}),
+          onChanged: () => setState(() => _groups = null),
         ),
       ),
     );
@@ -124,6 +129,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
 
   Future<void> _reload() async {
     _items.clear();
+    _groups = null;
     _page = 0;
     _total = -1;
     await _loadMore();
@@ -144,6 +150,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
             expand: 'node',
           );
       _items.addAll(res.items.map(MediaItem.new));
+      _groups = null;
       _page = res.page;
       _total = res.totalItems;
       _failed = false;
@@ -161,9 +168,10 @@ class _PhotosScreenState extends State<PhotosScreen> {
           session: widget.session,
           items: _items,
           initial: _items.indexOf(item),
-          onChanged: () => setState(() {}),
+          onChanged: () => setState(() => _groups = null),
           onTrashed: (item) => setState(() {
             _items.remove(item);
+            _groups = null;
             _total -= 1;
           }),
         ),
@@ -238,7 +246,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
       slivers.add(_skeleton(columns));
     }
 
-    for (final (key, items) in groupByMonth(_items)) {
+    for (final (key, items) in _byMonth) {
       final parts = key.split('-');
       final date = parts[0] == '0000' ? null : DateTime(int.parse(parts[0]), int.parse(parts[1]));
       slivers.add(
@@ -272,6 +280,22 @@ class _PhotosScreenState extends State<PhotosScreen> {
               ),
             ),
           ],
+        ),
+      );
+    }
+    if (_failed && !_loading && _items.isNotEmpty) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(AlcoveSpace.s5),
+            child: Column(
+              children: [
+                Text(l.loadFailed, textAlign: TextAlign.center),
+                const SizedBox(height: AlcoveSpace.s3),
+                OutlinedButton(onPressed: _loadMore, child: Text(l.retry)),
+              ],
+            ),
+          ),
         ),
       );
     }

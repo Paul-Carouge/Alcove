@@ -116,10 +116,11 @@ class _TagPickerState extends State<_TagPicker> {
     try {
       final color = tagColors[(widget.book.items.length + 6) % tagColors.length];
       final t = await widget.book.create(name, color);
+      if (!mounted) return; // the sheet was closed meanwhile
       _name.clear();
       setState(() => _selected.add(t.id));
     } catch (_) {
-      setState(() => _error = l.tagNameTaken);
+      if (mounted) setState(() => _error = l.tagNameTaken);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

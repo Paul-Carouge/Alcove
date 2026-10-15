@@ -73,12 +73,14 @@ class PhotoBackup {
     if (!await library.requestAccess()) return _finish(state, BackupStop.noAccess, progress);
     if (state.wifiOnly && !await isOnWifi()) return _finish(state, BackupStop.notOnWifi, progress);
 
+    // The whole run talks to one server: switching servers stops it (the state belongs to this one).
+    final pb = session.pb;
     final deadline = budget == null ? null : DateTime.now().add(budget);
-    bool stopNow() =>
-        (cancelled?.call() ?? false) || (deadline != null && DateTime.now().isAfter(deadline));
+    bool cancelledNow() => (cancelled?.call() ?? false) || !identical(session.pb, pb);
+    bool stopNow() => cancelledNow() || (deadline != null && DateTime.now().isAfter(deadline));
 
     try {
-      await _ensureFolder(state, defaultFolderName);
+      await _ensureFolder(pb, state, defaultFolderName);
     } on ClientException catch (e) {
       return _finish(
         state,
@@ -98,7 +100,7 @@ class PhotoBackup {
       if (stopNow()) {
         return _finish(
           state,
-          cancelled?.call() ?? false ? BackupStop.cancelled : BackupStop.timeUp,
+          cancelledNow() ? BackupStop.cancelled : BackupStop.timeUp,
           progress,
         );
       }
@@ -118,7 +120,7 @@ class PhotoBackup {
 
       final Set<String> known;
       try {
-        final res = await session.pb.send<Map<String, dynamic>>(
+        final res = await pb.send<Map<String, dynamic>>(
           '/api/v1/backup/known',
           method: 'POST',
           body: {'hashes': files.values.map((f) => f.$2).toSet().toList()},
@@ -136,7 +138,7 @@ class PhotoBackup {
         if (stopNow()) {
           return _finish(
             state,
-            cancelled?.call() ?? false ? BackupStop.cancelled : BackupStop.timeUp,
+            cancelledNow() ? BackupStop.cancelled : BackupStop.timeUp,
             progress,
           );
         }
@@ -151,8 +153,8 @@ class PhotoBackup {
         } else {
           try {
             final node = await uploader.upload(
-              endpoint: session.pb.buildURL('/api/v1/uploads/'),
-              token: session.pb.authStore.token,
+              endpoint: pb.buildURL('/api/v1/uploads/'),
+              token: pb.authStore.token,
               file: file,
               metadata: {'filename': progress.current, 'parent': state.folderId},
               resumeUrl: state.pending[asset.id],
@@ -201,8 +203,8 @@ class PhotoBackup {
 
   /// The destination folder: the saved one if it still exists, else a root folder with the same name,
   /// else a new one.
-  Future<void> _ensureFolder(BackupState state, String defaultName) async {
-    final nodes = session.pb.collection('nodes');
+  Future<void> _ensureFolder(PocketBase pb, BackupState state, String defaultName) async {
+    final nodes = pb.collection('nodes');
     if (state.folderId.isNotEmpty) {
       try {
         final f = await nodes.getOne(state.folderId);
@@ -214,7 +216,7 @@ class PhotoBackup {
     final name = state.folderName.isEmpty ? defaultName : state.folderName;
     final existing = await nodes.getList(
       perPage: 1,
-      filter: session.pb.filter(
+      filter: pb.filter(
         'parent = "" && kind = "folder" && trashed_at = "" && name = {:name}',
         {'name': name},
       ),
@@ -222,7 +224,7 @@ class PhotoBackup {
     final folder = existing.items.isNotEmpty
         ? existing.items.first
         : await nodes.create(
-            body: {'owner': session.user!.id, 'parent': '', 'name': name, 'kind': 'folder'},
+            body: {'owner': pb.authStore.record!.id, 'parent': '', 'name': name, 'kind': 'folder'},
           );
     state
       ..folderId = folder.id

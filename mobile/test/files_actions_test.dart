@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,6 +6,7 @@ import 'package:alcove/core/drive.dart';
 import 'package:alcove/core/secure_store.dart';
 import 'package:alcove/core/session.dart';
 import 'package:alcove/features/files/files_screen.dart';
+import 'package:alcove/features/files/tags.dart';
 import 'package:alcove/l10n/gen/app_localizations.dart';
 import 'package:alcove/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -285,6 +287,35 @@ void main() {
     expect(find.text('Factures'), findsOneWidget); // the chip under the name
   });
 
+  testWidgets('closing the tag sheet while a tag is being created', (tester) async {
+    final pending = Completer<RecordModel>();
+    final book = _SlowTags(pending.future);
+    final node = RecordModel.fromJson({'id': 'n1', 'name': 'facture.pdf', 'tags': <String>[]});
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => pickTags(context, book, node),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newTag')), 'Factures');
+    await tester.tap(find.byTooltip('Add the tag'));
+    await tester.pump();
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pumpAndSettle();
+    pending.complete(RecordModel.fromJson({'id': 't1', 'name': 'Factures'}));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   test('makeSearchable starts the job and waits for the new file', () async {
     var polls = 0;
     final client = MockClient((req) async {
@@ -363,4 +394,13 @@ void main() {
     expect(kept.existsSync(), isFalse);
     expect(jsonDecode(File('${dir.path}/queue.json').readAsStringSync()), isEmpty);
   });
+}
+
+/// Tags whose creation answers when the test says so.
+class _SlowTags extends TagBook {
+  _SlowTags(this.answer) : super(Session(store: SecureStore(const FlutterSecureStorage())));
+  final Future<RecordModel> answer;
+
+  @override
+  Future<RecordModel> create(String name, String color) => answer;
 }

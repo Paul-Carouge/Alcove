@@ -128,8 +128,8 @@ class _FilesScreenState extends State<FilesScreen> {
           if (mounted) _snack(l.searchableDone);
         case NodeAction.trash:
           await _drive.trash(node.id);
-          setState(() => _nodes = _nodes?.where((n) => n.id != node.id).toList());
           if (!mounted) return;
+          setState(() => _nodes = _nodes?.where((n) => n.id != node.id).toList());
           _snack(
             l.trashed(name),
             action: SnackBarAction(

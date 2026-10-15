@@ -51,8 +51,13 @@ class FakeServer {
   final List<String> folders = [];
   int quotaLeft = 1 << 30;
   final Map<String, (int, BytesBuilder, String)> uploads = {};
+  final List<String> hosts = [];
+
+  /// Runs when the backup asks which photos the server has.
+  Future<void> Function()? onKnown;
 
   Future<http.Response> handle(http.Request req) async {
+    hosts.add(req.url.host);
     final path = req.url.path;
     if (path == '/api/collections/nodes/records' && req.method == 'GET') {
       return _json(200, {'page': 1, 'perPage': 1, 'totalItems': 0, 'totalPages': 0, 'items': []});
@@ -71,6 +76,7 @@ class FakeServer {
       return _json(200, {'id': 'folder1', 'collectionId': 'nodes', 'trashed_at': ''});
     }
     if (path == '/api/v1/backup/known') {
+      await onKnown?.call();
       final asked = ((jsonDecode(req.body) as Map)['hashes'] as List).cast<String>();
       return _json(200, {'known': asked.where(hashes.contains).toList()});
     }
@@ -187,6 +193,17 @@ void main() {
     expect(server.uploadedNames, isEmpty);
     await service(library).run();
     expect(server.uploadedNames, ['a.jpg']);
+  });
+
+  test('switching servers during a backup stops it cleanly', () async {
+    await store.save(BackupState(enabled: true, wifiOnly: false));
+    server.onKnown = () => session.useServer(Uri.parse('https://other.example.com'));
+    final r = await service(
+      FakeLibrary([FakeAsset('a', photo('a.jpg', 'aaaa')), FakeAsset('b', photo('b.jpg', 'bbbb'))]),
+    ).run();
+    expect(r.stop, BackupStop.cancelled);
+    expect(server.uploadedNames, isEmpty);
+    expect(server.hosts, isNot(contains('other.example.com')));
   });
 
   test('stops when the server refuses (quota) and says why', () async {

@@ -10,6 +10,7 @@ import '../../theme/theme.dart';
 import '../account/account_screen.dart';
 import '../backup/backup_controller.dart';
 import '../backup/backup_screen.dart';
+import '../calendar/calendar_screen.dart';
 import '../files/files_screen.dart';
 import '../notes/notes_screen.dart';
 import '../photos/albums_screen.dart';
@@ -17,7 +18,7 @@ import '../photos/photos_screen.dart';
 
 typedef BackupFactory = Future<BackupController> Function(Session session);
 
-/// The signed-in app: Photos, Albums, Files, Notes and Account tabs. Photo backup runs when the app opens or comes
+/// The signed-in app: Photos, Albums, Files, Notes, Calendar and Account tabs. Photo backup runs when the app opens or comes
 /// back to the foreground (and in the background on Android).
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -38,6 +39,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _tab = 0;
   bool _notesVisited = false;
+  bool _calendarVisited = false;
   BackupController? _backup;
   late final AppUpdater _updater = AppUpdater(session: widget.session);
   late final UploadQueue _uploads = UploadQueue(widget.session);
@@ -91,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   final _navigators = {
-    for (final i in [1, 2, 3]) i: GlobalKey<NavigatorState>(),
+    for (final i in [1, 2, 3, 4]) i: GlobalKey<NavigatorState>(),
   };
 
   /// A tab with its own navigation stack. The system back button goes back inside the visible
@@ -121,6 +123,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _tabNavigator(3, (_) => NotesScreen(session: widget.session))
           else
             const SizedBox.shrink(),
+          if (_calendarVisited)
+            _tabNavigator(4, (_) => CalendarScreen(session: widget.session))
+          else
+            const SizedBox.shrink(),
           AccountScreen(
             session: widget.session,
             version: widget.version,
@@ -140,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           onDestinationSelected: (i) => setState(() {
             _tab = i;
             if (i == 3) _notesVisited = true;
+            if (i == 4) _calendarVisited = true;
           }),
           destinations: [
             NavigationDestination(
@@ -161,6 +168,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               icon: const Icon(Icons.edit_note_outlined),
               selectedIcon: const Icon(Icons.edit_note),
               label: l.tabNotes,
+            ),
+            // shortcut: six destinations (Material advises at most five) until the floating bar lands.
+            NavigationDestination(
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month),
+              label: l.tabCalendar,
             ),
             NavigationDestination(
               icon: ListenableBuilder(

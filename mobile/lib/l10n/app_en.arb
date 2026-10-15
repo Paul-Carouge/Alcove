@@ -412,5 +412,66 @@
         "type": "int"
       }
     }
+  },
+  "tabCalendar": "Calendar",
+  "calendarToday": "Today",
+  "calendarAgenda": "Agenda",
+  "calendarMonth": "Month",
+  "calendarPreviousMonth": "Previous month",
+  "calendarNextMonth": "Next month",
+  "calendarNewEvent": "New event",
+  "calendarEditEvent": "Edit event",
+  "calendarDefaultName": "Personal",
+  "calendarEmpty": "Nothing planned for the next 30 days.",
+  "calendarDayEmpty": "Nothing planned this day.",
+  "calendarAllDay": "All day",
+  "calendarEventTitle": "Title",
+  "calendarStarts": "Starts",
+  "calendarEnds": "Ends",
+  "calendarCalendar": "Calendar",
+  "calendarRepeat": "Repeat",
+  "calendarRepeatNone": "Does not repeat",
+  "calendarRepeatDaily": "Every day",
+  "calendarRepeatWeekly": "Every week",
+  "calendarRepeatMonthly": "Every month",
+  "calendarRepeatYearly": "Every year",
+  "calendarRepeatEnds": "Repeat ends",
+  "calendarEndsNever": "Never",
+  "calendarEndsUntil": "On a date",
+  "calendarEndsCount": "After a number of times",
+  "calendarUntil": "Last day",
+  "calendarCount": "Number of times",
+  "calendarSeriesNote": "Changes apply to every occurrence of this event.",
+  "calendarRepeats": "Repeats",
+  "calendarLocation": "Location",
+  "calendarDescription": "Description",
+  "calendarDeleteEvent": "Delete event",
+  "calendarDeleteEventBody": "“{name}” will be permanently deleted.",
+  "@calendarDeleteEventBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDeleteSeriesBody": "“{name}” and all its occurrences will be permanently deleted.",
+  "@calendarDeleteSeriesBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarErrorTitle": "Give the event a title.",
+  "calendarErrorEnd": "The end must be after the start.",
+  "calendarErrorUntil": "The last day must be on or after the start.",
+  "calendarErrorCount": "Enter a number between 1 and 999.",
+  "calendarDayEvents": "Events on {date}",
+  "@calendarDayEvents": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -13,8 +13,7 @@
 		MapPin,
 		Heart,
 		SlidersHorizontal,
-		Trash2,
-		X
+		Trash2
 	} from '@lucide/svelte';
 	import { trashNode } from '#lib/drive/api.js';
 	import { onMediaChange } from '#lib/drive/live.js';
@@ -44,6 +43,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Select from '#lib/ui/Select.svelte';
+	import SelectionBar from '#lib/ui/SelectionBar.svelte';
 
 	let filter = $state<PhotoFilter>('all');
 	let refine = $state<Refine>({});
@@ -434,37 +434,6 @@
 	</div>
 {/if}
 
-{#if selected}
-	<div class="selection-bar" role="region" aria-label={m.photos_selection()}>
-		<span class="count">{m.photos_selected({ count: selected.size })}</span>
-		<div class="bar-actions">
-			<Button variant="ghost" onclick={endSelection}>
-				<X size={16} aria-hidden="true" />{m.cancel_button()}
-			</Button>
-			{#if !target}
-				<Button variant="ghost" disabled={!selected.size} onclick={favoriteSelection}>
-					<Heart size={16} aria-hidden="true" />{m.photos_favorite_selected()}
-				</Button>
-				<Button
-					variant="ghost"
-					disabled={!selected.size}
-					loading={zipping}
-					onclick={downloadSelection}
-				>
-					<Download size={16} aria-hidden="true" />{m.photos_download_selected()}
-				</Button>
-				<Button variant="ghost" disabled={!selected.size} onclick={trashSelection}>
-					<Trash2 size={16} aria-hidden="true" />{m.photos_trash_selected()}
-				</Button>
-			{/if}
-			<Button disabled={!selected.size} loading={adding} onclick={addSelection}>
-				<BookImage size={16} aria-hidden="true" />{target
-					? m.album_add_to({ name: target.name })
-					: m.album_add_button()}
-			</Button>
-		</div>
-	</div>
-{/if}
 <p class="status" role="status">{status}</p>
 
 {#if showMemories}
@@ -530,6 +499,46 @@
 	{#if loading}<p class="muted center">{m.loading()}</p>{/if}
 	<div bind:this={sentinel} aria-hidden="true"></div>
 {/if}
+
+<SelectionBar
+	open={!!selected}
+	label={m.photos_selected({ count: selected?.size ?? 0 })}
+	onclear={endSelection}
+	clearLabel={target ? m.cancel_button() : m.clear_selection()}
+	actions={[
+		...(target
+			? []
+			: [
+					{
+						label: m.photos_favorite_selected(),
+						icon: Heart,
+						disabled: !selected?.size,
+						onclick: favoriteSelection
+					},
+					{
+						label: m.photos_download_selected(),
+						icon: Download,
+						disabled: !selected?.size,
+						loading: zipping,
+						onclick: downloadSelection
+					},
+					{
+						label: m.photos_trash_selected(),
+						icon: Trash2,
+						disabled: !selected?.size,
+						onclick: trashSelection
+					}
+				]),
+		{
+			label: target ? m.album_add_to({ name: target.name }) : m.album_add_button(),
+			icon: BookImage,
+			primary: true,
+			disabled: !selected?.size,
+			loading: adding,
+			onclick: addSelection
+		}
+	]}
+/>
 
 <PhotoViewer
 	{items}
@@ -702,52 +711,6 @@
 		margin: 0 0 var(--space-2);
 		color: var(--color-success);
 		font-size: var(--text-sm);
-	}
-	.selection-bar {
-		/* Under the app header, above month headings (the upload panel owns the bottom corner). */
-		position: sticky;
-		top: calc(4.5rem + var(--space-2));
-		z-index: 4;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: var(--space-3);
-		margin-bottom: var(--space-3);
-		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-xl);
-		background: var(--color-surface-raised);
-		box-shadow: var(--shadow-lg);
-		animation: rise var(--duration-base) var(--ease-emphasized);
-	}
-	.count {
-		font-family: var(--font-display);
-		font-size: var(--text-lg);
-		font-variant-numeric: tabular-nums;
-	}
-	.bar-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-	}
-	@media (max-width: 900px) {
-		.selection-bar {
-			top: calc(4rem + var(--space-2));
-		}
-	}
-	@media (max-width: 600px) {
-		.selection-bar {
-			padding: var(--space-2) var(--space-3);
-		}
-		.bar-actions {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			width: 100%;
-		}
-		.bar-actions > :global(:last-child) {
-			grid-column: 1 / -1;
-		}
 	}
 	.muted {
 		color: var(--color-text-muted);

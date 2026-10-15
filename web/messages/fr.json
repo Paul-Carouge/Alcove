@@ -123,8 +123,9 @@
 	"error_download": "Le téléchargement n’a pas pu démarrer. Réessayez.",
 	"select_all": "Tout sélectionner",
 	"select_item": "Sélectionner {name}",
-	"selected_count": "{count} sélectionné(s)",
 	"clear_selection": "Annuler la sélection",
+	"selection_label": "Sélection",
+	"selection_cleared": "Sélection annulée",
 	"action_move": "Déplacer vers…",
 	"move_title_one": "Déplacer « {name} »",
 	"move_title_many": "Déplacer {count} éléments",
@@ -417,7 +418,6 @@
 	"album_gone_title": "Cet album n’est pas disponible",
 	"album_gone_body": "Il a été supprimé, ou il n’est plus partagé avec vous.",
 	"photos_select": "Sélectionner",
-	"photos_selection": "Sélection",
 	"photos_selected": [
 		{
 			"declarations": ["input count", "local countPlural = count: plural"],

@@ -146,12 +146,10 @@ test('select a range with shift and download it as a ZIP', async ({ page }) => {
 		.click();
 	const pick = page.getByRole('button', { name: /^Select .+\.(jpg|png|mp4)$/ });
 	await pick.nth(2).click({ modifiers: ['Shift'] });
-	await expect(page.getByText('3 selected')).toBeVisible();
+	const bar = page.getByRole('region', { name: 'Selection' });
+	await expect(bar).toContainText('3 selected');
 
 	const download = page.waitForEvent('download');
-	await page
-		.getByRole('region', { name: 'Selection' })
-		.getByRole('button', { name: 'Download' })
-		.click();
+	await bar.getByRole('button', { name: 'Download' }).click();
 	expect((await download).suggestedFilename()).toBe('Photos.zip');
 });

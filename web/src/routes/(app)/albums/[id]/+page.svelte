@@ -8,6 +8,7 @@
 		BookImage,
 		CircleCheck,
 		Download,
+		ImageMinus,
 		ImagePlus,
 		Link as LinkIcon,
 		LogOut,
@@ -46,6 +47,7 @@
 	import Alert from '#lib/ui/Alert.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import SelectionBar from '#lib/ui/SelectionBar.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Dialog from '#lib/ui/Dialog.svelte';
 
@@ -284,19 +286,6 @@
 		</div>
 	</div>
 
-	{#if selected}
-		<div class="selection-bar" role="region" aria-label={m.photos_selection()}>
-			<span class="count">{m.photos_selected({ count: selected.size })}</span>
-			<div class="bar-actions">
-				<Button variant="ghost" onclick={() => (selected = null)}>
-					<X size={16} aria-hidden="true" />{m.cancel_button()}
-				</Button>
-				<Button variant="danger" disabled={!selected.size} onclick={removeSelection}>
-					{m.album_remove_selected()}
-				</Button>
-			</div>
-		</div>
-	{/if}
 	<p class="status" role="status">{status}</p>
 
 	{#if items.length === 0}
@@ -322,6 +311,21 @@
 		/>
 	{/if}
 {/if}
+
+<SelectionBar
+	open={!!selected}
+	label={m.photos_selected({ count: selected?.size ?? 0 })}
+	onclear={() => (selected = null)}
+	actions={[
+		{
+			label: m.album_remove_selected(),
+			icon: ImageMinus,
+			danger: true,
+			disabled: !selected?.size,
+			onclick: removeSelection
+		}
+	]}
+/>
 
 <PhotoViewer
 	{items}
@@ -453,33 +457,6 @@
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 	}
-	.selection-bar {
-		/* Under the app header, above month headings (the upload panel owns the bottom corner). */
-		position: sticky;
-		top: calc(4.5rem + var(--space-2));
-		z-index: 4;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: var(--space-3);
-		margin-bottom: var(--space-3);
-		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-xl);
-		background: var(--color-surface-raised);
-		box-shadow: var(--shadow-lg);
-	}
-	.count {
-		font-family: var(--font-display);
-		font-size: var(--text-lg);
-		font-variant-numeric: tabular-nums;
-	}
-	@media (max-width: 900px) {
-		.selection-bar {
-			top: calc(4rem + var(--space-2));
-		}
-	}
 	/* Phones: the buttons share the width evenly; the menu (a popover) stays beside them. */
 	@media (max-width: 600px) {
 		.head {
@@ -491,10 +468,6 @@
 		.tools :global(.btn) {
 			flex: 1 1 40%;
 		}
-	}
-	.bar-actions {
-		display: flex;
-		gap: var(--space-2);
 	}
 	.confirm {
 		margin: 0 0 var(--space-5);

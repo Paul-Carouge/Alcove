@@ -200,7 +200,9 @@
 <style>
 	.shell {
 		display: grid;
-		grid-template-columns: 16.5rem 1fr;
+		/* Read by fixed overlays (selection bar) to centre on the content column. */
+		--sidebar-width: 16.5rem;
+		grid-template-columns: var(--sidebar-width) 1fr;
 		min-height: 100dvh;
 	}
 	.sidebar {
@@ -422,6 +424,7 @@
 
 	@media (max-width: 900px) {
 		.shell {
+			--sidebar-width: 0px;
 			grid-template-columns: 1fr;
 		}
 		.sidebar {

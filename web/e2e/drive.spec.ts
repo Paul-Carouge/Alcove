@@ -173,8 +173,9 @@ test('select a range with shift and move it into a folder', async ({ page }) => 
 
 	await page.getByRole('checkbox', { name: 'Select a1.txt' }).click();
 	await page.getByRole('checkbox', { name: 'Select a3.txt' }).click({ modifiers: ['Shift'] });
-	const bar = page.getByRole('toolbar', { name: '3 selected' });
-	await expect(bar).toBeVisible();
+	// The selection bar floats at the bottom of the screen.
+	const bar = page.getByRole('region', { name: 'Selection' });
+	await expect(bar).toContainText('3 selected');
 	for (const name of ['a1.txt', 'a2.txt', 'a3.txt']) {
 		await expect(page.getByRole('checkbox', { name: `Select ${name}` })).toBeChecked();
 	}
@@ -210,11 +211,23 @@ test('select all and move everything to the trash', async ({ page }) => {
 	await openFolderWithFiles(page, unique('Bulk'), ['x1.txt', 'x2.txt']);
 
 	await page.getByRole('checkbox', { name: 'Select all' }).check();
-	await page
-		.getByRole('toolbar', { name: '2 selected' })
-		.getByRole('button', { name: 'Move to trash' })
-		.click();
+	const bar = page.getByRole('region', { name: 'Selection' });
+	await expect(bar).toContainText('2 selected');
+	await bar.getByRole('button', { name: 'Move to trash' }).click();
 	await expect(page.getByText('This folder is empty')).toBeVisible();
+});
+
+test('Escape clears the selection and hides the bar', async ({ page }) => {
+	await signIn(page);
+	await openFolderWithFiles(page, unique('Esc'), ['e1.txt']);
+
+	const box = page.getByRole('checkbox', { name: 'Select e1.txt' });
+	await box.check();
+	const bar = page.getByRole('region', { name: 'Selection' });
+	await expect(bar).toContainText('1 selected');
+	await page.keyboard.press('Escape');
+	await expect(bar).toBeHidden();
+	await expect(box).not.toBeChecked();
 });
 
 test('a folder downloads as a ZIP', async ({ page }) => {

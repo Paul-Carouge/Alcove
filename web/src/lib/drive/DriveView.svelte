@@ -11,7 +11,6 @@
 		Pencil,
 		Trash2,
 		Upload as UploadIcon,
-		X,
 		Tag as TagIcon
 	} from '@lucide/svelte';
 	import { ClientResponseError, type RecordSubscription } from 'pocketbase';
@@ -21,6 +20,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ActionsMenu from '#lib/ui/ActionsMenu.svelte';
+	import SelectionBar from '#lib/ui/SelectionBar.svelte';
 	import { downloadNode, forEachNode, listChildren, moveNode, pathTo, trashNode } from './api.js';
 	import MoveDialog from './MoveDialog.svelte';
 	import { Selection } from './selection.svelte.js';
@@ -308,57 +308,36 @@
 				<p class="count-line">{m.drive_item_count({ count: sorted.length })}</p>
 			{/if}
 		</div>
-		{#if selection.size > 0}
-			<div class="selbar" role="toolbar" aria-label={m.selected_count({ count: selection.size })}>
-				<span class="count">{m.selected_count({ count: selection.size })}</span>
-				<Button variant="secondary" onclick={() => zip(selected)}>
-					<Download size={18} aria-hidden="true" />
-					{m.action_download()}
-				</Button>
-				<Button variant="secondary" onclick={() => openMove(selected)}>
-					<FolderInput size={18} aria-hidden="true" />
-					{m.action_move()}
-				</Button>
-				<Button variant="secondary" onclick={() => trash(selected)}>
-					<Trash2 size={18} aria-hidden="true" />
-					{m.action_trash()}
-				</Button>
-				<button class="icon-btn" aria-label={m.clear_selection()} onclick={() => selection.clear()}>
-					<X size={18} aria-hidden="true" />
-				</button>
-			</div>
-		{:else}
-			<div class="actions">
-				<div class="segmented" role="radiogroup" aria-label={m.view_mode()}>
-					<button
-						role="radio"
-						aria-checked={layout === 'list'}
-						aria-label={m.view_list()}
-						title={m.view_list()}
-						onclick={() => setLayout('list')}><List size={18} aria-hidden="true" /></button
-					>
-					<button
-						role="radio"
-						aria-checked={layout === 'grid'}
-						aria-label={m.view_grid()}
-						title={m.view_grid()}
-						onclick={() => setLayout('grid')}><LayoutGrid size={18} aria-hidden="true" /></button
-					>
-				</div>
-				<Button
-					variant="secondary"
-					onclick={() => (newFolderOpen = true)}
-					disabled={view !== 'ready'}
+		<div class="actions">
+			<div class="segmented" role="radiogroup" aria-label={m.view_mode()}>
+				<button
+					role="radio"
+					aria-checked={layout === 'list'}
+					aria-label={m.view_list()}
+					title={m.view_list()}
+					onclick={() => setLayout('list')}><List size={18} aria-hidden="true" /></button
 				>
-					<FolderPlus size={18} aria-hidden="true" />
-					{m.new_folder_button()}
-				</Button>
-				<Button onclick={pickFiles} disabled={view !== 'ready'}>
-					<UploadIcon size={18} aria-hidden="true" />
-					{m.upload_button()}
-				</Button>
+				<button
+					role="radio"
+					aria-checked={layout === 'grid'}
+					aria-label={m.view_grid()}
+					title={m.view_grid()}
+					onclick={() => setLayout('grid')}><LayoutGrid size={18} aria-hidden="true" /></button
+				>
 			</div>
-		{/if}
+			<Button
+				variant="secondary"
+				onclick={() => (newFolderOpen = true)}
+				disabled={view !== 'ready'}
+			>
+				<FolderPlus size={18} aria-hidden="true" />
+				{m.new_folder_button()}
+			</Button>
+			<Button onclick={pickFiles} disabled={view !== 'ready'}>
+				<UploadIcon size={18} aria-hidden="true" />
+				{m.upload_button()}
+			</Button>
+		</div>
 		<input bind:this={fileInput} type="file" multiple hidden onchange={onPicked} />
 	</div>
 
@@ -503,6 +482,17 @@
 			</table>
 		{/if}
 	{/if}
+
+	<SelectionBar
+		open={selection.size > 0}
+		label={m.photos_selected({ count: selection.size })}
+		onclear={() => selection.clear()}
+		actions={[
+			{ label: m.action_download(), icon: Download, onclick: () => zip(selected) },
+			{ label: m.action_move(), icon: FolderInput, onclick: () => openMove(selected) },
+			{ label: m.action_trash(), icon: Trash2, onclick: () => trash(selected) }
+		]}
+	/>
 
 	{#if dragDepth > 0}
 		<div class="dropzone" aria-hidden="true">
@@ -849,42 +839,11 @@
 		outline: 2px dashed var(--color-accent);
 		outline-offset: -2px;
 	}
-	.selbar {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		box-shadow: var(--shadow-md);
-		animation: rise var(--duration-base) var(--ease-emphasized);
-	}
 	@keyframes rise {
 		from {
 			opacity: 0;
 			transform: translateY(var(--space-1));
 		}
-	}
-	.count {
-		font-weight: var(--weight-medium);
-		color: var(--color-accent);
-		margin-right: var(--space-2);
-		font-variant-numeric: tabular-nums;
-	}
-	.icon-btn {
-		display: grid;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border: 0;
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: var(--color-text);
-		cursor: pointer;
-	}
-	.icon-btn:hover {
-		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 	}
 	.action-error {
 		margin-bottom: var(--space-4);
@@ -901,15 +860,13 @@
 		.head {
 			align-items: stretch;
 		}
+		/* Wraps instead of overflowing the screen (long French labels). */
 		.actions {
+			flex-wrap: wrap;
 			width: 100%;
 		}
 		.actions :global(.btn) {
 			flex: 1;
-		}
-		.selbar {
-			flex-wrap: wrap;
-			width: 100%;
 		}
 		/* Phones: size and date move under the name, which keeps the width. */
 		.date,

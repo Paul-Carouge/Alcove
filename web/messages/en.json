@@ -123,8 +123,9 @@
 	"error_download": "The download could not start. Try again.",
 	"select_all": "Select all",
 	"select_item": "Select {name}",
-	"selected_count": "{count} selected",
 	"clear_selection": "Clear selection",
+	"selection_label": "Selection",
+	"selection_cleared": "Selection cleared",
 	"action_move": "Move to…",
 	"move_title_one": "Move “{name}”",
 	"move_title_many": "Move {count} items",
@@ -417,7 +418,6 @@
 	"album_gone_title": "This album is not available",
 	"album_gone_body": "It was deleted, or it is no longer shared with you.",
 	"photos_select": "Select",
-	"photos_selection": "Selection",
 	"photos_selected": [
 		{
 			"declarations": ["input count", "local countPlural = count: plural"],

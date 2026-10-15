@@ -158,6 +158,14 @@ void main() {
     final report = tester.getTopLeft(find.text('report.pdf'));
     expect(holidays.dy, lessThan(report.dy));
 
+    // The system back button goes back inside the tab instead of leaving the app.
+    await tester.tap(find.text('Holidays'));
+    await tester.pumpAndSettle();
+    expect(find.text('My files'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('My files'), findsOneWidget);
+
     // Account, then sign out back to the login screen.
     await tester.tap(find.text('Account'));
     await tester.pumpAndSettle();

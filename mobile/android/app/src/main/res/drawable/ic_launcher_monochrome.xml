@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ themed icon layer: only the alpha is used, the system tints it. Source: docs/brand/android-icon.svg (mark inside the 66dp safe zone). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Doorway -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.35"
+        android:pathData="M47.1,72.4V56.3a6.9,6.9 0,0 1,13.8 0v16.1z" />
+    <!-- Arch -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M37.9,72.4V51.7a16.1,16.1 0,0 1,32.2 0v20.7" />
+</vector>

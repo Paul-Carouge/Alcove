@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <!-- Source of the Android adaptive launcher icon (108dp canvas, 72dp visible, 66dp safe zone).
+       The mark is the Logo.svelte arch scaled x2.3 around the centre (54,54).
+       Layers live in mobile/android/app/src/main/res/drawable/ic_launcher_{background,foreground,monochrome}.xml;
+       keep them in sync with this file. Legacy PNG mipmaps and web/static/apple-touch-icon.png are
+       rendered from it (macOS: `sips -s format png file.svg -Z <px> --out file.png`). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A7966"/>
+      <stop offset="1" stop-color="#355C4D"/>
+    </linearGradient>
+  </defs>
+  <g id="background">
+    <rect width="108" height="108" fill="url(#bg)"/>
+  </g>
+  <g id="foreground">
+    <path d="M47.1 72.4V56.3a6.9 6.9 0 0 1 13.8 0v16.1z" fill="#F7F5F0" fill-opacity="0.35"/>
+    <path d="M37.9 72.4V51.7a16.1 16.1 0 0 1 32.2 0v20.7" fill="none" stroke="#F7F5F0" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

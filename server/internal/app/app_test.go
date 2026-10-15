@@ -18,12 +18,13 @@ func TestFullWiringServes(t *testing.T) {
 	srv := testutil.Server(t, a)
 
 	for path, want := range map[string]int{
-		"/health":                        http.StatusOK,
-		"/":                              http.StatusOK,       // SPA (or the "not built" placeholder)
-		"/api/v1/uploads/":               http.StatusNotFound, // no GET on the tus endpoint
-		"/api/nope":                      http.StatusNotFound,
-		"/api/collections/nodes/records": http.StatusOK,
-		"/api/collections/notes/records": http.StatusOK,
+		"/health":                         http.StatusOK,
+		"/":                               http.StatusOK,       // SPA (or the "not built" placeholder)
+		"/api/v1/uploads/":                http.StatusNotFound, // no GET on the tus endpoint
+		"/api/nope":                       http.StatusNotFound,
+		"/api/collections/nodes/records":  http.StatusOK,
+		"/api/collections/notes/records":  http.StatusOK,
+		"/api/collections/events/records": http.StatusOK,
 	} {
 		res, err := http.Get(srv.URL + path)
 		if err != nil {

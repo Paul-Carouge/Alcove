@@ -11,12 +11,16 @@ import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import 'photos_screen.dart';
+import '../../ui/shell.dart';
 
 /// Albums you own and albums shared with you (GET /api/v1/albums).
 class AlbumsScreen extends StatefulWidget {
-  const AlbumsScreen({super.key, required this.session});
+  const AlbumsScreen({super.key, required this.session, this.header});
 
   final Session session;
+
+  /// Shown under the title (the Photos / Albums switch).
+  final Widget? header;
 
   @override
   State<AlbumsScreen> createState() => _AlbumsScreenState();
@@ -195,11 +199,13 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     }
     return RefreshIndicator(
       onRefresh: _load,
-      edgeOffset: 120,
+      edgeOffset: LargeTitleAppBar.edgeOffset(context),
       child: CustomScrollView(
         slivers: [
-          LargeTitleAppBar(title: l.albumsTitle),
+          LargeTitleAppBar(title: l.albumsTitle, actions: shellActions(context)),
+          if (widget.header case final h?) SliverToBoxAdapter(child: h),
           content,
+          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
         ],
       ),
     );
@@ -314,7 +320,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
             itemBuilder: (_, i) => MediaTile(
               item: items[i],
               url: items[i].thumbUrl(widget.session.pb, _token),
-              onTap: () => Navigator.of(context).push(
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute<void>(
                   builder: (_) => PhotoViewer(session: widget.session, items: items, initial: i),
                 ),
@@ -327,7 +333,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _load,
-        edgeOffset: 120,
+        edgeOffset: LargeTitleAppBar.edgeOffset(context),
         child: CustomScrollView(
           slivers: [
             LargeTitleAppBar(
@@ -335,6 +341,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
               subtitle: items == null ? null : l.albumCount(items.length),
             ),
             ...content,
+            SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
           ],
         ),
       ),

@@ -495,9 +495,10 @@ class AlcoveAvatar extends StatelessWidget {
   }
 }
 
-/// The header of a main screen, like M3 Expressive's large flexible top app bar: a large serif
-/// title (and optional subtitle) that settles into the bar as the content scrolls, with a
-/// hairline once content passes under it.
+/// The header of a screen, like M3 Expressive's flexible top app bar but compact: the serif title
+/// sits on the same row as the actions, right under the status bar, and settles to a smaller size
+/// as the content scrolls (a hairline appears once content passes under it). No empty toolbar row
+/// above the title.
 class LargeTitleAppBar extends StatelessWidget {
   const LargeTitleAppBar({
     super.key,
@@ -512,26 +513,29 @@ class LargeTitleAppBar extends StatelessWidget {
   final List<Widget> actions;
   final Widget? leading;
 
-  static const double _expanded = 132;
-  static const double _subtitleHeight = 24;
-  static const double _bigSize = AlcoveFont.sizeXxxl - 2;
-  static const double _smallSize = AlcoveFont.sizeLg + 1;
+  static const double _toolbar = kToolbarHeight;
+  static const double _grow = AlcoveSpace.s4;
+  static const double _subtitleHeight = 22;
+  static const double _bigSize = AlcoveFont.sizeXxl + 2;
+  static const double _smallSize = AlcoveFont.sizeLg + 2;
+
+  /// Where a RefreshIndicator above this header should start (below the collapsed bar).
+  static double edgeOffset(BuildContext context) => MediaQuery.paddingOf(context).top + _toolbar;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final hasLeading = leading != null || (ModalRoute.of(context)?.impliesAppBarDismissal ?? false);
+    final route = ModalRoute.of(context);
+    final lead = leading ?? ((route?.impliesAppBarDismissal ?? false) ? const BackButton() : null);
+    // The title follows the text size setting, within what the header can hold.
+    final scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
     return SliverAppBar(
       pinned: true,
-      expandedHeight: _expanded + (subtitle == null ? 0 : _subtitleHeight),
-      leading: leading,
-      automaticallyImplyLeading: leading == null,
+      toolbarHeight: _toolbar,
+      expandedHeight: _toolbar + _grow + (subtitle == null ? 0 : _subtitleHeight),
+      automaticallyImplyLeading: false,
       backgroundColor: c.bg,
       titleSpacing: 0,
-      actions: [
-        ...actions,
-        const SizedBox(width: AlcoveSpace.s2),
-      ],
       flexibleSpace: Builder(
         builder: (context) {
           final s = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>()!;
@@ -540,54 +544,89 @@ class LargeTitleAppBar extends StatelessWidget {
               ? 0.0
               : ((s.currentExtent - s.minExtent) / range).clamp(0.0, 1.0).toDouble();
           final size = _smallSize + (_bigSize - _smallSize) * t;
-          final collapsedStart = hasLeading ? 56.0 : AlcoveSpace.s4;
-          final collapsedEnd = AlcoveSpace.s4 + actions.length * 52.0;
-          final below = subtitle == null ? 0.0 : _subtitleHeight * t;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              PositionedDirectional(
-                start: collapsedStart + (AlcoveSpace.s4 - collapsedStart) * t,
-                end: collapsedEnd + (AlcoveSpace.s4 - collapsedEnd) * t,
-                bottom:
-                    (kToolbarHeight - size * AlcoveFont.leadingTight) / 2 * (1 - t) +
-                    AlcoveSpace.s3 * t +
-                    below,
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: displayStyle(size, c.text),
-                  ),
-                ),
-              ),
-              if (subtitle != null)
-                PositionedDirectional(
-                  start: AlcoveSpace.s4,
-                  end: AlcoveSpace.s4,
-                  bottom: AlcoveSpace.s3,
-                  child: Opacity(
-                    opacity: ((t - 0.5) * 2).clamp(0.0, 1.0).toDouble(),
-                    child: Text(
-                      subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: c.textMuted, fontSize: AlcoveFont.sizeSm + 1),
+          return Padding(
+            padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (lead != null)
+                      Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: 56,
+                          height: _toolbar,
+                          child: Center(child: lead),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: AlcoveSpace.s4),
+                    Expanded(
+                      // Title (and subtitle) centred on the actions, at any height of the bar.
+                      child: ClipRect(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textScaler: scaler,
+                                  style: displayStyle(size, c.text),
+                                ),
+                              ),
+                              if (subtitle != null)
+                                SizedBox(
+                                  height: _subtitleHeight * t,
+                                  child: Opacity(
+                                    opacity: ((t - 0.5) * 2).clamp(0.0, 1.0).toDouble(),
+                                    child: Text(
+                                      subtitle!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textScaler: scaler,
+                                      style: TextStyle(
+                                        color: c.textMuted,
+                                        fontSize: AlcoveFont.sizeSm,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
+                    if (actions.isNotEmpty)
+                      Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          height: _toolbar,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: actions),
+                        ),
+                      ),
+                    const SizedBox(width: AlcoveSpace.s1),
+                  ],
+                ),
+                PositionedDirectional(
+                  start: 0,
+                  end: 0,
+                  bottom: 0,
+                  child: Opacity(
+                    opacity: (1 - t * 4).clamp(0.0, 1.0).toDouble(),
+                    child: Divider(height: 1, color: c.border),
                   ),
                 ),
-              PositionedDirectional(
-                start: 0,
-                end: 0,
-                bottom: 0,
-                child: Opacity(
-                  opacity: (1 - t * 4).clamp(0.0, 1.0).toDouble(),
-                  child: Divider(height: 1, color: c.border),
-                ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

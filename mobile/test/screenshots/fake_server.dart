@@ -173,7 +173,156 @@ http.Response fakeAlcove(http.Request req) {
       ],
     });
   }
+  http.Response page(List<Map<String, dynamic>> items) => _json({
+    'page': 1,
+    'perPage': 500,
+    'totalItems': items.length,
+    'totalPages': 1,
+    'items': items,
+  });
+  if (path == '/api/collections/notes/records') {
+    return page([
+      for (final (id, title, body, pinned, day) in [
+        ('n1', 'Courses', '- pain\n- café\n- tomates', true, '14'),
+        ('n2', 'Idées de week-end', 'Annecy, le lac et le marché du dimanche', false, '13'),
+        ('n3', 'Réunion copropriété', 'Ravalement de façade : devis à comparer', false, '10'),
+        ('n4', '', 'Appeler le plombier pour la facture du chauffe-eau', false, '02'),
+      ])
+        {
+          'id': id,
+          'collectionId': 'notes',
+          'collectionName': 'notes',
+          'owner': 'u1',
+          'title': title,
+          'body': body,
+          'pinned': pinned,
+          'tags': <String>[],
+          'trashed_at': '',
+          'updated': '2026-10-$day 09:30:00.000Z',
+        },
+    ]);
+  }
+  if (path == '/api/collections/calendars/records') {
+    return page([
+      {
+        'id': 'c1',
+        'collectionId': 'calendars',
+        'name': 'Paul',
+        'color': 'green',
+        'is_default': true,
+      },
+    ]);
+  }
+  if (path == '/api/collections/events/records') {
+    Map<String, dynamic> ev(
+      String id,
+      String title,
+      String start,
+      String end, {
+      bool allDay = false,
+      String location = '',
+    }) => {
+      'id': id,
+      'collectionId': 'events',
+      'collectionName': 'events',
+      'calendar': 'c1',
+      'title': title,
+      'description': '',
+      'location': location,
+      'start': start,
+      'end': end,
+      'all_day': allDay,
+      'rrule': '',
+    };
+    return page([
+      ev(
+        'e1',
+        'Dentiste',
+        '2026-10-15 08:30:00.000Z',
+        '2026-10-15 09:00:00.000Z',
+        location: '12 rue de la République',
+      ),
+      ev('e2', 'Déjeuner avec Camille', '2026-10-16 10:30:00.000Z', '2026-10-16 12:00:00.000Z'),
+      ev('e3', 'Vacances', '2026-10-24 00:00:00.000Z', '2026-10-27 00:00:00.000Z', allDay: true),
+      ev('e4', 'Yoga', '2026-10-20 16:00:00.000Z', '2026-10-20 17:00:00.000Z'),
+    ]);
+  }
+  if (path == '/api/collections/documents/records') {
+    Map<String, dynamic> doc(String id, String name, String kind, String mime, String text) => {
+      'id': 'doc$id',
+      'collectionId': 'documents',
+      'node': id,
+      'kind': kind,
+      'status': 'ready',
+      'text': text,
+      'updated': '2026-10-12 10:00:00.000Z',
+      'expand': {
+        'node': {
+          'id': id,
+          'collectionId': 'nodes',
+          'collectionName': 'nodes',
+          'name': name,
+          'kind': 'file',
+          'mime': mime,
+          'size': 384000,
+          'updated': '2026-10-12 10:00:00.000Z',
+        },
+      },
+    };
+    return page([
+      doc(
+        'f1',
+        'Contrat de location.pdf',
+        'pdf',
+        'application/pdf',
+        'Le présent bail est consenti pour une durée de trois ans à compter du 1er septembre…',
+      ),
+      doc(
+        'f7',
+        'Capture 2026-03-02.png',
+        'image',
+        'image/png',
+        'Facture numéro 2024-117 · Montant total : 84,20 euros',
+      ),
+      doc(
+        'f3',
+        'Notes de réunion.txt',
+        'text',
+        'text/plain',
+        'Ordre du jour : budget 2027, travaux de la cage d’escalier, questions diverses.',
+      ),
+      doc(
+        'f9',
+        'Attestation d’assurance.pdf',
+        'pdf',
+        'application/pdf',
+        'Nous certifions que M. Paul Carouge est assuré au titre du contrat habitation…',
+      ),
+    ]);
+  }
+  if (path == '/api/collections/nodes/records' &&
+      (req.url.queryParameters['filter'] ?? '').contains('kind = "file"')) {
+    // The "Recent" strip of Files.
+    Map<String, dynamic> f(String id, String name, String mime, String day) => {
+      'id': id,
+      'collectionId': 'nodes',
+      'collectionName': 'nodes',
+      'name': name,
+      'kind': 'file',
+      'mime': mime,
+      'size': 120000,
+      'blob': 'blob.bin',
+      'updated': '2026-10-$day 10:00:00.000Z',
+    };
+    return page([
+      f('f1', 'Contrat de location.pdf', 'application/pdf', '14'),
+      f('f3', 'Notes de réunion.txt', 'text/plain', '13'),
+      f('f8', 'Budget 2027.csv', 'text/csv', '11'),
+      f('f9', 'Attestation d’assurance.pdf', 'application/pdf', '09'),
+    ]);
+  }
   if (path == '/api/collections/nodes/records') {
+    final foldersOnly = (req.url.queryParameters['filter'] ?? '').contains('kind = "folder"');
     return _json({
       'page': 1,
       'perPage': 1000,
@@ -187,7 +336,7 @@ http.Response fakeAlcove(http.Request req) {
           ('f1', 'Contrat de location.pdf', 'file', 'application/pdf', 384000),
           ('f2', 'Lyon.jpg', 'file', 'image/jpeg', 2480000),
           ('f3', 'Notes de réunion.txt', 'file', 'text/plain', 4200),
-        ])
+        ].where((n) => !foldersOnly || n.$3 == 'folder'))
           {
             'id': id,
             'collectionId': 'nodes',

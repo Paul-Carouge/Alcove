@@ -155,12 +155,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Market list'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Search notes'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'cafe');
+    // The filter field under the title narrows the list as you type.
+    await tester.enterText(find.byKey(const Key('notesFilter')), 'cafe');
     await tester.pumpAndSettle();
     expect(find.text('Market list'), findsNothing);
-    await tester.enterText(find.byType(TextField), 'zzz');
+    await tester.enterText(find.byKey(const Key('notesFilter')), 'zzz');
     await tester.pumpAndSettle();
     expect(find.text('No notes match your search'), findsOneWidget);
   });

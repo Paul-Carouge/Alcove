@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
 
@@ -10,6 +11,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import '../../ui/kit.dart';
+import '../../ui/shell.dart';
 import '../files/file_actions.dart';
 import '../files/tags.dart';
 
@@ -41,7 +43,6 @@ class _NotesScreenState extends State<NotesScreen> {
   List<RecordModel>? _all;
   bool _failed = false;
   String _query = '';
-  bool _searching = false;
   bool _trash = false;
   void Function()? _stop;
 
@@ -99,7 +100,8 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Future<void> _open(RecordModel note, {bool isNew = false}) async {
-    final result = await Navigator.of(context).push<RecordModel>(
+    // Above the navigation bar: the editor has the whole screen (and the keyboard).
+    final result = await Navigator.of(context, rootNavigator: true).push<RecordModel>(
       MaterialPageRoute(
         builder: (_) => NoteEditorScreen(
           session: widget.session,
@@ -113,6 +115,7 @@ class _NotesScreenState extends State<NotesScreen> {
     if (!mounted || result == null) return;
     _put(result);
     if (isTrashed(result)) {
+      unawaited(HapticFeedback.mediumImpact());
       final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -286,7 +289,7 @@ class _NotesScreenState extends State<NotesScreen> {
       backgroundColor: c.bg,
       body: RefreshIndicator(
         onRefresh: _load,
-        edgeOffset: 120,
+        edgeOffset: LargeTitleAppBar.edgeOffset(context),
         child: CustomScrollView(
           slivers: [
             LargeTitleAppBar(
@@ -299,38 +302,30 @@ class _NotesScreenState extends State<NotesScreen> {
                   selectedIcon: Icon(Icons.delete, color: c.accent),
                   onPressed: () => setState(() => _trash = !_trash),
                 ),
-                IconButton(
-                  tooltip: l.notesSearch,
-                  isSelected: _searching,
-                  icon: const Icon(Icons.search),
-                  onPressed: () => setState(() {
-                    _searching = !_searching;
-                    if (!_searching) _query = '';
-                  }),
-                ),
+                ...shellActions(context),
               ],
             ),
-            if (_searching)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AlcoveSpace.s4,
-                    0,
-                    AlcoveSpace.s4,
-                    AlcoveSpace.s4,
-                  ),
-                  child: TextField(
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: l.notesSearch,
-                      prefixIcon: const Icon(Icons.search),
-                    ),
-                    onChanged: (v) => setState(() => _query = v),
-                  ),
+            // Filters the notes in place (the top bar's search looks everywhere).
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AlcoveSpace.s4,
+                  AlcoveSpace.s1,
+                  AlcoveSpace.s4,
+                  AlcoveSpace.s4,
+                ),
+                child: _FilterField(
+                  hint: l.notesSearch,
+                  onChanged: (v) => setState(() => _query = v),
                 ),
               ),
+            ),
             ...content,
-            const SliverToBoxAdapter(child: SizedBox(height: AlcoveSpace.s8 + AlcoveSpace.s6)),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: AlcoveSpace.s8 + AlcoveSpace.s5 + MediaQuery.paddingOf(context).bottom,
+              ),
+            ),
           ],
         ),
       ),
@@ -342,6 +337,69 @@ class _NotesScreenState extends State<NotesScreen> {
               icon: const Icon(Icons.edit_outlined),
               label: Text(l.notesNew),
             ),
+    );
+  }
+}
+
+/// A quiet search pill that filters a list as you type.
+class _FilterField extends StatefulWidget {
+  const _FilterField({required this.hint, required this.onChanged});
+  final String hint;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_FilterField> createState() => _FilterFieldState();
+}
+
+class _FilterFieldState extends State<_FilterField> {
+  final _text = TextEditingController();
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    const pill = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AlcoveRadius.full)),
+      borderSide: BorderSide.none,
+    );
+    return TextField(
+      key: const Key('notesFilter'),
+      controller: _text,
+      textInputAction: TextInputAction.search,
+      onChanged: (v) {
+        setState(() {});
+        widget.onChanged(v);
+      },
+      decoration: InputDecoration(
+        hintText: widget.hint,
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: _text.text.isEmpty
+            ? null
+            : IconButton(
+                tooltip: l.searchClear,
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  _text.clear();
+                  setState(() {});
+                  widget.onChanged('');
+                },
+              ),
+        filled: true,
+        fillColor: c.surfaceSunken,
+        contentPadding: const EdgeInsets.symmetric(vertical: AlcoveSpace.s3),
+        border: pill,
+        enabledBorder: pill,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(AlcoveRadius.full)),
+          borderSide: BorderSide(color: c.focus, width: 1.5),
+        ),
+      ),
     );
   }
 }

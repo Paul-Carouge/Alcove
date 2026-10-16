@@ -1,5 +1,5 @@
 // Renders app screens to PNG files for design review (not part of the regular test run):
-//   SCREENSHOTS=/tmp/shots flutter test test/screenshots
+//   SCREENSHOTS=/tmp/shots flutter test test/screenshots   (PHONE=small for a 360 dp phone)
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -16,6 +16,10 @@ final shotsDir = Platform.environment['SCREENSHOTS'];
 final skipShots = shotsDir == null ? 'SCREENSHOTS not set' : false;
 
 const _fixtures = '../web/e2e/fixtures';
+
+/// A page of a scanned document, for the PDF viewer.
+final scanPicture = File('$_fixtures/scan.jpg').readAsBytesSync();
+
 final _pictures = [
   for (final f in ['harbor.jpg', 'lyon.jpg', 'winter.jpg', 'scan.jpg'])
     File('$_fixtures/$f').readAsBytesSync(),
@@ -39,6 +43,14 @@ Future<void> loadFonts() async {
       ),
     );
   await icons.load();
+  // The app asks for JetBrains Mono (falling back to the system mono); the Mac's mono stands in.
+  final mono = FontLoader(AlcoveFont.mono)
+    ..addFont(
+      Future.value(
+        ByteData.sublistView(File('/System/Library/Fonts/SFNSMono.ttf').readAsBytesSync()),
+      ),
+    );
+  await mono.load();
   // Every server image becomes one of the test pictures (stable per URL).
   alcoveImageProvider = (url) =>
       MemoryImage(_pictures[url.toString().hashCode.abs() % _pictures.length]);
@@ -65,8 +77,14 @@ Widget phone(
 );
 
 Future<void> setPhoneSize(WidgetTester tester) async {
-  tester.view.physicalSize = const Size(1170, 2532);
+  // PHONE=small: a 360 × 740 dp Android phone (the narrowest common size).
+  tester.view.physicalSize = Platform.environment['PHONE'] == 'small'
+      ? const Size(1080, 2220)
+      : const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
+  // A real phone: a status bar on top, the gesture bar below (in physical pixels).
+  tester.view.padding = const FakeViewPadding(top: 36 * 3, bottom: 20 * 3);
+  tester.view.viewPadding = const FakeViewPadding(top: 36 * 3, bottom: 20 * 3);
   addTearDown(tester.view.reset);
 }
 

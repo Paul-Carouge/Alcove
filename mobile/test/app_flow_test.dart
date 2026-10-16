@@ -151,7 +151,9 @@ void main() {
     expect(find.byIcon(Icons.favorite), findsOneWidget);
 
     // Files: folders first.
-    await tester.tap(find.text('Files'));
+    // The floating bar names only the current destination; the others by tooltip and semantics.
+    expect(find.bySemanticsLabel('Files'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('tabFiles')));
     await tester.pumpAndSettle();
     expect(find.text('My files'), findsOneWidget);
     final holidays = tester.getTopLeft(find.text('Holidays'));
@@ -166,8 +168,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('My files'), findsOneWidget);
 
-    // Account, then sign out back to the login screen.
-    await tester.tap(find.text('Account'));
+    // Account, from the avatar in the top bar, then sign out back to the login screen.
+    await tester.tap(find.byKey(const Key('accountButton')));
     await tester.pumpAndSettle();
     expect(find.text('Paul Carouge'), findsOneWidget);
     expect(find.textContaining('Made by Paul Carouge', skipOffstage: false), findsOneWidget);

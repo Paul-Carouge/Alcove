@@ -10,15 +10,25 @@ import '../../theme/tokens.g.dart';
 import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
+import '../../ui/shell.dart';
 import '../backup/backup_controller.dart';
 import 'media.dart';
 import 'photo_viewer.dart';
 
 /// The timeline: photos and videos grouped by month (headers stay pinned), newest first.
 class PhotosScreen extends StatefulWidget {
-  const PhotosScreen({super.key, required this.session, this.backup, this.onOpenBackup});
+  const PhotosScreen({
+    super.key,
+    required this.session,
+    this.backup,
+    this.onOpenBackup,
+    this.header,
+  });
 
   final Session session;
+
+  /// Shown under the title (the Photos / Albums switch).
+  final Widget? header;
   final BackupController? backup;
   final VoidCallback? onOpenBackup;
 
@@ -109,7 +119,8 @@ class _PhotosScreenState extends State<PhotosScreen> {
   }
 
   void _openMemory(List<MediaItem> items) {
-    Navigator.of(context).push(
+    // Above the navigation bar: the viewer takes the whole screen.
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
         builder: (_) => PhotoViewer(
           session: widget.session,
@@ -162,7 +173,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
   }
 
   void _open(MediaItem item) {
-    Navigator.of(context).push(
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
         builder: (_) => PhotoViewer(
           session: widget.session,
@@ -197,8 +208,10 @@ class _PhotosScreenState extends State<PhotosScreen> {
               listenable: c,
               builder: (context, _) => _BackupChip(controller: c, onTap: widget.onOpenBackup),
             ),
+          ...shellActions(context),
         ],
       ),
+      if (widget.header case final h?) SliverToBoxAdapter(child: h),
     ];
 
     if (_memories.isNotEmpty) {
@@ -309,7 +322,12 @@ class _PhotosScreenState extends State<PhotosScreen> {
         ),
       );
     }
-    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: AlcoveSpace.s7)));
+    // Room for the floating navigation bar.
+    slivers.add(
+      SliverToBoxAdapter(
+        child: SizedBox(height: AlcoveSpace.s5 + MediaQuery.paddingOf(context).bottom),
+      ),
+    );
 
     return Listener(
       onPointerDown: (e) => _pointers[e.pointer] = e.position,
@@ -320,7 +338,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
         onRefresh: () async {
           await Future.wait([_reload(), _loadMemories()]);
         },
-        edgeOffset: 120,
+        edgeOffset: LargeTitleAppBar.edgeOffset(context),
         child: CustomScrollView(controller: _scroll, slivers: slivers),
       ),
     );

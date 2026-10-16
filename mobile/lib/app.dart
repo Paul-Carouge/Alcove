@@ -43,11 +43,22 @@ class _AlcoveAppState extends State<AlcoveApp> {
     super.initState();
     _session.addListener(_changed);
     _session.restore().whenComplete(() {
+      _wasSignedIn = _session.isSignedIn;
       if (mounted) setState(() => _restored = true);
     });
   }
 
-  void _changed() => setState(() {});
+  final _navigator = GlobalKey<NavigatorState>();
+  bool _wasSignedIn = false;
+
+  void _changed() {
+    // Signed out (or the server changed): close what was opened above the home screen (account,
+    // viewers, search), so the sign-in screen shows.
+    final signedIn = _session.isSignedIn;
+    if (_wasSignedIn && !signedIn) _navigator.currentState?.popUntil((r) => r.isFirst);
+    _wasSignedIn = signedIn;
+    setState(() {});
+  }
 
   @override
   void dispose() {
@@ -79,6 +90,7 @@ class _AlcoveAppState extends State<AlcoveApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigator,
       title: kProductName,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),

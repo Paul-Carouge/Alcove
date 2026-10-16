@@ -10,6 +10,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import '../../ui/kit.dart';
+import '../../ui/shell.dart';
 import '../files/file_actions.dart';
 import '../files/tags.dart';
 
@@ -135,7 +136,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _edit({RecordModel? event, String? day}) async {
     final cals = _calendars;
     if (cals == null || cals.isEmpty) return;
-    await Navigator.of(context).push<void>(
+    await Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => EventEditorScreen(
@@ -205,30 +206,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
       backgroundColor: c.bg,
       body: RefreshIndicator(
         onRefresh: _load,
-        edgeOffset: 120,
+        edgeOffset: LargeTitleAppBar.edgeOffset(context),
         child: CustomScrollView(
           slivers: [
             LargeTitleAppBar(
               title: l.tabCalendar,
-              actions: [
-                IconButton(
-                  tooltip: l.calendarToday,
-                  icon: const Icon(Icons.today_outlined),
-                  onPressed: () => setState(() {
-                    _today = _todayKey();
-                    _selected = _today;
-                  }),
+              actions: shellActions(context),
+            ),
+            // The view switch and "Today", under the title (the top bar keeps search and account).
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  AlcoveSpace.s4,
+                  AlcoveSpace.s1,
+                  AlcoveSpace.s2,
+                  AlcoveSpace.s4,
                 ),
-                IconButton(
-                  key: const Key('calendarView'),
-                  tooltip: _month ? l.calendarAgenda : l.calendarMonth,
-                  icon: Icon(_month ? Icons.view_agenda_outlined : Icons.calendar_view_month),
-                  onPressed: () => setState(() => _month = !_month),
+                child: Row(
+                  children: [
+                    SegmentedSwitch<bool>(
+                      value: _month,
+                      onChanged: (v) => setState(() => _month = v),
+                      segments: [
+                        (false, l.calendarAgenda, const Key('calendarAgenda')),
+                        (true, l.calendarMonth, const Key('calendarView')),
+                      ],
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () => setState(() {
+                        _today = _todayKey();
+                        _selected = _today;
+                      }),
+                      icon: const Icon(Icons.today_outlined),
+                      label: Text(l.calendarToday),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
             ...content,
-            const SliverToBoxAdapter(child: SizedBox(height: AlcoveSpace.s8 + AlcoveSpace.s6)),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: AlcoveSpace.s8 + AlcoveSpace.s5 + MediaQuery.paddingOf(context).bottom,
+              ),
+            ),
           ],
         ),
       ),

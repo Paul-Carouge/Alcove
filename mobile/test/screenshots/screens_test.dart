@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:alcove/core/app_update.dart';
@@ -23,6 +24,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import 'package:alcove/core/file_cache.dart';
+import 'package:alcove/core/native_files.dart';
+import 'package:alcove/core/previews.dart';
+import 'package:alcove/core/share_inbox.dart';
+import 'package:alcove/features/share/share_screen.dart';
+import 'package:alcove/features/viewer/file_viewer.dart';
+import 'package:flutter/services.dart';
+
 import 'fake_server.dart';
 import 'harness.dart';
 
@@ -46,6 +55,36 @@ class _PendingUpdate extends AppUpdater {
   }
   @override
   bool get supported => true;
+}
+
+/// PdfRenderer stand-in: three A4 pages, each the scanned test picture.
+class _FakeNative extends NativeFiles {
+  @override
+  Future<PdfInfo> pdfOpen(String path) async =>
+      (id: 1, pages: List.filled(3, const Size(595, 842)));
+  @override
+  Future<Uint8List> pdfRender(int id, int page, int width) async => scanPicture;
+  @override
+  Future<void> pdfClose(int id) async {}
+}
+
+/// A file already in the viewer cache, so the viewer shows it at once.
+(RecordModel, FileCache) _cached(String id, String name, String mime, List<int> bytes) {
+  final dir = Directory.systemTemp.createTempSync('viewer');
+  final node = RecordModel.fromJson({
+    'id': id,
+    'collectionId': 'nodes',
+    'name': name,
+    'kind': 'file',
+    'mime': mime,
+    'size': bytes.length,
+    'updated': '2026-10-12 10:00:00.000Z',
+  });
+  final f = File('${dir.path}/${cacheName(id, node.getStringValue('updated'), name)}')
+    ..createSync(recursive: true)
+    ..writeAsBytesSync(bytes);
+  assert(f.existsSync());
+  return (node, FileCache(root: () async => dir));
 }
 
 BackupController _backup(Session session) {
@@ -95,16 +134,40 @@ void main() {
       backupFactory: (s) async => _backup(s),
     );
 
-    for (final (i, tab) in ['photos', 'albums', 'files', 'account'].indexed) {
+    // Each destination of the floating bar (and Albums, Account) as the owner sees it.
+    for (final (tab, taps) in [
+      ('photos', <Key>[]),
+      ('albums', [const Key('photosAlbums')]),
+      ('files', [const Key('tabFiles')]),
+      ('documents', [const Key('tabDocuments')]),
+      ('notes', [const Key('tabNotes')]),
+      ('calendar', [const Key('tabCalendar')]),
+      ('account', [const Key('accountButton')]),
+    ]) {
       testWidgets('$tab $suffix', (tester) async {
         await pump(tester, home);
         await tester.pump();
-        if (i > 0) {
-          await tester.tap(find.byType(NavigationDestination).at(i));
+        for (final k in taps) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+          await tester.pump();
+          await tester.tap(find.byKey(k));
+          await tester.pump(const Duration(milliseconds: 400));
         }
         await shoot(tester, '$tab-$suffix');
+        // Realtime reconnection timers of Notes and Calendar end with the tree.
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(minutes: 5));
       }, skip: skipShots != false);
     }
+
+    testWidgets('photos-scrolled $suffix', (tester) async {
+      await pump(tester, home);
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 80)));
+      await tester.pump();
+      await tester.drag(find.byType(CustomScrollView).first, const Offset(0, -500));
+      await shoot(tester, 'photos-scrolled-$suffix');
+    }, skip: skipShots != false);
 
     testWidgets('update $suffix', (tester) async {
       await pump(
@@ -182,7 +245,7 @@ void main() {
       await tester.pump();
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pump();
-      await tester.longPress(find.text('Contrat de location.pdf'));
+      await tester.longPress(find.text('Contrat de location.pdf').last);
       await tester.pump(const Duration(milliseconds: 400));
     }
 
@@ -222,6 +285,129 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await shoot(tester, 'search-$suffix');
+    }, skip: skipShots != false);
+
+    Future<void> viewer(
+      WidgetTester tester,
+      String shot,
+      String name,
+      String mime,
+      List<int> bytes,
+    ) async {
+      final (node, cache) = _cached('f$shot', name, mime, bytes);
+      await pump(
+        tester,
+        (s) => FileViewerScreen(
+          session: s,
+          node: node,
+          kind: previewKind(mime, name),
+          cache: cache,
+          native: _FakeNative(),
+        ),
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 120)));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await shoot(tester, '$shot-$suffix');
+    }
+
+    testWidgets('pdf $suffix', (tester) async {
+      await viewer(tester, 'pdf', 'Contrat de location.pdf', 'application/pdf', scanPicture);
+    }, skip: skipShots != false);
+
+    testWidgets('text $suffix', (tester) async {
+      await viewer(
+        tester,
+        'text',
+        'Notes de réunion.md',
+        'text/markdown',
+        utf8.encode(
+          '# Réunion du 13 octobre\n\nPrésents : Camille, Léa, Paul.\n\n'
+          '## Budget 2027\n\nLe budget est voté à l’unanimité. Les travaux de la cage d’escalier '
+          'commenceront au printemps, après comparaison de trois devis.\n\n'
+          '## Questions diverses\n\n- Local vélos : une clé de plus.\n- Prochaine réunion en janvier.\n',
+        ),
+      );
+    }, skip: skipShots != false);
+
+    testWidgets('code $suffix', (tester) async {
+      await viewer(
+        tester,
+        'code',
+        'budget.json',
+        'application/json',
+        utf8.encode(
+          '{"year":2027,"total":48200,"lines":[{"label":"Ravalement","amount":31000},'
+          '{"label":"Ascenseur","amount":9800},{"label":"Espaces verts","amount":2400},'
+          '{"label":"Assurance","amount":5000}],"approved":true}',
+        ),
+      );
+    }, skip: skipShots != false);
+
+    testWidgets('nopreview $suffix', (tester) async {
+      await viewer(tester, 'nopreview', 'Archives 2024.zip', 'application/zip', [1, 2, 3]);
+    }, skip: skipShots != false);
+
+    testWidgets('share $suffix', (tester) async {
+      await pump(
+        tester,
+        (s) => ShareScreen(
+          session: s,
+          files: const [
+            SharedFile(
+              path: '/x/1',
+              name: 'Facture EDF octobre.pdf',
+              mime: 'application/pdf',
+              size: 182000,
+            ),
+            SharedFile(
+              path: '/x/2',
+              name: 'IMG_20261014_1830.jpg',
+              mime: 'image/jpeg',
+              size: 3400000,
+            ),
+          ],
+        ),
+      );
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 80)));
+      await shoot(tester, 'share-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('sort $suffix', (tester) async {
+      await pump(tester, (s) => FilesScreen(session: s, uploads: UploadQueue(s)));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 80)));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('sortButton')));
+      await tester.pump(const Duration(milliseconds: 400));
+      await shoot(tester, 'sort-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('pdf-jump $suffix', (tester) async {
+      final (node, cache) = _cached(
+        'fj',
+        'Contrat de location.pdf',
+        'application/pdf',
+        scanPicture,
+      );
+      await pump(
+        tester,
+        (s) => FileViewerScreen(
+          session: s,
+          node: node,
+          kind: PreviewKind.pdf,
+          cache: cache,
+          native: _FakeNative(),
+        ),
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 120)));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.tap(find.byKey(const Key('pageChip')));
+      await tester.pump(const Duration(milliseconds: 400));
+      await shoot(tester, 'pdf-jump-$suffix');
     }, skip: skipShots != false);
 
     testWidgets('login $suffix', (tester) async {

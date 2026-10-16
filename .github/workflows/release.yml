@@ -47,6 +47,15 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - uses: subosito/flutter-action@v2
         with: { channel: stable, flutter-version: 3.44.8, cache: true }
+      # The project asks Gradle for 8 GB + 4 GB metaspace (fine on a laptop); the private-repo runner has
+      # about 7 GB and kills the job. User-level properties take precedence over the project's.
+      - name: Fit Gradle in the runner's memory
+        run: |
+          mkdir -p ~/.gradle
+          printf '%s\n' \
+            'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError' \
+            'kotlin.daemon.jvmargs=-Xmx1g' \
+            'org.gradle.workers.max=2' > ~/.gradle/gradle.properties
       - name: Build the signed APKs
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}

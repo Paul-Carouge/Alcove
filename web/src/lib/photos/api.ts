@@ -21,6 +21,8 @@ export interface Media extends RecordModel {
 	lat: number;
 	lon: number;
 	favorite: boolean;
+	/** Restored from Google Photos (ADR 0030). */
+	description?: string;
 	thumb: string;
 	preview: string;
 	expand?: { node?: DriveNode };

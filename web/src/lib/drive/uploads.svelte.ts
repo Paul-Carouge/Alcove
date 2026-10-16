@@ -21,14 +21,22 @@ const CONCURRENCY = 3;
 let tus: Promise<typeof import('tus-js-client')> | null = null;
 const loadTus = () => (tus ??= import('tus-js-client'));
 
+/** Quota full, or the server's disk full (507): both shown as "Not enough space". */
 const isQuota = (err: DetailedError) =>
-	err.originalResponse?.getStatus() === 413 &&
-	(err.originalResponse.getBody() ?? '').startsWith('ERR_QUOTA_EXCEEDED');
+	err.originalResponse?.getStatus() === 507 ||
+	(err.originalResponse?.getStatus() === 413 &&
+		(err.originalResponse.getBody() ?? '').startsWith('ERR_QUOTA_EXCEEDED'));
 
 /** Retry network errors, timeouts, conflicts and rate limits; not other client errors. */
 function shouldRetry(err: DetailedError): boolean {
 	const status = err.originalResponse?.getStatus() ?? 0;
-	return status === 0 || status === 409 || status === 423 || status === 429 || status >= 500;
+	return (
+		status === 0 ||
+		status === 409 ||
+		status === 423 ||
+		status === 429 ||
+		(status >= 500 && status !== 507)
+	);
 }
 
 /**

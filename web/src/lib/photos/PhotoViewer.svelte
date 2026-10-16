@@ -349,6 +349,10 @@
 				<aside class="info" aria-label={m.photo_info()}>
 					<h2>{m.photo_info()}</h2>
 					<dl>
+						{#if item.description}
+							<dt>{m.photo_description()}</dt>
+							<dd class="description">{item.description}</dd>
+						{/if}
 						<dt>{m.photo_taken()}</dt>
 						<dd>{takenLabel(item.taken_at)}</dd>
 						<dt>{m.photo_file()}</dt>
@@ -605,5 +609,9 @@
 			bottom: var(--space-3);
 			transform: none;
 		}
+	}
+	.description {
+		white-space: pre-line;
+		overflow-wrap: anywhere;
 	}
 </style>

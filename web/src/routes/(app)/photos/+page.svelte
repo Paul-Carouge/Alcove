@@ -12,6 +12,7 @@
 		Image as ImageIcon,
 		MapPin,
 		Heart,
+		Import,
 		SlidersHorizontal,
 		Trash2
 	} from '@lucide/svelte';
@@ -380,6 +381,9 @@
 			</a>
 			<a class="link-btn" href={resolve('/(app)/photos/duplicates')}>
 				<Copy size={16} aria-hidden="true" />{m.duplicates_title()}
+			</a>
+			<a class="link-btn" href={resolve('/(app)/photos/import')} title={m.import_title()}>
+				<Import size={16} aria-hidden="true" />{m.import_link()}
 			</a>
 		{/if}
 	</div>

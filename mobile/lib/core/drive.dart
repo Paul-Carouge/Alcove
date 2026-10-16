@@ -86,10 +86,23 @@ class UploadItem {
     required this.open,
     this.path,
     this.resumeUrl,
+    this.moveSource = false,
+    this.account = '',
+    this.queuedAt,
   });
 
   final String name;
   final String parent;
+
+  /// The source is a temporary copy of ours (a file shared to the app): moved into the queue's
+  /// storage instead of copied, so it doesn't stay behind.
+  final bool moveSource;
+
+  /// Whose upload this is (`<server>|<user id>`): only sent while that account is signed in.
+  String account;
+
+  /// When it was queued (items of another account are dropped after a week).
+  DateTime? queuedAt;
 
   /// Gives a local file to send (copied from a content URI if needed).
   final Future<File> Function() open;
@@ -113,21 +126,39 @@ class UploadItem {
     'path': path,
     'resume': resumeUrl,
     'failed': status == UploadStatus.failed,
+    'account': account,
+    'queuedAt': queuedAt?.toUtc().toIso8601String(),
   };
 }
 
 /// Sends files one at a time (tus) and reports progress. Each file is first copied into the app's own
 /// storage and the queue is saved, so uploads interrupted by closing the app resume at the next start
 /// ([restore]), from where they stopped.
+///
+/// Each upload belongs to the account that queued it (server and user). Only the signed-in
+/// account's uploads are sent; another account's stay on disk, resume when it signs in again, and
+/// are deleted after [dormantFor]. Entries saved before accounts were recorded go to the first
+/// account that signs in.
 class UploadQueue extends ChangeNotifier {
   UploadQueue(
     this.session, {
     http.Client Function()? httpClient,
     Future<Directory> Function()? storage,
+    DateTime Function()? now,
   }) : _httpClient = httpClient ?? http.Client.new,
-       _storage = storage ?? _defaultStorage;
+       _storage = storage ?? _defaultStorage,
+       _now = now ?? DateTime.now;
+
+  static const dormantFor = Duration(days: 7);
 
   final Session session;
+  final DateTime Function() _now;
+
+  /// Saved uploads of other accounts, kept as they are in queue.json.
+  final List<Map<String, dynamic>> _dormant = [];
+
+  /// The signed-in account, as recorded on its uploads.
+  String get account => '${session.server ?? ''}|${session.user?.id ?? ''}';
   final http.Client Function() _httpClient;
   final Future<Directory> Function() _storage;
   final List<UploadItem> items = [];
@@ -153,6 +184,11 @@ class UploadQueue extends ChangeNotifier {
   /// Queues files: they are copied into the app's storage first, then sent.
   void add(Iterable<UploadItem> files) {
     final list = files.toList();
+    for (final i in list) {
+      i
+        ..account = account
+        ..queuedAt ??= _now();
+    }
     items.addAll(list);
     _changed();
     unawaited(_stage(list));
@@ -177,8 +213,18 @@ class UploadQueue extends ChangeNotifier {
         final src = await item.open();
         if (!src.path.startsWith(dir.path)) {
           final safe = item.name.replaceAll(RegExp(r'[^\w.\- ]'), '_');
-          final copy = await src.copy('${dir.path}/${DateTime.now().microsecondsSinceEpoch}-$safe');
-          item.path = copy.path;
+          final target = '${dir.path}/${DateTime.now().microsecondsSinceEpoch}-$safe';
+          if (item.moveSource) {
+            // Our own temporary copy: moved (or copied, then deleted, across volumes).
+            try {
+              item.path = (await src.rename(target)).path;
+            } on FileSystemException {
+              item.path = (await src.copy(target)).path;
+              await src.delete().catchError((Object _) => src);
+            }
+          } else {
+            item.path = (await src.copy(target)).path;
+          }
         } else {
           item.path = src.path;
         }
@@ -199,19 +245,41 @@ class UploadQueue extends ChangeNotifier {
       final file = File('${(await _storage()).path}/queue.json');
       if (!await file.exists()) return;
       final list = jsonDecode(await file.readAsString()) as List<dynamic>;
+      final me = account;
+      final now = _now();
       for (final raw in list.cast<Map<String, dynamic>>()) {
         final path = raw['path'] as String?;
         if (path == null || !await File(path).exists()) continue;
+        // Saved before accounts were recorded: the first account to sign in takes them.
+        final owner = (raw['account'] as String?)?.isNotEmpty == true
+            ? raw['account'] as String
+            : me;
+        final queuedAt = DateTime.tryParse(raw['queuedAt'] as String? ?? '') ?? now;
+        if (owner != me) {
+          if (now.difference(queuedAt) > dormantFor) {
+            await File(path).delete().catchError((Object _) => File(path));
+          } else {
+            _dormant.add({
+              ...raw,
+              'account': owner,
+              'queuedAt': queuedAt.toUtc().toIso8601String(),
+            });
+          }
+          continue;
+        }
         final item = UploadItem(
           name: raw['name'] as String,
           parent: raw['parent'] as String? ?? '',
           open: () async => File(path),
           path: path,
           resumeUrl: raw['resume'] as String?,
+          account: owner,
+          queuedAt: queuedAt,
         );
         if (raw['failed'] == true) item.status = UploadStatus.failed;
         items.add(item);
       }
+      await _save(); // records the adopted and dropped entries
     } catch (_) {
       return; // a damaged queue file must not break the app
     }
@@ -224,9 +292,10 @@ class UploadQueue extends ChangeNotifier {
       final dir = await _storage();
       await dir.create(recursive: true);
       final pending = items.where((i) => i.status != UploadStatus.done && i.path != null);
+      // Other accounts' uploads are kept for when they sign in again.
       await File(
         '${dir.path}/queue.json',
-      ).writeAsString(jsonEncode([for (final i in pending) i.toJson()]));
+      ).writeAsString(jsonEncode([for (final i in pending) i.toJson(), ..._dormant]));
     } catch (_) {
       // Saving is best effort: the upload itself goes on.
     }

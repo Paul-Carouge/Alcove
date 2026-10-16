@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.31.0](2026-10-16-v0.31.0.md) | 2026-10-16 | The app, reworked from real use |
 | [0.30.0](2026-10-15-v0.30.0.md) | 2026-10-15 | Calendar, and a lighter app |
 | [0.29.0](2026-10-15-v0.29.0.md) | 2026-10-15 | Notes |
 | [0.28.0](2026-10-14-v0.28.0.md) | 2026-10-14 | Lin |

@@ -7,6 +7,34 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-10-16
+
+### Added
+- **In-app viewers** (Android): PDFs open inside the app, rendered by Android itself (no added size), with
+  pinch-to-zoom and a page jump; text, Markdown, code, JSON and CSV files open as text. Every viewer, the
+  photo viewer included, has Share, Open with… and Download (to Downloads/Alcove).
+- **Share to Alcove**: send files, photos or text to Alcove from any Android app, then pick the folder.
+- **Search in the app**: files, folders, photos, documents (by their text) and notes, from the search
+  button at the top of every tab.
+- **Documents tab** in the app, with filters (all, PDFs, scans, text).
+- Files: sort by name, date or size (remembered on the phone), a strip of recent files, and pull to
+  refresh on every list and grid.
+- Light haptic feedback on key actions.
+
+### Changed
+- **A floating navigation bar** replaces the crowded bottom bar: Photos (with Albums inside), Files,
+  Documents, Notes and Calendar. Your account moved to the avatar at the top right. The bar hides while you
+  scroll down and comes back when you scroll up.
+- Compact headers: the page title now sits right under the status bar, without the large empty band.
+- The app starts faster: tabs load on first visit.
+
+### Security
+- Files cached for viewing and sharing are deleted when you sign out or switch servers, and queued uploads
+  stay with the account that queued them.
+- Shared files from other apps are checked (no access to Alcove's private files, size limits, safe names),
+  and files handed to other apps never carry the Android package type.
+
+
 ## [0.30.0] - 2026-10-15
 
 ### Added

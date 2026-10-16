@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../core/drive.dart';
+import '../../core/file_sort.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
@@ -458,4 +460,62 @@ class UploadBanner extends StatelessWidget {
       },
     );
   }
+}
+
+/// Chooses how Files lists folders: by name, date or size. Tapping the current order flips it.
+Future<FileSort?> showSortSheet(BuildContext context, FileSort current) {
+  final l = AppLocalizations.of(context);
+  final c = context.colors;
+  String direction(SortField f, bool desc) => switch (f) {
+    SortField.name => desc ? l.sortNameDesc : l.sortNameAsc,
+    SortField.date => desc ? l.sortDateDesc : l.sortDateAsc,
+    SortField.size => desc ? l.sortSizeDesc : l.sortSizeAsc,
+  };
+  return showModalBottomSheet<FileSort>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SheetHeader(title: l.sortTitle, subtitle: l.sortHint),
+          InsetGroup(
+            children: [
+              for (final (field, icon, label) in [
+                (SortField.name, Icons.sort_by_alpha, l.sortName),
+                (SortField.date, Icons.schedule, l.sortDate),
+                (SortField.size, Icons.straighten, l.sortSize),
+              ])
+                Semantics(
+                  selected: current.field == field,
+                  child: GroupTile(
+                    key: Key('sort-${field.name}'),
+                    icon: icon,
+                    title: label,
+                    subtitle: current.field == field ? direction(field, current.descending) : null,
+                    chevron: false,
+                    trailing: current.field == field
+                        ? Icon(
+                            current.descending ? Icons.arrow_downward : Icons.arrow_upward,
+                            color: c.accent,
+                          )
+                        : null,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.pop(
+                        context,
+                        current.field == field
+                            ? FileSort(field, descending: !current.descending)
+                            : FileSort.initial(field),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }

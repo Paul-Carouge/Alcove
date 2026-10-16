@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Only the downloaded update is shared with the installer. -->
+<!-- What the app may hand to other apps: the downloaded update (to the installer) and the files
+     opened in the viewers (Open with, Share). Nothing else of the app's storage. -->
 <paths>
     <cache-path name="updates" path="updates/" />
+    <cache-path name="viewer" path="viewer/" />
 </paths>

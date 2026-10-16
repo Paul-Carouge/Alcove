@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,8 +7,11 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../core/file_cache.dart';
+import '../../core/native_files.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
@@ -111,6 +115,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
       }
       return;
     }
+    unawaited(HapticFeedback.mediumImpact());
     widget.onTrashed?.call(item);
     if (!mounted) return;
     if (widget.items.isEmpty) {
@@ -242,6 +247,43 @@ class _PhotoViewerState extends State<PhotoViewer> {
     }
   }
 
+  /// The original, downloaded into the viewer cache (for Share and Open with).
+  Future<File> _original(MediaItem item) => FileCache.instance.fetch(
+    widget.session,
+    key: cacheName('m${item.id}', '', item.name.isEmpty ? item.id : item.name),
+    url: () async => item.originalUrl(widget.session.pb, await widget.session.fileToken()),
+    expectedSize: item.size,
+  );
+
+  Future<void> _handOut({required bool share}) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final item = _item;
+    final mime = item.isVideo ? 'video/*' : 'image/*';
+    if (!NativeFiles.instance.available) {
+      // shortcut: iOS opens the original in the browser until it has a share sheet channel.
+      try {
+        final token = await widget.session.fileToken();
+        if (!await launchUrl(item.originalUrl(widget.session.pb, token))) throw StateError('x');
+      } catch (_) {
+        messenger.showSnackBar(SnackBar(content: Text(l.fileCannotOpen)));
+      }
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final f = await _original(item);
+      final ok = share
+          ? await NativeFiles.instance.share([f.path], mime, item.name)
+          : await NativeFiles.instance.openWith(f.path, mime, l.viewerOpenWith);
+      if (!ok) messenger.showSnackBar(SnackBar(content: Text(l.viewerNoApp)));
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l.loadFailed)));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   void _toggleChrome() {
     setState(() => _chrome = !_chrome);
     SystemChrome.setEnabledSystemUIMode(
@@ -280,7 +322,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
                   final it = widget.items[i];
                   final pb = widget.session.pb;
                   if (it.isVideo) {
-                    return _VideoPage(
+                    return VideoPage(
                       key: ValueKey(it.id),
                       url: it.originalUrl(pb, _token),
                       active: i == _index,
@@ -394,39 +436,52 @@ class _PhotoViewerState extends State<PhotoViewer> {
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: AlcoveSpace.s4),
                         child: Center(
-                          child: FloatingToolbar(
-                            color: colors.stagePanel.withValues(alpha: 0.94),
-                            foreground: colors.onStage,
-                            border: colors.stageBorder,
-                            children: [
-                              if (_mine(item))
-                                IconButton(
-                                  tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
-                                  onPressed: _toggleFavorite,
-                                  icon: Icon(
-                                    item.favorite ? Icons.favorite : Icons.favorite_border,
-                                    color: item.favorite ? colors.favorite : null,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: FloatingToolbar(
+                              color: colors.stagePanel.withValues(alpha: 0.94),
+                              foreground: colors.onStage,
+                              border: colors.stageBorder,
+                              children: [
+                                if (_mine(item))
+                                  IconButton(
+                                    tooltip: item.favorite ? l.favoriteRemove : l.favoriteAdd,
+                                    onPressed: _toggleFavorite,
+                                    icon: Icon(
+                                      item.favorite ? Icons.favorite : Icons.favorite_border,
+                                      color: item.favorite ? colors.favorite : null,
+                                    ),
                                   ),
-                                ),
-                              IconButton(
-                                tooltip: l.details,
-                                onPressed: _details,
-                                icon: const Icon(Icons.info_outline),
-                              ),
-                              IconButton(
-                                tooltip: l.saveToPhone,
-                                onPressed: _saving ? null : _saveToPhone,
-                                icon: _saving
-                                    ? LoadingIndicator(size: 24, color: colors.onStage)
-                                    : const Icon(Icons.download_outlined),
-                              ),
-                              if (widget.onTrashed != null && _mine(item))
                                 IconButton(
-                                  tooltip: l.trashConfirm,
-                                  onPressed: _trash,
-                                  icon: const Icon(Icons.delete_outline),
+                                  tooltip: l.details,
+                                  onPressed: _details,
+                                  icon: const Icon(Icons.info_outline),
                                 ),
-                            ],
+                                IconButton(
+                                  tooltip: l.viewerShare,
+                                  onPressed: _saving ? null : () => _handOut(share: true),
+                                  icon: const Icon(Icons.share_outlined),
+                                ),
+                                IconButton(
+                                  tooltip: l.viewerOpenWith,
+                                  onPressed: _saving ? null : () => _handOut(share: false),
+                                  icon: const Icon(Icons.open_in_new),
+                                ),
+                                IconButton(
+                                  tooltip: l.saveToPhone,
+                                  onPressed: _saving ? null : _saveToPhone,
+                                  icon: _saving
+                                      ? LoadingIndicator(size: 24, color: colors.onStage)
+                                      : const Icon(Icons.download_outlined),
+                                ),
+                                if (widget.onTrashed != null && _mine(item))
+                                  IconButton(
+                                    tooltip: l.trashConfirm,
+                                    onPressed: _trash,
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -540,17 +595,17 @@ class ZoomablePageState extends State<ZoomablePage> with SingleTickerProviderSta
   }
 }
 
-class _VideoPage extends StatefulWidget {
-  const _VideoPage({super.key, required this.url, required this.active});
+class VideoPage extends StatefulWidget {
+  const VideoPage({super.key, required this.url, required this.active});
 
   final Uri url;
   final bool active;
 
   @override
-  State<_VideoPage> createState() => _VideoPageState();
+  State<VideoPage> createState() => VideoPageState();
 }
 
-class _VideoPageState extends State<_VideoPage> {
+class VideoPageState extends State<VideoPage> {
   late final VideoPlayerController _controller = VideoPlayerController.networkUrl(widget.url);
   bool _ready = false;
 
@@ -565,8 +620,8 @@ class _VideoPageState extends State<_VideoPage> {
   }
 
   @override
-  void didUpdateWidget(_VideoPage old) {
-    super.didUpdateWidget(old);
+  void didUpdateWidget(VideoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (!widget.active) _controller.pause();
   }
 

@@ -75,11 +75,14 @@ class FakeDrive {
       final filter = req.url.queryParameters['filter'] ?? '';
       final parent = RegExp(r"parent = '([^']*)'").firstMatch(filter)?.group(1) ?? '';
       final foldersOnly = filter.contains('kind = "folder"');
+      // The "Recent" strip of the root has its own test (recent_files_test.dart).
+      final recentOnly = filter.contains('kind = "file"');
       final items = nodes.values
           .where(
             (n) =>
                 n['parent'] == parent &&
                 n['trashed_at'] == '' &&
+                !recentOnly &&
                 (!foldersOnly || n['kind'] == 'folder'),
           )
           .toList();

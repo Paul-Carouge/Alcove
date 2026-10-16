@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../core/drive.dart';
+import '../../core/notes.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import '../../ui/kit.dart';
 import '../files/files_screen.dart';
+import '../files/tags.dart';
+import '../notes/notes_screen.dart';
 
 /// One search result: a file or folder found by name, or a document found by its text.
 class SearchHit {
@@ -36,11 +40,21 @@ class SearchHit {
   );
 }
 
-/// Finds files and folders by name and documents by their text (GET /api/v1/search, ADR 0025).
+bool _isMedia(RecordModel n) {
+  final m = n.getStringValue('mime');
+  return m.startsWith('image/') || m.startsWith('video/');
+}
+
+/// Searches everything, like the web app: notes by title or text (ADR 0027), files and folders
+/// by name, photos and videos by name, files by tag, and documents by their text
+/// (GET /api/v1/search, ADR 0025).
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, required this.session});
+  const SearchScreen({super.key, required this.session, this.uploads});
 
   final Session session;
+
+  /// The app's upload queue, for folders opened from the results.
+  final UploadQueue? uploads;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -50,6 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final _query = TextEditingController();
   Timer? _debounce;
   List<SearchHit>? _hits;
+  List<RecordModel> _notes = const [];
   bool _loading = false;
   bool _failed = false;
   String _token = '';
@@ -81,19 +96,35 @@ class _SearchScreenState extends State<SearchScreen> {
     if (q.isEmpty) {
       setState(() {
         _hits = null;
+        _notes = const [];
         _loading = false;
         _failed = false;
       });
       return;
     }
     setState(() => _loading = true);
+    final query = q.length > 200 ? q.substring(0, 200) : q;
+    // Notes are a bonus: a failure there must not hide the files.
+    final notes = widget.session.pb
+        .collection('notes')
+        .getList(
+          perPage: 20,
+          filter: widget.session.pb.filter(
+            'trashed_at = "" && (title ~ {:q} || body ~ {:q})',
+            {'q': query},
+          ),
+          sort: '-pinned,-updated',
+        )
+        .then((r) => r.items, onError: (Object _) => <RecordModel>[]);
     try {
       final res = await widget.session.pb.send<Map<String, dynamic>>(
         '/api/v1/search',
-        query: {'q': q.length > 200 ? q.substring(0, 200) : q},
+        query: {'q': query},
       );
+      final found = await notes;
       if (!mounted || seq != _seq) return;
       setState(() {
+        _notes = found;
         _hits = [
           for (final h in (res['items'] as List<dynamic>? ?? const []))
             SearchHit.fromJson(h as Map<String, dynamic>),
@@ -110,13 +141,34 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Widget _noteRow(BuildContext context, RecordModel n, String locale) => NoteRow(
+    note: n,
+    locale: locale,
+    onTap: () async {
+      final saved = await Navigator.of(context).push<RecordModel>(
+        MaterialPageRoute(
+          builder: (_) => NoteEditorScreen(
+            session: widget.session,
+            api: NotesApi(widget.session),
+            tags: TagBook(widget.session),
+            note: n,
+          ),
+        ),
+      );
+      if (saved != null && mounted) {
+        setState(() => _notes = [for (final x in _notes) x.id == saved.id ? saved : x]);
+      }
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.colors;
     final locale = Localizations.localeOf(context).toLanguageTag();
     final hits = _hits;
-    final byName = hits?.where((h) => h.match == 'name').toList() ?? const [];
+    final byName = hits?.where((h) => h.match == 'name' && !_isMedia(h.node)).toList() ?? const [];
+    final media = hits?.where((h) => h.match == 'name' && _isMedia(h.node)).toList() ?? const [];
     final byTag = hits?.where((h) => h.match == 'tag').toList() ?? const [];
     final inText = hits?.where((h) => h.inText).toList() ?? const [];
 
@@ -124,7 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
       node: h.node,
       locale: locale,
       thumb: nodeThumb(widget.session, h.node, _token),
-      onTap: () => openNode(context, widget.session, h.node),
+      onTap: () => openNode(context, widget.session, h.node, uploads: widget.uploads),
       below: h.inText && h.snippet.isNotEmpty
           ? _Snippet(segments: h.snippet)
           : h.match == 'tag'
@@ -192,12 +244,25 @@ class _SearchScreenState extends State<SearchScreen> {
           action: OutlinedButton(onPressed: _search, child: Text(l.retry)),
         ),
         null => EmptyState(icon: Icons.manage_search, title: l.searchTitle, body: l.searchPrompt),
-        [] => EmptyState(icon: Icons.search_off, title: l.searchNone(_query.text.trim())),
+        [] when _notes.isEmpty => EmptyState(
+          icon: Icons.search_off,
+          title: l.searchNone(_query.text.trim()),
+        ),
         _ => ListView(
-          padding: const EdgeInsets.only(top: AlcoveSpace.s4, bottom: AlcoveSpace.s6),
+          padding: EdgeInsets.only(
+            top: AlcoveSpace.s4,
+            bottom: AlcoveSpace.s6 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
+            if (_notes.isNotEmpty)
+              InsetGroup(
+                title: l.tabNotes,
+                children: [for (final n in _notes) _noteRow(context, n, locale)],
+              ),
             if (byName.isNotEmpty)
               InsetGroup(title: l.searchByName, children: [for (final h in byName) row(h)]),
+            if (media.isNotEmpty)
+              InsetGroup(title: l.searchPhotos, children: [for (final h in media) row(h)]),
             if (byTag.isNotEmpty)
               InsetGroup(title: l.searchByTag, children: [for (final h in byTag) row(h)]),
             if (inText.isNotEmpty)

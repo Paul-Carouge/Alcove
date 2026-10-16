@@ -5,22 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../core/drive.dart';
+import '../../core/file_sort.dart';
+import '../../core/recent_files.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
 import '../../theme/tokens.g.dart';
 import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
-import '../search/search_screen.dart';
+import '../../ui/shell.dart';
+import '../viewer/file_viewer.dart';
 import 'file_actions.dart';
 import 'tags.dart';
 
-/// Browses the drive: folders first, then files, by name. Files open in the system browser,
-/// which downloads or shows them. With an [uploads] queue, files can be added, renamed, moved and
-/// moved to the trash.
+/// Browses the drive: folders first, then files, in the order chosen on this device (name, date
+/// or size). Files open in the app's viewers. At the root, a strip shows recent files. With an
+/// [uploads] queue, files can be added, renamed, moved and moved to the trash.
 class FilesScreen extends StatefulWidget {
   const FilesScreen({super.key, required this.session, this.folder, this.uploads});
 
@@ -43,14 +44,25 @@ class _FilesScreenState extends State<FilesScreen> {
   late final TagBook _tags = TagBook(widget.session);
   StreamSubscription<String>? _arrivals;
   final _fab = GlobalKey();
+  FileSort _sort = FileSort.byName;
+  List<RecordModel> _recent = const [];
 
   String get _here => widget.folder?.id ?? '';
+  bool get _root => widget.folder == null;
 
   @override
   void initState() {
     super.initState();
+    FileSort.load().then((s) {
+      if (!mounted) return;
+      setState(() {
+        _sort = s;
+        if (_nodes != null) _nodes = sortNodes(_nodes!, s);
+      });
+    }, onError: (Object _) {});
     _load();
     // A file sent to this folder: show it.
+    widget.uploads?.addListener(_uploadsChanged);
     _arrivals = widget.uploads?.completed.listen((parent) {
       if (parent == _here) _load();
     });
@@ -58,6 +70,7 @@ class _FilesScreenState extends State<FilesScreen> {
 
   @override
   void dispose() {
+    widget.uploads?.removeListener(_uploadsChanged);
     _arrivals?.cancel();
     super.dispose();
   }
@@ -128,8 +141,12 @@ class _FilesScreenState extends State<FilesScreen> {
           if (mounted) _snack(l.searchableDone);
         case NodeAction.trash:
           await _drive.trash(node.id);
+          unawaited(HapticFeedback.mediumImpact());
           if (!mounted) return;
-          setState(() => _nodes = _nodes?.where((n) => n.id != node.id).toList());
+          setState(() {
+            _nodes = _nodes?.where((n) => n.id != node.id).toList();
+            _recent = _recent.where((n) => n.id != node.id).toList();
+          });
           _snack(
             l.trashed(name),
             action: SnackBarAction(
@@ -161,19 +178,10 @@ class _FilesScreenState extends State<FilesScreen> {
             filter: widget.session.pb.filter('parent = {:p} && trashed_at = ""', {'p': parent}),
             sort: '-kind,name',
           );
-      // Folders first ("folder" > "file" with -kind), then a natural, case-insensitive name order.
-      list.sort((a, b) {
-        final k = b.getStringValue('kind').compareTo(a.getStringValue('kind'));
-        return k != 0
-            ? k
-            : a
-                  .getStringValue('name')
-                  .toLowerCase()
-                  .compareTo(b.getStringValue('name').toLowerCase());
-      });
+      if (_root) unawaited(_loadRecent());
       if (mounted) {
         setState(() {
-          _nodes = list;
+          _nodes = sortNodes(list, _sort);
           _failed = false;
         });
       }
@@ -182,8 +190,40 @@ class _FilesScreenState extends State<FilesScreen> {
     }
   }
 
-  Future<void> _open(RecordModel node) =>
-      openNode(context, widget.session, node, uploads: widget.uploads);
+  /// Files opened on this phone and documents changed lately (photos have their own tab).
+  Future<void> _loadRecent() async {
+    try {
+      final user = widget.session.user?.id ?? '';
+      final opened = await RecentFiles(user).opened();
+      final res = await widget.session.pb
+          .collection('nodes')
+          .getList(
+            perPage: 10,
+            filter: 'kind = "file" && trashed_at = "" && mime !~ "image/%" && mime !~ "video/%"',
+            sort: '-updated',
+          );
+      final merged = mergeRecent(opened, res.items);
+      if (mounted) setState(() => _recent = merged);
+    } catch (_) {
+      // A bonus: the folder works without it.
+    }
+  }
+
+  Future<void> _open(RecordModel node) async {
+    await openNode(context, widget.session, node, uploads: widget.uploads);
+    // The file opened is now the most recent.
+    if (_root && mounted && node.getStringValue('kind') == 'file') unawaited(_loadRecent());
+  }
+
+  Future<void> _chooseSort() async {
+    final next = await showSortSheet(context, _sort);
+    if (next == null || next == _sort || !mounted) return;
+    setState(() {
+      _sort = next;
+      if (_nodes != null) _nodes = sortNodes(_nodes!, next);
+    });
+    unawaited(next.save());
+  }
 
   String _token = '';
 
@@ -225,9 +265,20 @@ class _FilesScreenState extends State<FilesScreen> {
         ),
       ];
     } else {
+      final recent = _root ? _recent : const <RecordModel>[];
       content = [
+        if (recent.isNotEmpty)
+          SliverToBoxAdapter(
+            child: RecentStrip(
+              nodes: recent,
+              locale: locale,
+              thumb: _thumb,
+              onOpen: _open,
+            ),
+          ),
         SliverToBoxAdapter(
           child: InsetGroup(
+            title: recent.isNotEmpty ? l.filesAll : null,
             children: [
               for (final n in nodes)
                 NodeRow(
@@ -243,26 +294,31 @@ class _FilesScreenState extends State<FilesScreen> {
         ),
       ];
     }
-    return Scaffold(
+    final scaffold = Scaffold(
       body: RefreshIndicator(
         onRefresh: _load,
-        edgeOffset: 120,
+        edgeOffset: LargeTitleAppBar.edgeOffset(context),
         child: CustomScrollView(
           slivers: [
             LargeTitleAppBar(
               title: title,
               actions: [
                 IconButton(
-                  tooltip: AppLocalizations.of(context).searchTitle,
-                  icon: const Icon(Icons.search),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => SearchScreen(session: widget.session)),
-                  ),
+                  key: const Key('sortButton'),
+                  tooltip: l.sortTitle,
+                  icon: const Icon(Icons.swap_vert),
+                  onPressed: _chooseSort,
                 ),
+                ...shellActions(context, account: _root),
               ],
             ),
             ...content,
-            const SliverToBoxAdapter(child: SizedBox(height: AlcoveSpace.s6)),
+            // Room under the last row for the FAB (and the floating navigation bar).
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: AlcoveSpace.s8 + AlcoveSpace.s5 + MediaQuery.paddingOf(context).bottom,
+              ),
+            ),
           ],
         ),
       ),
@@ -278,8 +334,17 @@ class _FilesScreenState extends State<FilesScreen> {
                 child: const Icon(Icons.add),
               ),
             ),
-      bottomNavigationBar: widget.uploads == null ? null : UploadBanner(queue: widget.uploads!),
+      bottomNavigationBar: _hasUploads ? UploadBanner(queue: widget.uploads!) : null,
     );
+    return scaffold;
+  }
+
+  /// The banner only takes room while there are uploads to show.
+  late bool _hasUploads = widget.uploads?.items.isNotEmpty ?? false;
+
+  void _uploadsChanged() {
+    final has = widget.uploads?.items.isNotEmpty ?? false;
+    if (has != _hasUploads && mounted) setState(() => _hasUploads = has);
   }
 
   Uri? _thumb(RecordModel n) => nodeThumb(widget.session, n, _token);
@@ -308,7 +373,7 @@ String formatSize(int bytes, String locale) {
   return '${NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: u == 0 ? 0 : 1).format(v)} ${units[u]}';
 }
 
-/// Opens a folder in a new Files screen, or a file in the system browser (which shows or downloads it).
+/// Opens a folder in a new Files screen (in the current tab), or a file in the app's viewers.
 Future<void> openNode(
   BuildContext context,
   Session session,
@@ -323,18 +388,7 @@ Future<void> openNode(
     );
     return;
   }
-  final l = AppLocalizations.of(context);
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    final token = await session.fileToken();
-    final url = session.pb.buildURL('/api/v1/nodes/${Uri.encodeComponent(node.id)}/download', {
-      'token': token,
-      'inline': '1',
-    });
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) throw StateError('launch');
-  } catch (_) {
-    messenger.showSnackBar(SnackBar(content: Text(l.fileCannotOpen)));
-  }
+  await openFileNode(context, session, node);
 }
 
 /// One file or folder in a grouped list; [below] replaces the size and date line (search snippets).
@@ -368,15 +422,7 @@ class NodeRow extends StatelessWidget {
     final folder = node.getStringValue('kind') == 'folder';
     final mime = node.getStringValue('mime');
     final updated = DateTime.tryParse(node.getStringValue('updated').replaceFirst(' ', 'T'));
-    final (icon, tint) = folder
-        ? (Icons.folder_rounded, c.accent)
-        : switch (mime.split('/').first) {
-            'image' => (Icons.image_outlined, c.success),
-            'video' => (Icons.movie_outlined, c.favorite),
-            'audio' => (Icons.graphic_eq, c.warning),
-            _ when mime.contains('pdf') => (Icons.picture_as_pdf_outlined, c.danger),
-            _ => (Icons.description_outlined, c.textMuted),
-          };
+    final (icon, tint) = folder ? (Icons.folder_rounded, c.accent) : fileIcon(c, mime);
     return InkWell(
       onTap: onTap,
       onLongPress: onMore,
@@ -454,3 +500,117 @@ class NodeRow extends StatelessWidget {
     );
   }
 }
+
+/// Recent files at the top of My files: opened on this phone or changed lately.
+class RecentStrip extends StatelessWidget {
+  const RecentStrip({
+    super.key,
+    required this.nodes,
+    required this.locale,
+    required this.thumb,
+    required this.onOpen,
+  });
+
+  final List<RecordModel> nodes;
+  final String locale;
+  final Uri? Function(RecordModel) thumb;
+  final void Function(RecordModel) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(top: AlcoveSpace.s1, bottom: AlcoveSpace.s5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SectionHeader(
+            title: l.filesRecent,
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              AlcoveSpace.s4 + AlcoveSpace.s1,
+              0,
+              AlcoveSpace.s4 + AlcoveSpace.s1,
+              AlcoveSpace.s3,
+            ),
+          ),
+          SizedBox(
+            height: 148,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s4),
+              itemCount: nodes.length,
+              separatorBuilder: (_, _) => const SizedBox(width: AlcoveSpace.s3),
+              itemBuilder: (context, i) {
+                final n = nodes[i];
+                final url = thumb(n);
+                final updated = modifiedAt(n);
+                final (icon, tint) = fileIcon(c, n.getStringValue('mime'));
+                return SizedBox(
+                  width: 128,
+                  child: Material(
+                    color: c.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AlcoveRadius.lg),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => onOpen(n),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AlcoveSpace.s3),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (url != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(AlcoveRadius.md),
+                                child: SizedBox.square(
+                                  dimension: 44,
+                                  child: RemoteImage(url: url, cacheWidth: 132),
+                                ),
+                              )
+                            else
+                              TintedIcon(icon: icon, color: tint, size: 44),
+                            const Spacer(),
+                            Text(
+                              n.getStringValue('name'),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: sansStyle(
+                                AlcoveFont.sizeSm,
+                                c.text,
+                                AlcoveFont.medium,
+                              ).copyWith(height: 1.3),
+                            ),
+                            if (updated != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                DateFormat.MMMd(locale).format(updated.toLocal()),
+                                maxLines: 1,
+                                style: sansStyle(AlcoveFont.sizeXs, c.textMuted),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The icon and tint of a file type, as in the lists.
+(IconData, Color) fileIcon(AlcoveColors c, String mime) => switch (mime.split('/').first) {
+  'image' => (Icons.image_outlined, c.success),
+  'video' => (Icons.movie_outlined, c.favorite),
+  'audio' => (Icons.graphic_eq, c.warning),
+  _ when mime.contains('pdf') => (Icons.picture_as_pdf_outlined, c.danger),
+  'text' => (Icons.notes, c.accent),
+  _ => (Icons.description_outlined, c.textMuted),
+};

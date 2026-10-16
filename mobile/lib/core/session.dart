@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import 'file_cache.dart';
+
 import 'secure_store.dart';
 
 /// Outcome of a sign-in step (mirrors the web login, see web/src/routes/(public)/login).
@@ -126,6 +128,8 @@ class Session extends ChangeNotifier {
     await store.writeServerUrl(url);
     if (_server != url) {
       await store.clearAuth();
+      // Another server: nothing of the previous account's files stays on the phone.
+      if (_server != null) await purgeDeviceFiles();
       await _connect(url);
     }
     notifyListeners();
@@ -202,6 +206,8 @@ class Session extends ChangeNotifier {
     _epoch++;
     _pb?.authStore.clear();
     await store.clearAuth();
+    // Viewer cache, shared-in copies and recent files go with the account.
+    await purgeDeviceFiles();
     notifyListeners();
   }
 

@@ -473,5 +473,115 @@
         "type": "String"
       }
     }
+  },
+  "tabDocuments": "Documents",
+  "photosLibrary": "Library",
+  "shareQueued": "{count, plural, =1{Sending 1 file to {folder}} other{Sending {count} files to {folder}}}",
+  "@shareQueued": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotos": "Photos and videos",
+  "filesAll": "All files",
+  "filesRecent": "Recent",
+  "sortTitle": "Sort",
+  "sortHint": "Folders stay on top.",
+  "sortName": "Name",
+  "sortDate": "Date modified",
+  "sortSize": "Size",
+  "sortNameAsc": "A to Z",
+  "sortNameDesc": "Z to A",
+  "sortDateAsc": "Oldest first",
+  "sortDateDesc": "Newest first",
+  "sortSizeAsc": "Smallest first",
+  "sortSizeDesc": "Largest first",
+  "viewerShare": "Share",
+  "viewerOpenWith": "Open with…",
+  "viewerDownload": "Download",
+  "viewerNoApp": "No app on this phone can open this file.",
+  "savedToDownloads": "Saved to Downloads › Alcove",
+  "viewerNoPreview": "No preview for this file",
+  "viewerNoPreviewBody": "Open it with another app on your phone, share it or download it.",
+  "viewerTooLarge": "Too large to preview",
+  "viewerNotText": "This file does not look like text",
+  "viewerDownloading": "Downloading…",
+  "viewerDownloadingPercent": "Downloading, {percent} percent",
+  "@viewerDownloadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCannotShow": "This PDF cannot be shown here",
+  "pdfPage": "Page {current} of {total}",
+  "@pdfPage": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfPageShort": "{current} / {total}",
+  "@pdfPageShort": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfJumpTitle": "Go to page",
+  "pdfJumpLabel": "Page (1 to {total})",
+  "@pdfJumpLabel": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfJump": "Go",
+  "documentsAll": "All",
+  "documentsPdf": "PDF",
+  "documentsScans": "Scans",
+  "documentsText": "Text",
+  "documentsEmptyTitle": "No documents yet",
+  "documentsEmpty": "PDFs, scans and text files from your drive appear here, searchable by their text.",
+  "shareTitle": "Save to Alcove",
+  "shareFiles": "{count, plural, =1{1 file} other{{count} files}}",
+  "@shareFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shareMore": "{count, plural, =1{and 1 more} other{and {count} more}}",
+  "@shareMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shareDestination": "Destination",
+  "shareSendTo": "Send to {folder}",
+  "@shareSendTo": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
   }
 }

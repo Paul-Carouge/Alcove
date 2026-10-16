@@ -49,6 +49,13 @@ Updating is just as simple: `sudo alcove update`, or the **Update** button on th
 Prefer Docker? `docker compose up -d` works too. See [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md) for
 every option, backups, Tailscale and reverse proxies.
 
+### Let an AI assistant do it
+
+Using Claude, ChatGPT or another assistant with access to your server? Copy the ready-made prompt in
+[docs/AI-INSTALL.md](docs/AI-INSTALL.md) and paste it into the chat: it gives the assistant everything it
+needs to install, update, back up or troubleshoot Alcove (real commands and flags, file locations, the app,
+common mistakes), and asks it to explain each command before running it.
+
 ## Mobile app
 
 Android and iOS (Flutter). On first launch you enter your server's address; the app checks that it is
@@ -84,6 +91,7 @@ Details are in [docs/ROADMAP.md](docs/ROADMAP.md).
 - [Design system](docs/DESIGN.md)
 - [Security](docs/SECURITY.md), including how to report a vulnerability
 - [Self-hosting guide](docs/SELF-HOSTING.md)
+- [Install with an AI assistant](docs/AI-INSTALL.md): a prompt to paste into your assistant
 - [Contributing](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Releases

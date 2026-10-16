@@ -7,6 +7,13 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.31.1] - 2026-10-16
+
+### Fixed
+- Release: the Android build ran out of memory on GitHub's runner, so 0.31.0 was never published. This
+  release ships the same app and server as 0.31.0.
+
+
 ## [0.31.0] - 2026-10-16
 
 ### Added

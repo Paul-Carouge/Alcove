@@ -7,6 +7,26 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-10-17
+
+### Added
+- **Import from Google Photos** (Photos → Import): bring a whole library from Google Takeout archives, uploaded
+  from the browser (resumable, for 50 GB archives) or, for administrators, picked from the server's
+  `pb_data/import` folder for any account. Dates, places, descriptions, favorites and albums are restored into
+  the database (files are never modified; a plausible EXIF date still wins), photos in Google's trash are
+  skipped, and photos already in the account are recognized, so re-running or having backed up the phone adds
+  no duplicates. The import runs in the background, one at a time, survives restarts, can be cancelled, and
+  ends with a report (failures downloadable as CSV). Archives of a failed or cancelled import are kept for a
+  new attempt. Hostile archives (zip bombs, overlapping entries, huge directories) are refused. Handles
+  Takeout's quirks: sidecars in another archive,
+  `.supplemental-metadata` and truncated names, `(1)` duplicates, edited copies and Live Photos (ADR 0030).
+- The photo viewer shows a photo's description.
+
+### Changed
+- Uploads keep a small amount of free disk space (1% of the volume, at least 512 MB) so the database can
+  always write; when the disk is that full, uploads stop with a clear "not enough space" message instead of
+  filling it. Import archives keep a larger margin (5%, at least 5 GB).
+
 ## [0.31.1] - 2026-10-16
 
 ### Fixed

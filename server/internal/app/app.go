@@ -27,6 +27,7 @@ import (
 	"github.com/Paul-Carouge/Alcove/server/internal/service"
 	"github.com/Paul-Carouge/Alcove/server/internal/setup"
 	"github.com/Paul-Carouge/Alcove/server/internal/shares"
+	"github.com/Paul-Carouge/Alcove/server/internal/takeout"
 	"github.com/Paul-Carouge/Alcove/server/internal/totp"
 	"github.com/Paul-Carouge/Alcove/server/internal/updater"
 	"github.com/Paul-Carouge/Alcove/server/internal/updates"
@@ -64,6 +65,7 @@ func Wire(app core.App, cfg config.Config) {
 		},
 	})
 	uploads.Register(app, len(cfg.TrustedProxyHeaders) > 0)
+	takeout.Register(app)
 	archive.Register(app)
 	notes.Register(app)
 	calendar.Register(app)

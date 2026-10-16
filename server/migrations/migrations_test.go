@@ -67,3 +67,44 @@ func TestUsersLockdown(t *testing.T) {
 		t.Errorf("reset template not pointing to the web app:\n%s", users.ResetPasswordTemplate.Body)
 	}
 }
+
+func TestImportsMigration(t *testing.T) {
+	app, err := tests.NewTestApp()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Cleanup()
+	hasRule := func() bool {
+		for _, r := range app.Settings().RateLimits.Rules {
+			if r.Label == "/api/v1/imports/" {
+				return true
+			}
+		}
+		return false
+	}
+	check := func(up bool) {
+		t.Helper()
+		media, err := app.FindCollectionByNameOrId("media")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = app.FindCollectionByNameOrId("imports")
+		if (err == nil) != up || (media.Fields.GetByName("import_taken_at") != nil) != up || hasRule() != up {
+			t.Errorf("up=%v: imports %v, media field %v, rate limit %v", up, err, media.Fields.GetByName("import_taken_at"), hasRule())
+		}
+	}
+	check(true)
+	imports, _ := app.FindCollectionByNameOrId("imports")
+	if imports.CreateRule != nil || imports.UpdateRule != nil || imports.DeleteRule != nil {
+		t.Error("imports must be written by the server only")
+	}
+	mig := find(t, "1791745200_imports.go")
+	if err := mig.Down(app); err != nil {
+		t.Fatal(err)
+	}
+	check(false)
+	if err := mig.Up(app); err != nil {
+		t.Fatal(err)
+	}
+	check(true)
+}

@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -137,7 +138,14 @@ func beforeSave(app core.App, node *core.Record) error {
 	}
 
 	if len(files) > 0 {
-		meta, err := inspect(files[0].Reader)
+		var meta fileMeta
+		var err error
+		if known, ok := knownFiles.LoadAndDelete(files[0]); ok {
+			meta = known.(fileMeta)
+			meta.mime, err = sniff(files[0].Reader)
+		} else {
+			meta, err = inspect(files[0].Reader)
+		}
 		if err != nil {
 			return fmt.Errorf("inspect uploaded file: %w", err)
 		}
@@ -222,6 +230,44 @@ func inspect(r interface {
 		return fileMeta{}, err
 	}
 	return fileMeta{size: n, mime: mt.String(), sha256: hex.EncodeToString(h.Sum(nil))}, nil
+}
+
+// sniff detects the type of a file from its first bytes.
+func sniff(r interface {
+	Open() (io.ReadSeekCloser, error)
+}) (string, error) {
+	f, err := r.Open()
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = f.Close() }()
+	mt, err := mimetype.DetectReader(f)
+	if err != nil {
+		return "", err
+	}
+	return mt.String(), nil
+}
+
+// knownFiles are files whose size and SHA-256 the server computed itself while writing them (imports):
+// they are not read twice. Only server code can add to it; the key is the file being saved.
+var knownFiles sync.Map
+
+// SaveNewFileKnown is SaveNewFile for a file whose size and SHA-256 are already known.
+func SaveNewFileKnown(app core.App, owner, parent, name string, newFile func() (*filesystem.File, error), size int64, sha string) (*core.Record, error) {
+	var made []*filesystem.File
+	defer func() {
+		for _, f := range made {
+			knownFiles.Delete(f)
+		}
+	}()
+	return SaveNewFile(app, owner, parent, name, func() (*filesystem.File, error) {
+		f, err := newFile()
+		if err == nil {
+			made = append(made, f)
+			knownFiles.Store(f, fileMeta{size: size, sha256: sha})
+		}
+		return f, err
+	})
 }
 
 var errCycle = validation.Errors{"parent": validation.NewError("validation_parent_cycle", "A folder cannot be moved inside itself.")}

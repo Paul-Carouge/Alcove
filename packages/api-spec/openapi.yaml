@@ -47,6 +47,15 @@ tags:
       timeline sorts by `-taken_at`. Only `favorite` can be changed by users, through this API.
       Albums (`albums`, `album_items` collections) can be shared with other accounts as viewers or
       contributors (ADR 0018); participants read shared items through the `media` view rule.
+  - name: imports
+    description: |
+      Import of a Google Photos library from Google Takeout archives (ADR 0030). Archives are either
+      uploaded with the tus endpoint (`purpose=import` metadata: kept as temporary import files, not drive
+      files, deleted when the import ends) or dropped by an administrator in the server's `import` folder.
+      Jobs are records of the PocketBase `imports` collection: read them (and follow their progress
+      through realtime) with `GET /api/collections/imports/records`; the owner of the imported photos and
+      the administrator who started the job can read it. One import runs at a time per server; others wait
+      in `queued`.
   - name: admin
     description: Server administration, for accounts with `role = admin` (ADR 0015).
   - name: documents
@@ -259,8 +268,12 @@ paths:
           required: true
           description: |
             tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required,
-            a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root).
-            Other keys are ignored.
+            a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root),
+            `purpose` (optional: `import` stores a Google Takeout `.zip` as a temporary import file instead of
+            a drive file; pass its upload id, the last segment of `Location`, to `createImport`). Import archives
+            are capped per account (200 archives; in bytes, the quota left, or the server-wide
+            `imports.max_upload_bytes` app setting, 500 GB by default, without quota) and must fit on the disk
+            with 5% (at least 5 GB) left free. Other keys are ignored.
           schema: { type: string, example: "filename aGVsbG8udHh0,parent " }
       responses:
         "201":
@@ -272,6 +285,7 @@ paths:
         "400": { description: "Invalid name, parent, or missing length." }
         "401": { description: Authentication required. }
         "413": { description: "File larger than the server limit, or than the space left in the user's quota (body starts with ERR_QUOTA_EXCEEDED)." }
+        "507": { description: "Import upload larger than the server's free disk space (body starts with ERR_DISK_FULL). Too many or too large import archives answer 413 with ERR_IMPORT_LIMIT." }
   /api/v1/uploads/{uploadId}:
     parameters:
       - name: uploadId
@@ -320,6 +334,7 @@ paths:
               schema: { type: string }
         "404": { description: "Unknown upload, or owned by another user." }
         "409": { description: "Offset mismatch, or the target folder no longer exists." }
+        "507": { description: "The chunk would leave less than the disk's reserved free space (body starts with ERR_DISK_FULL): 1% of the volume (at least 512 MB) for regular uploads, 5% (at least 5 GB) for import archives. Retry later." }
         "413": { description: "The quota was exceeded meanwhile (ERR_QUOTA_EXCEEDED); the upload is discarded." }
     delete:
       tags: [uploads]
@@ -1352,6 +1367,136 @@ paths:
         "403": { description: Administrators only. }
         "409": { description: An installation is already running. }
         "502": { description: The release could not be reached or verified. }
+  /api/v1/imports/google:
+    post:
+      tags: [imports]
+      operationId: createImport
+      summary: Start importing a Google Photos library from Takeout archives.
+      description: |
+        Give either `uploads` (ids of your finished `purpose=import` uploads) or `serverFiles` (names of
+        `.zip` files or extracted folders in the server's import folder; administrators only). With
+        `serverFiles`, `user` chooses the account receiving the photos (default: the caller). The job starts
+        `queued`; a user can have one unfinished import at a time.
+      security:
+        - userToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uploads:
+                  type: array
+                  maxItems: 200
+                  items: { type: string, pattern: "^[A-Za-z0-9]{1,64}$" }
+                serverFiles:
+                  type: array
+                  maxItems: 200
+                  items: { type: string, maxLength: 255 }
+                user: { type: string, maxLength: 64, description: "Receiving account (administrators, with serverFiles)." }
+      responses:
+        "201":
+          description: Job created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportJob" }
+        "400": { description: "Invalid or unknown uploads, server files or user." }
+        "401": { description: Authentication required. }
+        "403": { description: "serverFiles or user given by a non-administrator." }
+        "409": { description: "This account already has an unfinished import." }
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/v1/imports/google/server-files:
+    get:
+      tags: [imports]
+      operationId: listImportServerFiles
+      summary: The Takeout archives and folders an administrator dropped in the server's import folder.
+      description: Only `.zip` files and folders at the top level; hidden entries and symbolic links are ignored.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: The folder and its contents, by name.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [dir, items]
+                properties:
+                  dir: { type: string, description: Absolute path of the import folder on the server. }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, kind, size]
+                      properties:
+                        name: { type: string }
+                        kind: { type: string, enum: [zip, folder] }
+                        size: { type: integer, description: "Bytes (0 for folders)." }
+        "401": { description: Authentication required. }
+        "403": { description: Administrators only. }
+  /api/v1/imports/google/uploads:
+    get:
+      tags: [imports]
+      operationId: listImportUploads
+      summary: Your finished import archives that no unfinished job uses.
+      description: |
+        Archives stay after a failed or cancelled import so a new job can use them; they are deleted after a
+        successful import, or once nothing was uploaded for a day.
+      security:
+        - userToken: []
+      responses:
+        "200":
+          description: Newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImportUpload" }
+        "401": { description: Authentication required. }
+  /api/v1/imports/google/uploads/{uploadId}:
+    parameters:
+      - name: uploadId
+        in: path
+        required: true
+        schema: { type: string, pattern: "^[A-Za-z0-9]{1,64}$" }
+    delete:
+      tags: [imports]
+      operationId: deleteImportUpload
+      summary: Delete one of your import archives to free the space.
+      security:
+        - userToken: []
+      responses:
+        "204": { description: Deleted. }
+        "401": { description: Authentication required. }
+        "404": { description: Unknown archive. }
+        "409": { description: An unfinished import uses it. }
+  /api/v1/imports/{importId}/cancel:
+    parameters:
+      - name: importId
+        in: path
+        required: true
+        schema: { type: string, maxLength: 64 }
+    post:
+      tags: [imports]
+      operationId: cancelImport
+      summary: Cancel an unfinished import.
+      description: |
+        Photos already imported stay. Uploaded archives are kept (listed by `listImportUploads`, deleted after a
+        day without use); files in the server's import folder are never deleted. Administrators can cancel any
+        job.
+      security:
+        - userToken: []
+      responses:
+        "204": { description: Cancelled (a running job stops within seconds). }
+        "401": { description: Authentication required. }
+        "404": { description: "Unknown job, or neither yours nor started by you (administrators see every job)." }
+        "409": { description: The job has already finished. }
 components:
   securitySchemes:
     userToken:
@@ -1432,6 +1577,52 @@ components:
         collectionId: { type: string }
         thumb: { type: string }
         preview: { type: string }
+    ImportUpload:
+      type: object
+      required: [id, name, size, finishedAt]
+      properties:
+        id: { type: string }
+        name: { type: string, description: The file name it was uploaded with. }
+        size: { type: integer }
+        finishedAt: { type: string, format: date-time }
+    ImportJob:
+      type: object
+      description: A record of the PocketBase `imports` collection.
+      required: [id, owner, source, status, total, processed, imported, duplicates, skipped, undated, failed, albums]
+      properties:
+        id: { type: string }
+        owner: { type: string, description: Account receiving the photos. }
+        created_by: { type: string }
+        source: { type: string, enum: [upload, server] }
+        files: { type: array, items: { type: string } }
+        status: { type: string, enum: [queued, scanning, running, done, failed, cancelled] }
+        error:
+          type: string
+          description: |
+            Why a job failed: `quota_exceeded`, `disk_full`, `no_photos`, `unreadable`, `too_many_entries`,
+            `unsafe_archive` (overlapping entries, oversized central directory, decompression budget exceeded),
+            `interrupted` (stopped by three restarts in a row), `internal`; empty otherwise.
+        total: { type: integer, description: Photos and videos found in the archives. }
+        processed: { type: integer }
+        imported: { type: integer }
+        duplicates: { type: integer, description: Already in the account (same SHA-256). }
+        skipped: { type: integer, description: In Google's trash. }
+        undated: { type: integer, description: "Imported without a Google date (EXIF or upload date used)." }
+        failed: { type: integer }
+        albums: { type: integer, description: Albums created or completed. }
+        failures:
+          type: array
+          description: The first 1000 failures.
+          items:
+            type: object
+            required: [path, reason]
+            properties:
+              path: { type: string }
+              reason: { type: string, enum: [unreadable, too_large, suspicious_compression, unsupported, save_failed] }
+        started_at: { type: string }
+        finished_at: { type: string }
+        created: { type: string }
+        updated: { type: string }
     AdminUser:
       type: object
       required: [id, email, name, admin, quotaBytes, usedBytes, twoFactor, created]

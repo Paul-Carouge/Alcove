@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pocketbase/pocketbase/apis"
@@ -23,6 +24,7 @@ import (
 	expslog "golang.org/x/exp/slog"
 
 	"github.com/Paul-Carouge/Alcove/server/internal/drive"
+	"github.com/Paul-Carouge/Alcove/server/internal/takeout"
 )
 
 const (
@@ -38,17 +40,26 @@ const (
 	metaFilename = "filename"
 	metaParent   = "parent"
 	metaOwner    = "owner"
+	metaPurpose  = "purpose"
+	// purposeImport: a Google Takeout archive, kept as a temporary import file (ADR 0030).
+	purposeImport = "import"
 
 	// errQuota prefixes quota rejections so clients can tell them apart.
 	errQuota = "ERR_QUOTA_EXCEEDED"
+	errDisk  = "ERR_DISK_FULL"
+	// errImportLimit: too many or too large import archives for the account.
+	errImportLimit = "ERR_IMPORT_LIMIT"
 )
 
 type ownerKey struct{}
 
 type service struct {
-	app   core.App
-	store filestore.FileStore
-	tus   http.Handler
+	// creating serializes upload creations per account, so the import allowance check and the creation
+	// of the upload happen together.
+	creating sync.Map // owner → *sync.Mutex
+	app      core.App
+	store    filestore.FileStore
+	tus      http.Handler
 }
 
 // Register mounts the tus endpoint and the hourly cleanup job. behindProxy
@@ -115,22 +126,38 @@ func (s *service) serve(e *core.RequestEvent) error {
 	owner := e.Auth.Id
 	ctx := context.WithValue(e.Request.Context(), ownerKey{}, owner)
 
+	floor := takeout.SafetyFloor
 	if id := strings.Trim(strings.TrimPrefix(e.Request.URL.Path, BasePath), "/"); id != "" {
-		if !s.ownedBy(ctx, id, owner) {
+		info, ok := s.infoOf(ctx, id, owner)
+		if !ok {
 			return e.NotFoundError("", nil)
 		}
+		if info.MetaData[metaPurpose] == purposeImport {
+			floor = takeout.ImportFloor
+		}
+	}
+	// Every chunk must leave the disk's floor free: a full disk would stop the database. Import archives
+	// keep a larger margin than regular uploads (phone backups on a small SD card must keep working).
+	if e.Request.Method == http.MethodPatch && !takeout.FitsOnDisk(s.app.DataDir(), max(e.Request.ContentLength, 0), false, floor) {
+		e.Response.Header().Set("Tus-Resumable", "1.0.0")
+		return e.String(http.StatusInsufficientStorage, errDisk+": not enough disk space on the server")
+	}
+	if e.Request.Method == http.MethodPost {
+		m, _ := s.creating.LoadOrStore(owner, &sync.Mutex{})
+		m.(*sync.Mutex).Lock()
+		defer m.(*sync.Mutex).Unlock()
 	}
 	s.tus.ServeHTTP(e.Response, e.Request.WithContext(ctx))
 	return nil
 }
 
-func (s *service) ownedBy(ctx context.Context, id, owner string) bool {
+func (s *service) infoOf(ctx context.Context, id, owner string) (tusd.FileInfo, bool) {
 	up, err := s.store.GetUpload(ctx, id)
 	if err != nil {
-		return false
+		return tusd.FileInfo{}, false
 	}
 	info, err := up.GetInfo(ctx)
-	return err == nil && info.MetaData[metaOwner] == owner
+	return info, err == nil && info.MetaData[metaOwner] == owner
 }
 
 func reject(code, msg string, status int) (tusd.HTTPResponse, tusd.FileInfoChanges, error) {
@@ -153,6 +180,9 @@ func (s *service) preCreate(hook tusd.HookEvent) (tusd.HTTPResponse, tusd.FileIn
 	if !drive.ValidName(name) {
 		return reject("ERR_INVALID_NAME", "invalid file name", http.StatusBadRequest)
 	}
+	if up.MetaData[metaPurpose] == purposeImport {
+		return s.preCreateImport(owner, name, up.Size)
+	}
 	parent := up.MetaData[metaParent]
 	if err := checkParent(s.app, owner, parent); err != nil {
 		return reject("ERR_INVALID_PARENT", err.Error(), http.StatusBadRequest)
@@ -166,6 +196,24 @@ func (s *service) preCreate(hook tusd.HookEvent) (tusd.HTTPResponse, tusd.FileIn
 
 	return tusd.HTTPResponse{}, tusd.FileInfoChanges{MetaData: tusd.MetaData{
 		metaOwner: owner, metaFilename: name, metaParent: parent,
+	}}, nil
+}
+
+// preCreateImport accepts a Takeout archive: a .zip, within the account's import allowance (its quota
+// left, or the server-wide cap without quota; 200 archives), that fits on the disk with its floor kept.
+func (s *service) preCreateImport(owner, name string, size int64) (tusd.HTTPResponse, tusd.FileInfoChanges, error) {
+	if !strings.EqualFold(filepath.Ext(name), ".zip") {
+		return reject("ERR_INVALID_NAME", "import archives are .zip files", http.StatusBadRequest)
+	}
+	count, used := takeout.ImportUsage(s.app, owner)
+	if count >= takeout.MaxUploads || used+size > takeout.UploadLimit(s.app, owner) {
+		return reject(errImportLimit, "too many or too large import archives for this account", http.StatusRequestEntityTooLarge)
+	}
+	if !takeout.FitsOnDisk(s.app.DataDir(), size, true, takeout.ImportFloor) {
+		return reject(errDisk, "not enough disk space on the server", http.StatusInsufficientStorage)
+	}
+	return tusd.HTTPResponse{}, tusd.FileInfoChanges{MetaData: tusd.MetaData{
+		metaOwner: owner, metaFilename: name, metaPurpose: purposeImport,
 	}}, nil
 }
 
@@ -189,6 +237,9 @@ func checkParent(app core.App, owner, parent string) error {
 func (s *service) preFinish(hook tusd.HookEvent) (tusd.HTTPResponse, error) {
 	meta := hook.Upload.MetaData
 	owner, parent := meta[metaOwner], meta[metaParent]
+	if meta[metaPurpose] == purposeImport {
+		return s.finishImport(hook)
+	}
 
 	// The parent may have been trashed or deleted during a long upload.
 	if err := checkParent(s.app, owner, parent); err != nil {
@@ -207,6 +258,19 @@ func (s *service) preFinish(hook tusd.HookEvent) (tusd.HTTPResponse, error) {
 	}
 	s.discard(hook)
 	return tusd.HTTPResponse{Header: tusd.HTTPHeader{NodeHeader: node.Id}}, nil
+}
+
+// finishImport moves the archive out of the tus folder (whose stale files are swept daily) into the
+// owner's import archives, named after the upload id (listed by GET /api/v1/imports/google/uploads).
+func (s *service) finishImport(hook tusd.HookEvent) (tusd.HTTPResponse, error) {
+	meta := hook.Upload.MetaData
+	err := takeout.StoreUpload(s.app, meta[metaOwner], hook.Upload.ID, meta[metaFilename], hook.Upload.Storage[filestore.StorageKeyPath])
+	s.discard(hook) // the .info file (and the data, if it could not be moved)
+	if err != nil {
+		s.app.Logger().Error("cannot keep an import archive", "upload", hook.Upload.ID, "error", err)
+		return tusd.HTTPResponse{}, tusd.NewError("ERR_FINALIZE", "could not store the archive", http.StatusInternalServerError)
+	}
+	return tusd.HTTPResponse{}, nil
 }
 
 // discard deletes an upload's partial data.

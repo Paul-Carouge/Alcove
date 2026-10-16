@@ -198,6 +198,8 @@ class ApiClient {
           return CompleteSetupRequest.fromJson(value);
         case 'CompleteSetupRequestAllOfAdmin':
           return CompleteSetupRequestAllOfAdmin.fromJson(value);
+        case 'CreateImportRequest':
+          return CreateImportRequest.fromJson(value);
         case 'CreateShare':
           return CreateShare.fromJson(value);
         case 'CreateUserRequest':
@@ -236,6 +238,12 @@ class ApiClient {
           return GetPhotoFacets200ResponseYearsInner.fromJson(value);
         case 'Health':
           return Health.fromJson(value);
+        case 'ImportJob':
+          return ImportJob.fromJson(value);
+        case 'ImportJobFailuresInner':
+          return ImportJobFailuresInner.fromJson(value);
+        case 'ImportUpload':
+          return ImportUpload.fromJson(value);
         case 'KnownHashes200Response':
           return KnownHashes200Response.fromJson(value);
         case 'KnownHashesRequest':
@@ -246,6 +254,12 @@ class ApiClient {
           return ListAlbums200Response.fromJson(value);
         case 'ListDuplicates200Response':
           return ListDuplicates200Response.fromJson(value);
+        case 'ListImportServerFiles200Response':
+          return ListImportServerFiles200Response.fromJson(value);
+        case 'ListImportServerFiles200ResponseItemsInner':
+          return ListImportServerFiles200ResponseItemsInner.fromJson(value);
+        case 'ListImportUploads200Response':
+          return ListImportUploads200Response.fromJson(value);
         case 'ListPhotoLocations200Response':
           return ListPhotoLocations200Response.fromJson(value);
         case 'ListPhotoLocations200ResponseItemsInner':

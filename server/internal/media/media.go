@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
@@ -61,6 +62,7 @@ type worker struct {
 // Register binds hooks, the favorite route and the background workers.
 func Register(app core.App) {
 	w := &worker{app: app, queue: make(chan string, queueSize), done: make(chan struct{})}
+	workers.Store(app, w)
 
 	track := func(e *core.RecordEvent) error {
 		if err := e.Next(); err != nil {
@@ -110,6 +112,9 @@ func (w *worker) track(node *core.Record) {
 		rec = core.NewRecord(col)
 		rec.Set("node", node.Id)
 		rec.Set("owner", node.GetString("owner"))
+		if v, ok := annotations.LoadAndDelete(annotationKey(node.GetString("owner"), node.GetString("sha256"))); ok {
+			v.(Imported).apply(rec)
+		}
 	}
 	rec.Set("kind", kind)
 	rec.Set("status", "pending")
@@ -323,6 +328,7 @@ func (w *worker) fill(rec, node *core.Record, tmp string) error {
 		return err
 	}
 
+	mergeImported(rec, &info, time.Now())
 	if !info.Taken.IsZero() {
 		rec.Set("taken_at", info.Taken.UTC())
 	}
@@ -452,4 +458,76 @@ func fillSizeFromPreview(ctx context.Context, rec *core.Record, src, preview str
 	}
 	rec.Set("width", w)
 	rec.Set("height", h)
+}
+
+// mergeImported fills what the file lacks from the metadata a Google Takeout import kept on the record
+// (ADR 0030). It runs on every processing, so retries and backfills never lose imported values.
+func mergeImported(rec *core.Record, info *Info, now time.Time) {
+	if imported := rec.GetDateTime("import_taken_at").Time(); !imported.IsZero() && !PlausibleTaken(info.Taken, imported, now) {
+		info.Taken = imported
+	}
+	if !info.HasLocation && rec.GetBool("import_has_location") {
+		info.HasLocation, info.Lat, info.Lon = true, rec.GetFloat("import_lat"), rec.GetFloat("import_lon")
+	}
+}
+
+// PlausibleTaken reports whether a file's own date (EXIF, video creation time) should win over the date
+// another source gives (Google Photos' photoTakenTime). It loses when it is missing, before 1971 (zeroed
+// clocks), more than two days in the future, or exactly midnight on 1 January (a reset camera clock)
+// while the other date is more than a day away.
+func PlausibleTaken(own, other, now time.Time) bool {
+	if own.IsZero() || own.Year() < 1971 || own.After(now.Add(48*time.Hour)) {
+		return false
+	}
+	reset := own.Month() == time.January && own.Day() == 1 && own.Hour() == 0 && own.Minute() == 0 && own.Second() == 0
+	return !reset || other.Sub(own).Abs() <= 24*time.Hour
+}
+
+// workers maps an app to its media worker (one per app; tests create several).
+var workers sync.Map
+
+// Requeue processes a pending media record again (its imported metadata changed). Records that do not
+// fit in the queue stay pending and are picked up at the next start.
+func Requeue(app core.App, id string) {
+	if w, ok := workers.Load(app); ok {
+		w.(*worker).enqueue(id)
+	}
+}
+
+// Imported is what an import (Google Takeout, ADR 0030) knows about a file before saving it.
+type Imported struct {
+	Taken       time.Time
+	HasLocation bool
+	Lat, Lon    float64
+	Description string
+	Favorite    bool
+}
+
+// annotations wait for the media record of a file being saved, keyed by owner and SHA-256: the record
+// is created with them, so the worker never processes the file without them.
+var annotations sync.Map
+
+func annotationKey(owner, sha string) string { return owner + "/" + sha }
+
+// Annotate attaches imported metadata to the next media record created for this owner's content.
+func Annotate(owner, sha string, m Imported) { annotations.Store(annotationKey(owner, sha), m) }
+
+// Forget drops an annotation that was not used (the file was not a photo, or saving failed).
+func Forget(owner, sha string) { annotations.Delete(annotationKey(owner, sha)) }
+
+func (m Imported) apply(rec *core.Record) {
+	if !m.Taken.IsZero() {
+		rec.Set("taken_at", m.Taken)
+		rec.Set("import_taken_at", m.Taken)
+	}
+	if m.HasLocation {
+		rec.Set("has_location", true)
+		rec.Set("lat", m.Lat)
+		rec.Set("lon", m.Lon)
+		rec.Set("import_has_location", true)
+		rec.Set("import_lat", m.Lat)
+		rec.Set("import_lon", m.Lon)
+	}
+	rec.Set("description", m.Description)
+	rec.Set("favorite", m.Favorite)
 }

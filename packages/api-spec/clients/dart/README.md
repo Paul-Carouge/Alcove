@@ -94,6 +94,11 @@ Class | Method | HTTP request | Description
 *DriveApi* | [**downloadZip**](doc//DriveApi.md#downloadzip) | **GET** /api/v1/zip/{ticket} | Stream a prepared ZIP.
 *DriveApi* | [**getMyUsage**](doc//DriveApi.md#getmyusage) | **GET** /api/v1/me/usage | Storage used by the signed-in user, and their quota.
 *DriveApi* | [**knownHashes**](doc//DriveApi.md#knownhashes) | **POST** /api/v1/backup/known | Which of these file fingerprints you already have (phone backup deduplication).
+*ImportsApi* | [**cancelImport**](doc//ImportsApi.md#cancelimport) | **POST** /api/v1/imports/{importId}/cancel | Cancel an unfinished import.
+*ImportsApi* | [**createImport**](doc//ImportsApi.md#createimport) | **POST** /api/v1/imports/google | Start importing a Google Photos library from Takeout archives.
+*ImportsApi* | [**deleteImportUpload**](doc//ImportsApi.md#deleteimportupload) | **DELETE** /api/v1/imports/google/uploads/{uploadId} | Delete one of your import archives to free the space.
+*ImportsApi* | [**listImportServerFiles**](doc//ImportsApi.md#listimportserverfiles) | **GET** /api/v1/imports/google/server-files | The Takeout archives and folders an administrator dropped in the server's import folder.
+*ImportsApi* | [**listImportUploads**](doc//ImportsApi.md#listimportuploads) | **GET** /api/v1/imports/google/uploads | Your finished import archives that no unfinished job uses.
 *PhotosApi* | [**dismissDuplicates**](doc//PhotosApi.md#dismissduplicates) | **POST** /api/v1/photos/duplicates/dismiss | Mark a group as \"not duplicates\"; it is hidden until another similar photo joins it.
 *PhotosApi* | [**getAlbumPeople**](doc//PhotosApi.md#getalbumpeople) | **GET** /api/v1/albums/{albumId}/people | The owner and participants of an album.
 *PhotosApi* | [**getMapConfig**](doc//PhotosApi.md#getmapconfig) | **GET** /api/v1/map/config | How the web app draws maps (ADR 0020).
@@ -133,6 +138,7 @@ Class | Method | HTTP request | Description
  - [ApplyUpdate202Response](doc//ApplyUpdate202Response.md)
  - [CompleteSetupRequest](doc//CompleteSetupRequest.md)
  - [CompleteSetupRequestAllOfAdmin](doc//CompleteSetupRequestAllOfAdmin.md)
+ - [CreateImportRequest](doc//CreateImportRequest.md)
  - [CreateShare](doc//CreateShare.md)
  - [CreateUserRequest](doc//CreateUserRequest.md)
  - [CreateZip200Response](doc//CreateZip200Response.md)
@@ -152,11 +158,17 @@ Class | Method | HTTP request | Description
  - [GetPhotoFacets200ResponseCamerasInner](doc//GetPhotoFacets200ResponseCamerasInner.md)
  - [GetPhotoFacets200ResponseYearsInner](doc//GetPhotoFacets200ResponseYearsInner.md)
  - [Health](doc//Health.md)
+ - [ImportJob](doc//ImportJob.md)
+ - [ImportJobFailuresInner](doc//ImportJobFailuresInner.md)
+ - [ImportUpload](doc//ImportUpload.md)
  - [KnownHashes200Response](doc//KnownHashes200Response.md)
  - [KnownHashesRequest](doc//KnownHashesRequest.md)
  - [ListAlbumItems200Response](doc//ListAlbumItems200Response.md)
  - [ListAlbums200Response](doc//ListAlbums200Response.md)
  - [ListDuplicates200Response](doc//ListDuplicates200Response.md)
+ - [ListImportServerFiles200Response](doc//ListImportServerFiles200Response.md)
+ - [ListImportServerFiles200ResponseItemsInner](doc//ListImportServerFiles200ResponseItemsInner.md)
+ - [ListImportUploads200Response](doc//ListImportUploads200Response.md)
  - [ListPhotoLocations200Response](doc//ListPhotoLocations200Response.md)
  - [ListPhotoLocations200ResponseItemsInner](doc//ListPhotoLocations200ResponseItemsInner.md)
  - [ListUsers200Response](doc//ListUsers200Response.md)

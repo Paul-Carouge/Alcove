@@ -893,6 +893,113 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/imports/google": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start importing a Google Photos library from Takeout archives.
+     * @description Give either `uploads` (ids of your finished `purpose=import` uploads) or `serverFiles` (names of
+     *     `.zip` files or extracted folders in the server's import folder; administrators only). With
+     *     `serverFiles`, `user` chooses the account receiving the photos (default: the caller). The job starts
+     *     `queued`; a user can have one unfinished import at a time.
+     */
+    post: operations["createImport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/imports/google/server-files": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The Takeout archives and folders an administrator dropped in the server's import folder.
+     * @description Only `.zip` files and folders at the top level; hidden entries and symbolic links are ignored.
+     */
+    get: operations["listImportServerFiles"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/imports/google/uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Your finished import archives that no unfinished job uses.
+     * @description Archives stay after a failed or cancelled import so a new job can use them; they are deleted after a
+     *     successful import, or once nothing was uploaded for a day.
+     */
+    get: operations["listImportUploads"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/imports/google/uploads/{uploadId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        uploadId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete one of your import archives to free the space. */
+    delete: operations["deleteImportUpload"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/imports/{importId}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        importId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cancel an unfinished import.
+     * @description Photos already imported stay. Uploaded archives are kept (listed by `listImportUploads`, deleted after a
+     *     day without use); files in the server's import folder are never deleted. Administrators can cancel any
+     *     job.
+     */
+    post: operations["cancelImport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -931,6 +1038,61 @@ export interface components {
       collectionId: string;
       thumb: string;
       preview: string;
+    };
+    ImportUpload: {
+      id: string;
+      /** @description The file name it was uploaded with. */
+      name: string;
+      size: number;
+      /** Format: date-time */
+      finishedAt: string;
+    };
+    /** @description A record of the PocketBase `imports` collection. */
+    ImportJob: {
+      id: string;
+      /** @description Account receiving the photos. */
+      owner: string;
+      created_by?: string;
+      /** @enum {string} */
+      source: "upload" | "server";
+      files?: string[];
+      /** @enum {string} */
+      status:
+        "queued" | "scanning" | "running" | "done" | "failed" | "cancelled";
+      /**
+       * @description Why a job failed: `quota_exceeded`, `disk_full`, `no_photos`, `unreadable`, `too_many_entries`,
+       *     `unsafe_archive` (overlapping entries, oversized central directory, decompression budget exceeded),
+       *     `interrupted` (stopped by three restarts in a row), `internal`; empty otherwise.
+       */
+      error?: string;
+      /** @description Photos and videos found in the archives. */
+      total: number;
+      processed: number;
+      imported: number;
+      /** @description Already in the account (same SHA-256). */
+      duplicates: number;
+      /** @description In Google's trash. */
+      skipped: number;
+      /** @description Imported without a Google date (EXIF or upload date used). */
+      undated: number;
+      failed: number;
+      /** @description Albums created or completed. */
+      albums: number;
+      /** @description The first 1000 failures. */
+      failures?: {
+        path: string;
+        /** @enum {string} */
+        reason:
+          | "unreadable"
+          | "too_large"
+          | "suspicious_compression"
+          | "unsupported"
+          | "save_failed";
+      }[];
+      started_at?: string;
+      finished_at?: string;
+      created?: string;
+      updated?: string;
     };
     AdminUser: {
       id: string;
@@ -1582,8 +1744,12 @@ export interface operations {
         "Upload-Length": number;
         /**
          * @description tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required,
-         *     a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root).
-         *     Other keys are ignored.
+         *     a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root),
+         *     `purpose` (optional: `import` stores a Google Takeout `.zip` as a temporary import file instead of
+         *     a drive file; pass its upload id, the last segment of `Location`, to `createImport`). Import archives
+         *     are capped per account (200 archives; in bytes, the quota left, or the server-wide
+         *     `imports.max_upload_bytes` app setting, 500 GB by default, without quota) and must fit on the disk
+         *     with 5% (at least 5 GB) left free. Other keys are ignored.
          */
         "Upload-Metadata": string;
       };
@@ -1617,6 +1783,13 @@ export interface operations {
       };
       /** @description File larger than the server limit, or than the space left in the user's quota (body starts with ERR_QUOTA_EXCEEDED). */
       413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Import upload larger than the server's free disk space (body starts with ERR_DISK_FULL). Too many or too large import archives answer 413 with ERR_IMPORT_LIMIT. */
+      507: {
         headers: {
           [name: string]: unknown;
         };
@@ -1728,6 +1901,13 @@ export interface operations {
       };
       /** @description The quota was exceeded meanwhile (ERR_QUOTA_EXCEEDED); the upload is discarded. */
       413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The chunk would leave less than the disk's reserved free space (body starts with ERR_DISK_FULL): 1% of the volume (at least 512 MB) for regular uploads, 5% (at least 5 GB) for import archives. Retry later. */
+      507: {
         headers: {
           [name: string]: unknown;
         };
@@ -3467,6 +3647,219 @@ export interface operations {
       };
       /** @description The release could not be reached or verified. */
       502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          uploads?: string[];
+          serverFiles?: string[];
+          /** @description Receiving account (administrators, with serverFiles). */
+          user?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Job created. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ImportJob"];
+        };
+      };
+      /** @description Invalid or unknown uploads, server files or user. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description serverFiles or user given by a non-administrator. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description This account already has an unfinished import. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      429: components["responses"]["TooManyRequests"];
+    };
+  };
+  listImportServerFiles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The folder and its contents, by name. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description Absolute path of the import folder on the server. */
+            dir: string;
+            items: {
+              name: string;
+              /** @enum {string} */
+              kind: "zip" | "folder";
+              /** @description Bytes (0 for folders). */
+              size: number;
+            }[];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Administrators only. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listImportUploads: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Newest first. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items: components["schemas"]["ImportUpload"][];
+          };
+        };
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteImportUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        uploadId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown archive. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description An unfinished import uses it. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancelImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        importId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cancelled (a running job stops within seconds). */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown job, or neither yours nor started by you (administrators see every job). */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The job has already finished. */
+      409: {
         headers: {
           [name: string]: unknown;
         };

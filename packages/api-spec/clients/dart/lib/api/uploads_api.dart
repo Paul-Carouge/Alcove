@@ -139,7 +139,7 @@ class UploadsApi {
   ///   Total size in bytes (deferred length is not supported). Max 64 GiB.
   ///
   /// * [String] uploadMetadata (required):
-  ///   tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required, a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root). Other keys are ignored. 
+  ///   tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required, a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root), `purpose` (optional: `import` stores a Google Takeout `.zip` as a temporary import file instead of a drive file; pass its upload id, the last segment of `Location`, to `createImport`). Import archives are capped per account (200 archives; in bytes, the quota left, or the server-wide `imports.max_upload_bytes` app setting, 500 GB by default, without quota) and must fit on the disk with 5% (at least 5 GB) left free. Other keys are ignored. 
   Future<Response> createUploadWithHttpInfo(String tusResumable, int uploadLength, String uploadMetadata,) async {
     // ignore: prefer_const_declarations
     final path = r'/api/v1/uploads/';
@@ -179,7 +179,7 @@ class UploadsApi {
   ///   Total size in bytes (deferred length is not supported). Max 64 GiB.
   ///
   /// * [String] uploadMetadata (required):
-  ///   tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required, a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root). Other keys are ignored. 
+  ///   tus metadata (comma-separated `key base64(value)` pairs). Keys: `filename` (required, a valid node name), `parent` (optional, id of a folder owned by the caller; empty = root), `purpose` (optional: `import` stores a Google Takeout `.zip` as a temporary import file instead of a drive file; pass its upload id, the last segment of `Location`, to `createImport`). Import archives are capped per account (200 archives; in bytes, the quota left, or the server-wide `imports.max_upload_bytes` app setting, 500 GB by default, without quota) and must fit on the disk with 5% (at least 5 GB) left free. Other keys are ignored. 
   Future<void> createUpload(String tusResumable, int uploadLength, String uploadMetadata,) async {
     final response = await createUploadWithHttpInfo(tusResumable, uploadLength, uploadMetadata,);
     if (response.statusCode >= HttpStatus.badRequest) {

@@ -34,5 +34,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0027](0027-notes-in-the-database.md) | Notes are stored in the database, not as Markdown files | Accepted |
 | [0028](0028-calendar-model.md) | Calendar: events in the database, shaped like iCalendar; CalDAV later | Accepted |
 | [0029](0029-per-abi-android-apks.md) | Android: one APK per ABI, the universal APK kept | Accepted |
+| [0030](0030-google-photos-import-from-takeout.md) | Google Photos import from Google Takeout archives | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

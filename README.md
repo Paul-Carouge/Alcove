@@ -77,7 +77,7 @@ launch. The iPhone app comes later.
 | 0 | Foundations: monorepo, `/health`, skeleton clients, deployment, CI | ✅ v0.1.0 |
 | 1 | Server, accounts and auth, **drive** (upload, folders, sharing, trash) | ✅ v0.2–v0.8 |
 | – | One-command install and signed updates | ✅ v0.9 |
-| 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters and map done |
+| 2 | Photos and videos (timeline, albums, thumbnails, EXIF) | 🚧 timeline, albums, links, duplicates, filters, map and Google Photos import done |
 | 3 | Documents (OCR, full-text search) | 🚧 PDF text, OCR of scans and screenshots, full-text search done |
 | 4 | Mobile app and automatic photo backup | 🚧 sign-in, photos, albums, file management, scanning, automatic backup and in-app updates done |
 | 5 | Notes, calendar (CalDAV) | |

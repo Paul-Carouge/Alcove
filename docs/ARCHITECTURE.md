@@ -56,6 +56,7 @@ server/
   internal/albums          album hooks (roles, cover, pruning) and reads (list, items, people, lookup)
   internal/notes           notes invariants (tags owned by the note's owner), notes trash purge
   internal/calendar        event invariants (calendar owned by the event's owner, end after start, uid)
+  internal/takeout         Google Photos import from Takeout zips: sidecar matching, import jobs (ADR 0030)
   internal/ffbundle        Alcove's own ffmpeg for native Linux installs: verified install, PATH activation
   migrations/              versioned Go migrations (up + down)
 ```
@@ -98,6 +99,11 @@ checks the `media` view rule.
 **Public album links (v0.12, [ADR 0019](adr/0019-public-album-links.md)):** a `shares` record points to a node or
 an album. Visitors get previews and thumbnails (re-encoded, no metadata) and video streams, never original photos,
 and no location or camera data.
+
+**Google Photos import (ADR 0030):** `imports` jobs (owner, created_by, source `upload`|`server`, files, status,
+counters, failures, hidden resume state), read by the owner and the starting administrator, written only by the
+server, followed through realtime. Imported photos get `media.description` and hidden `import_*` fields (Google's
+date and place) that the media worker merges with EXIF on every processing (EXIF wins when plausible).
 
 **Notes (phase 5, [ADR 0027](adr/0027-notes-in-the-database.md)):** `notes` (owner, title, Markdown `body`,
 `pinned`, `tags`, `trashed_at`), owner-only rules, written by clients through the record API and synced by

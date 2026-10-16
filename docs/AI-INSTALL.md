@@ -148,6 +148,12 @@ serve it over HTTPS with `sudo tailscale serve --bg 8090` and open https://<mach
 4. Suggest next steps: schedule backups (Settings → Backups), turn on two-factor sign-in (account menu →
    Security), install the Android app.
 
+== Importing from Google Photos ==
+Google Photos libraries come in through Google Takeout (.zip, 50 GB archives, only Google Photos selected).
+In the web app: Photos → Import, then upload the archives or, for large exports, copy them to
+<data>/pb_data/import/ on the server (Docker: /data/pb_data/import/ in the container) and pick them there as
+an administrator. Dates, places, favorites and albums are restored; already present photos are skipped.
+
 == Troubleshooting ==
 - Setup link does not open from the phone: use the LAN IP, same network, port 8090 open in the firewall.
 - "cannot reach the release server": the machine cannot reach github.com, or certificates are missing.

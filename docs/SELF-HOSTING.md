@@ -236,6 +236,44 @@ tile.openstreetmap.org (which sees the area viewed). For many users, prefer your
 Read the release notes before major versions; breaking changes are announced in the
 [CHANGELOG](../CHANGELOG.md).
 
+## Importing from Google Photos
+
+Alcove imports a whole Google Photos library from **Google Takeout** (Google offers no other way to export
+everything). Photos keep their date, place, description, favorite and albums; the files themselves are never
+modified, and photos you already have (backed up from the phone, or from an earlier import) are not duplicated.
+See [ADR 0030](adr/0030-google-photos-import-from-takeout.md) for the details.
+
+1. On [takeout.google.com](https://takeout.google.com/), click **Deselect all**, select only **Google Photos**,
+   choose **.zip** and **50 GB** archives. Google emails you when the export is ready (hours to days).
+   Download **every** archive: a photo and its information can be in different ones.
+2. In the web app: **Photos → Import**. Either upload the archives (resumable: if the connection drops, pick
+   the same files again), or, as an administrator, copy them to the server's import folder and pick them
+   there, choosing the account that receives the photos:
+
+   | Install | Import folder |
+   |---|---|
+   | Linux (native) | `/var/lib/alcove/pb_data/import/` |
+   | Docker | `/data/pb_data/import/` in the container: `docker compose cp ./takeout-001.zip alcove:/data/pb_data/import/` |
+   | macOS | `~/Library/Application Support/Alcove/pb_data/import/` |
+
+   The folder is created the first time an administrator opens the "From the server" tab, which also shows its
+   exact path. An already extracted Takeout folder works too.
+3. Follow the progress (you can close the page: the import runs on the server, one at a time, and resumes
+   after a restart). The report lists what was imported, already present, skipped (in Google's trash),
+   without a Google date, and what failed, downloadable as CSV.
+
+Photos go to a **Google Photos** folder in Files, by year, and appear in Photos; Google albums become Alcove
+albums. Uploaded archives need free disk space until the import succeeds, then they are deleted; after a
+failure or a cancel they stay (listed on the upload step, with a delete button) so you can start again
+without re-uploading, and unused ones are deleted after a day without uploads. Files in the server's import
+folder are never deleted (remove them yourself afterwards). The import stops with a clear message when the
+account's quota is full: free space or raise the quota, then run it again.
+
+Limits: per account, 200 archives and, in bytes, what is left of its quota or, without quota, 500 GB
+(change it in the admin console: collection `app_settings`, record with key `imports.max_upload_bytes` and a
+number of bytes as value). Imports always leave 5% of the disk (at least 5 GB) free; other uploads stop
+only when less than 1% (at least 512 MB) would be left, to protect the database.
+
 ## Troubleshooting
 
 - **The setup link does not open from my phone.** Use the address the installer printed (an IP such as

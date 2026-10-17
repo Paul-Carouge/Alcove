@@ -94,7 +94,8 @@ disk is too small for the remaining photos (`disk_full`, checked before importin
 items not at all, the disk's floor kept), archives are unreadable or unsafe (`unsafe_archive`). A clean
 shutdown (update, restart) puts a running job back in the queue; a job found still running at startup was
 stopped by a crash, and after three such crashes in a row without progress it fails as `interrupted` instead
-of crashing the server again. Administrators can cancel any job.
+of crashing the server again; its uploaded archives are quarantined (no new job may use them; the owner can
+delete them). Administrators can cancel any job.
 
 **API** (OpenAPI): `POST /api/v1/imports/google` (uploads, or server files and a target user for
 administrators; one unfinished job per account), `GET /api/v1/imports/google/server-files` (administrators),
@@ -104,7 +105,9 @@ administrators; one unfinished job per account), `GET /api/v1/imports/google/ser
 **Hostile archives.** Entry names are never used as paths on disk (each entry streams into a temp file Alcove
 names); names with `..`, absolute paths, backslashes, control characters (C0 and C1), invalid UTF-8 or more
 than 1024 bytes are ignored, and invisible format characters (bidi overrides, zero-width) become `_` in
-names (and are dropped from descriptions). `archive/zip` allocates every central directory header it reads, from wherever
+names (and are dropped from descriptions). `archive/zip` preallocates the entry count the end records declare (a ZIP64 record can claim billions):
+Alcove reads that count first, exactly where `archive/zip` does, and refuses more than the limit below. It
+also allocates every central directory header it reads, from wherever
 crafted end records make it start (shifted offsets, ignored ZIP64 locators): Alcove therefore gives it a
 reader that refuses to serve more than 48 MB (plus a little for the end records) while it parses, which
 bounds the headers whatever the archive claims, then lifts the limit for the data. After parsing, at most

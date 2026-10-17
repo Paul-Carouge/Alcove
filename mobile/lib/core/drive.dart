@@ -246,7 +246,7 @@ class UploadQueue extends ChangeNotifier {
       // Leftovers of a save interrupted before its rename.
       if (await dir.exists()) {
         await for (final f in dir.list()) {
-          if (f is File && f.path.endsWith('.tmp') && f.path.contains('/queue.json.')) {
+          if (f is File && f.path.endsWith('/queue.json.tmp')) {
             await f.delete();
           }
         }
@@ -296,14 +296,24 @@ class UploadQueue extends ChangeNotifier {
     unawaited(_run());
   }
 
-  Future<void> _save() async {
+  Future<void> _saving = Future.value();
+
+  /// Completes when every save requested so far is on disk.
+  @visibleForTesting
+  Future<void> get saved => _saving;
+
+  /// Saves run one after another, each writing the state at its turn: two overlapping saves could
+  /// otherwise finish out of order and leave the older queue on disk.
+  Future<void> _save() => _saving = _saving.then((_) => _write());
+
+  Future<void> _write() async {
     try {
       final dir = await _storage();
       await dir.create(recursive: true);
       final pending = items.where((i) => i.status != UploadStatus.done && i.path != null);
       // Other accounts' uploads are kept for when they sign in again. Written to a temporary file then
       // renamed, so an app killed mid-write never leaves a truncated queue (which restore would drop).
-      final tmp = File('${dir.path}/queue.json.${DateTime.now().microsecondsSinceEpoch}.tmp');
+      final tmp = File('${dir.path}/queue.json.tmp');
       await tmp.writeAsString(
         jsonEncode([for (final i in pending) i.toJson(), ..._dormant]),
         flush: true,

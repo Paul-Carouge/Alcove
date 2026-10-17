@@ -7,6 +7,13 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.32.2] - 2026-10-17
+
+### Fixed
+- App: uploads waiting in the queue could all be lost if the app was closed at the exact moment the queue
+  was being saved. The queue is now saved atomically.
+
+
 ## [0.32.1] - 2026-10-17
 
 ### Security

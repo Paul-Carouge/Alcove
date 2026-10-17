@@ -7,6 +7,13 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.32.3] - 2026-10-17
+
+### Fixed
+- App: two saves of the upload queue that overlapped could finish in the wrong order and leave an older
+  queue on disk. Saves now run one after another.
+
+
 ## [0.32.2] - 2026-10-17
 
 ### Fixed

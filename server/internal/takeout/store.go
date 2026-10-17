@@ -110,7 +110,30 @@ func DeleteUpload(app core.App, owner, id string) error {
 		return err
 	}
 	_ = root.Remove(id + ".json")
+	_ = root.Remove(id + ".quarantine")
 	return nil
+}
+
+// quarantine marks the archives of a job that crashed the server repeatedly: no new job may use them
+// (otherwise the same archive could crash it forever); the owner can still delete them.
+func quarantine(app core.App, owner string, ids []string) {
+	root, err := os.OpenRoot(uploadsOf(app, owner))
+	if err != nil {
+		return
+	}
+	defer func() { _ = root.Close() }()
+	for _, id := range ids {
+		if uploadID.MatchString(id) {
+			if f, err := root.Create(id + ".quarantine"); err == nil {
+				_ = f.Close()
+			}
+		}
+	}
+}
+
+func quarantined(root *os.Root, id string) bool {
+	_, err := root.Lstat(id + ".quarantine")
+	return err == nil
 }
 
 // usedUploads are the archives unfinished jobs need ("owner/id").

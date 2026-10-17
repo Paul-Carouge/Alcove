@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -190,6 +192,7 @@ func TestEntryCountEdgeCases(t *testing.T) {
 	if err := openErr(t, dir, "bad-locator.zip"); !errors.Is(err, errTooManyEntries) {
 		t.Errorf("ignored locator over the limit: %v", err)
 	}
+	setLimit(t, &maxEntriesPerArchive, 100_000)
 	setLimit(t, &maxCentralDir, 64<<10)
 	setLimit(t, &dirReadSlack, 0)
 	if err := openErr(t, dir, "bad-locator.zip"); !errors.Is(err, errUnsafe) {
@@ -486,5 +489,117 @@ func TestDiskFloors(t *testing.T) {
 	// Partial uploads count against what is left.
 	if fits(free, total, 3*gb+600<<20, 100<<20, SafetyFloor) {
 		t.Error("announced partial uploads ignored")
+	}
+}
+
+// tailReader is a sparse archive: zeros, then tail at the end.
+type tailReader struct {
+	size int64
+	tail []byte
+}
+
+func (t *tailReader) ReadAt(p []byte, off int64) (int, error) {
+	if off >= t.size {
+		return 0, io.EOF
+	}
+	n := min(int64(len(p)), t.size-off)
+	start := t.size - int64(len(t.tail))
+	for i := range n {
+		p[i] = 0
+		if o := off + i; o >= start {
+			p[i] = t.tail[o-start]
+		}
+	}
+	if n < int64(len(p)) {
+		return int(n), io.EOF
+	}
+	return int(n), nil
+}
+
+// A 40 GiB archive whose last 144 bytes declare (size-46)/30 entries in a ZIP64 end record: archive/zip
+// would preallocate about 11 GB before reading its directory.
+func TestDeclaredRecordsStopPreallocation(t *testing.T) {
+	const size int64 = 40 << 30
+	le := binary.LittleEndian
+	cd := make([]byte, 46)
+	le.PutUint32(cd, 0x02014b50)
+	eocd64 := make([]byte, 56)
+	le.PutUint32(eocd64, 0x06064b50)
+	le.PutUint64(eocd64[4:], 44)
+	cdOff := size - (46 + 56 + 20 + 22)
+	records := uint64(size-46) / 30
+	le.PutUint64(eocd64[24:], records)
+	le.PutUint64(eocd64[32:], records)
+	le.PutUint64(eocd64[40:], 46)
+	le.PutUint64(eocd64[48:], uint64(cdOff))
+	loc := make([]byte, 20)
+	le.PutUint32(loc, 0x07064b50)
+	le.PutUint64(loc[8:], uint64(cdOff+46))
+	le.PutUint32(loc[16:], 1)
+	eocd := make([]byte, 22)
+	le.PutUint32(eocd, 0x06054b50)
+	for _, at := range []int{8, 10} {
+		le.PutUint16(eocd[at:], 0xffff)
+	}
+	le.PutUint32(eocd[12:], 0xffffffff)
+	le.PutUint32(eocd[16:], 0xffffffff)
+	r := &tailReader{size: size, tail: slices.Concat(cd, eocd64, loc, eocd)}
+
+	if n, err := declaredRecords(r, size); err != nil || n != records {
+		t.Fatalf("declaredRecords = %d, %v; want %d", n, err, records)
+	}
+	var m0, m1 runtime.MemStats
+	runtime.ReadMemStats(&m0)
+	_, err := openZip(r, size)
+	runtime.ReadMemStats(&m1)
+	if !errors.Is(err, errTooManyEntries) {
+		t.Errorf("openZip: %v", err)
+	}
+	if delta := m1.TotalAlloc - m0.TotalAlloc; delta > 64<<20 {
+		t.Errorf("allocated %d MB", delta>>20)
+	}
+}
+
+// declaredRecords reads the count archive/zip reads, on ordinary, ZIP64 and crafted archives.
+func TestDeclaredRecordsMatchArchiveZip(t *testing.T) {
+	cases := map[string][]byte{
+		"plain":         crafted(t, 300, 0, 0, false),
+		"negative base": crafted(t, 300, 0, 1, false),
+		"positive base": crafted(t, 300, -7, 0, false),
+	}
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	_, _ = w.Create("a")
+	_ = w.SetComment("a comment")
+	_ = w.Close()
+	cases["comment"] = buf.Bytes()
+	for name, b := range cases {
+		n, err := declaredRecords(bytes.NewReader(b), int64(len(b)))
+		zr, zerr := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+		if err != nil || zerr != nil || n%65536 != uint64(len(zr.File))%65536 {
+			t.Errorf("%s: declared %d (%v), archive/zip read %v (%v)", name, n, err, zr, zerr)
+		}
+	}
+}
+
+func TestQuarantineAfterRepeatedCrashes(t *testing.T) {
+	e := newJobEnv(t)
+	dir := uploadsOf(e.app, e.alice.Id)
+	writeZip(t, filepath.Join(dir, "boom.zip"), zipFile{name: "x.jpg", data: []byte("x")})
+	j := e.job(t, "upload", "boom")
+	j.Set("status", StatusRunning)
+	j.Set("attempts", maxAttempts-1)
+	if err := e.app.Save(j); err != nil {
+		t.Fatal(err)
+	}
+	e.r.Start()
+	e.r.Stop()
+	root, _ := os.OpenRoot(dir)
+	defer func() { _ = root.Close() }()
+	if !quarantined(root, "boom") {
+		t.Fatal("archive not quarantined after the job crashed the server")
+	}
+	if err := DeleteUpload(e.app, e.alice.Id, "boom"); err != nil || quarantined(root, "boom") {
+		t.Errorf("delete: %v, still quarantined %v", err, quarantined(root, "boom"))
 	}
 }

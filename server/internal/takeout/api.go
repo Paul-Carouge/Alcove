@@ -109,7 +109,11 @@ func (r *Runner) create(e *core.RequestEvent) error {
 				return e.BadRequestError("Unknown server file.", map[string]any{"name": f})
 			}
 		}
-	} else {
+	}
+
+	r.mu.Lock() // one unfinished import per account; archives cannot be deleted while checked
+	defer r.mu.Unlock()
+	if source == "upload" {
 		root, err := os.OpenRoot(filepath.Join(e.App.DataDir(), UploadDir, owner))
 		if err != nil {
 			return e.BadRequestError("Unknown upload.", nil)
@@ -119,11 +123,12 @@ func (r *Runner) create(e *core.RequestEvent) error {
 			if info, err := root.Lstat(f + ".zip"); !uploadID.MatchString(f) || err != nil || !info.Mode().IsRegular() {
 				return e.BadRequestError("Unknown upload.", nil)
 			}
+			if quarantined(root, f) {
+				return e.BadRequestError("This archive stopped an earlier import several times; delete it and upload it again.",
+					map[string]any{"upload": f})
+			}
 		}
 	}
-
-	r.mu.Lock() // one unfinished import per account, even with concurrent requests
-	defer r.mu.Unlock()
 	n, err := e.App.CountRecords(Collection, dbx.HashExp{"owner": owner}, dbx.In("status", StatusQueued, StatusScanning, StatusRunning))
 	if err != nil {
 		return err

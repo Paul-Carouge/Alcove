@@ -279,6 +279,9 @@ func (r *Runner) finish(job *core.Record, status, code string) {
 			r.app.Logger().Error("cannot save import", "import", job.Id, "error", err)
 		}
 	}
+	if code == string(errRestarts) && job.GetString("source") == "upload" {
+		quarantine(r.app, job.GetString("owner"), job.GetStringSlice("files"))
+	}
 	if status == StatusDone && job.GetString("source") == "upload" {
 		for _, f := range job.GetStringSlice("files") {
 			_ = DeleteUpload(r.app, job.GetString("owner"), f)

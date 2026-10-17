@@ -124,18 +124,9 @@ func openSources(root *os.Root, names []string) (*archives, error) {
 				return fail(err)
 			}
 			a.srcs = append(a.srcs, source{file: f, size: info.Size()})
-			// The end records and the directory, plus a little for the reads around them.
-			br := newBudgetReaderAt(f, maxCentralDir+dirReadSlack)
-			zr, err := zip.NewReader(br, info.Size())
-			if br.exceeded.Load() || errors.Is(err, errUnsafe) {
-				return fail(fmt.Errorf("%s: central directory too large: %w", name, errUnsafe))
-			}
+			zr, err := openZip(f, info.Size())
 			if err != nil {
 				return fail(fmt.Errorf("%s: %w", name, err))
-			}
-			br.lift()
-			if len(zr.File) > maxEntriesPerArchive {
-				return fail(errTooManyEntries)
 			}
 			if total += len(zr.File); total > maxEntries {
 				return fail(errTooManyEntries)
@@ -149,6 +140,32 @@ func openSources(root *os.Root, names []string) (*archives, error) {
 		}
 	}
 	return a, nil
+}
+
+// openZip parses an archive's directory with bounded memory: the declared entry count is checked
+// before archive/zip preallocates it, and what it reads while parsing is capped.
+func openZip(r io.ReaderAt, size int64) (*zip.Reader, error) {
+	records, err := declaredRecords(r, size)
+	if err != nil {
+		return nil, err
+	}
+	if records > uint64(maxEntriesPerArchive) { // #nosec G115 -- a small positive limit
+		return nil, errTooManyEntries
+	}
+	// The end records and the directory, plus a little for the reads around them.
+	br := newBudgetReaderAt(r, maxCentralDir+dirReadSlack)
+	zr, err := zip.NewReader(br, size)
+	if br.exceeded.Load() || errors.Is(err, errUnsafe) {
+		return nil, fmt.Errorf("central directory too large: %w", errUnsafe)
+	}
+	if err != nil {
+		return nil, err
+	}
+	br.lift()
+	if len(zr.File) > maxEntriesPerArchive {
+		return nil, errTooManyEntries
+	}
+	return zr, nil
 }
 
 // checkOverlap refuses archives whose entries share bytes, or point past the end of the file.

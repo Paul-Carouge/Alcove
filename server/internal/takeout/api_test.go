@@ -324,3 +324,17 @@ func TestConcurrentImportUploadsShareTheAllowance(t *testing.T) {
 		t.Errorf("%d uploads of 10 bytes created within a 25-byte allowance, want 2", created)
 	}
 }
+
+func TestQuarantinedUploadCannotStartAnImport(t *testing.T) {
+	e := setup(t)
+	if err := takeout.StoreUpload(e.app, e.alice.Id, "boom", "boom.zip", writeTemp(t, "PK")); err != nil {
+		t.Fatal(err)
+	}
+	takeout.Quarantine(e.app, e.alice.Id, "boom")
+	if code, _ := e.call(t, http.MethodPost, "/api/v1/imports/google", e.aliceTok, `{"uploads":["boom"]}`); code != http.StatusBadRequest {
+		t.Errorf("quarantined upload: %d", code)
+	}
+	if code, _ := e.call(t, http.MethodDelete, "/api/v1/imports/google/uploads/boom", e.aliceTok, ""); code != http.StatusNoContent {
+		t.Errorf("owner cannot delete it: %d", code)
+	}
+}

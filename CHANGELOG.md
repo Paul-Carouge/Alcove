@@ -7,6 +7,14 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.32.1] - 2026-10-17
+
+### Security
+- Google Photos import: a crafted Takeout archive could declare billions of entries in its ZIP64 end record
+  and make the server allocate gigabytes before reading anything (out of memory). The declared entry count
+  is now checked before the archive is opened. Archives behind an import that stopped the server three
+  times are quarantined: no new import can use them until they are deleted and uploaded again.
+
 ## [0.32.0] - 2026-10-17
 
 ### Added

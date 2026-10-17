@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.32.1](2026-10-17-v0.32.1.md) | 2026-10-17 | The allocation before the read |
 | [0.32.0](2026-10-17-v0.32.0.md) | 2026-10-17 | Bringing Google Photos home |
 | [0.31.1](2026-10-16-v0.31.1.md) | 2026-10-16 | Room to build |
 | [0.31.0](2026-10-16-v0.31.0.md) | 2026-10-16 | The app, reworked from real use |

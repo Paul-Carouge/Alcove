@@ -7,6 +7,31 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-10-18
+
+### Added
+- App: select several photos in the timeline. Press and hold a photo, then tap others; the bar shows how
+  many are selected and lets you favorite, share or move them all to the trash. Back ends the selection.
+
+### Fixed
+- App: after looking at photos for a few minutes (or deleting one), the timeline came back with blank
+  thumbnails. File links carry a token that expires after a few minutes; images now fetch a fresh one
+  when they load, and an image that failed is retried the next time it shows instead of staying broken.
+- App: a video opened minutes after the viewer could spin forever; it now uses a fresh link and shows an
+  error if it cannot play.
+- App: the timeline no longer skips photos after some were moved to the trash (it continues after the
+  last photo shown instead of counting pages).
+- App: an upload stuck on a dead connection (after changing Wi-Fi) fails after 5 minutes and resumes,
+  instead of freezing the upload queue.
+- Server: during a large upload, photos and documents beyond the worker queue stayed unprocessed (no
+  thumbnail, Google Photos import waiting) until the next restart. They are now picked up every 5 minutes.
+
+### Performance
+- Server: the photo timeline reads its pages straight from an index instead of sorting the whole library
+  on every page, much faster on large libraries and hard disks.
+- Server: without ffmpeg installed, videos are no longer copied in full every night just to fail again.
+- Web and app: the timeline counts photos once instead of on every page.
+
 ## [0.32.3] - 2026-10-17
 
 ### Fixed

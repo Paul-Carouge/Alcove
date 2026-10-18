@@ -57,6 +57,10 @@ type worker struct {
 	wg    sync.WaitGroup
 	scan  sync.WaitGroup // startup scans
 	once  sync.Once
+
+	queued sync.Map   // ids waiting in queue, so a sweep does not add them twice
+	active sync.Map   // ids being processed
+	sendMu sync.Mutex // guards sends on queue against its close
 }
 
 // Register binds hooks, the favorite route and the background workers.
@@ -89,6 +93,12 @@ func Register(app core.App) {
 	})
 	// Failed items are retried once a day (e.g. after ffmpeg was installed).
 	app.Cron().MustAdd("alcoveMediaRetry", "23 3 * * *", func() { w.requeue("failed") })
+	// Items dropped by a full queue (a big upload) are picked up once it drained.
+	app.Cron().MustAdd("alcoveMediaPending", "*/5 * * * *", func() {
+		if len(w.queue) == 0 {
+			w.requeue("pending")
+		}
+	})
 }
 
 // track creates or resets the media record of a node when its content changes.
@@ -142,10 +152,21 @@ func (w *worker) enqueue(id string) {
 	if w.done == nil || w.stopping() {
 		return
 	}
+	if _, dup := w.queued.LoadOrStore(id, struct{}{}); dup {
+		return
+	}
+	// Under the lock: stop() never closes the queue between the check and the send.
+	w.sendMu.Lock()
+	defer w.sendMu.Unlock()
+	if w.stopping() {
+		w.queued.Delete(id)
+		return
+	}
 	select {
 	case w.queue <- id:
 	default:
-		// Full queue: the record stays "pending" and is picked up at next start.
+		// Full queue: the record stays "pending" and the next sweep picks it up.
+		w.queued.Delete(id)
 	}
 }
 
@@ -173,7 +194,9 @@ func (w *worker) stop() {
 	close(w.done)
 	w.scan.Wait()
 	w.once.Do(func() {}) // never start after stopping
+	w.sendMu.Lock()
 	close(w.queue)
+	w.sendMu.Unlock()
 	w.wg.Wait()
 }
 
@@ -246,6 +269,9 @@ func (w *worker) requeue(status string) {
 		if w.stopping() {
 			return
 		}
+		if _, busy := w.active.Load(r.Id); busy {
+			continue
+		}
 		if status == "failed" {
 			r.Set("status", "pending")
 			_ = w.app.Save(r)
@@ -257,7 +283,11 @@ func (w *worker) requeue(status string) {
 func (w *worker) loop() {
 	defer w.wg.Done()
 	for id := range w.queue {
+		// Active first: a sweep in between must never see the id as neither queued nor active.
+		w.active.Store(id, struct{}{})
+		w.queued.Delete(id)
 		_ = w.process(id) // errors are logged and kept on the record
+		w.active.Delete(id)
 	}
 }
 
@@ -307,6 +337,11 @@ func truncate(s string, n int) string {
 // fill copies the original to a temp file (ffmpeg and EXIF need seeking),
 // extracts metadata and builds thumbnails when needed.
 func (w *worker) fill(rec, node *core.Record, tmp string) error {
+	video := rec.GetString("kind") == "video"
+	// Before the copy: without ffmpeg, every nightly retry would read whole videos off the disk.
+	if video && !HaveFFmpeg() {
+		return errors.New("ffmpeg is not installed")
+	}
 	src := filepath.Join(tmp, "original")
 	if err := w.copyOriginal(node, src); err != nil {
 		return err
@@ -314,13 +349,9 @@ func (w *worker) fill(rec, node *core.Record, tmp string) error {
 
 	ctx := context.Background()
 	mime, _, _ := strings.Cut(node.GetString("mime"), ";")
-	video := rec.GetString("kind") == "video"
 	var info Info
 	var err error
 	if video {
-		if !HaveFFmpeg() {
-			return errors.New("ffmpeg is not installed")
-		}
 		if info, err = VideoInfo(ctx, src); err != nil {
 			return err
 		}

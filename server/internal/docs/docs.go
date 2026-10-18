@@ -95,6 +95,10 @@ type Docs struct {
 	once   sync.Once
 	instMu sync.Mutex // one bundle installation at a time
 	jobs   *jobs      // searchable PDFs
+
+	queued sync.Map   // ids waiting in queue, so a sweep does not add them twice
+	active sync.Map   // ids being processed
+	sendMu sync.Mutex // guards sends on queue against its close
 }
 
 // Register binds hooks, routes and the background worker.
@@ -147,6 +151,12 @@ func Register(app core.App, opts Options) *Docs {
 		d.requeueFailed()
 		d.requeueRetryable()
 		prune(d.app)
+	})
+	// Items dropped by a full queue (a big upload) are picked up once it drained.
+	app.Cron().MustAdd("alcoveDocumentsPending", "*/5 * * * *", func() {
+		if len(d.queue) == 0 {
+			d.requeue("pending")
+		}
 	})
 	return d
 }
@@ -233,10 +243,21 @@ func (d *Docs) enqueue(id string) {
 	if d.stopping() {
 		return
 	}
+	if _, dup := d.queued.LoadOrStore(id, struct{}{}); dup {
+		return
+	}
+	// Under the lock: stop() never closes the queue between the check and the send.
+	d.sendMu.Lock()
+	defer d.sendMu.Unlock()
+	if d.stopping() {
+		d.queued.Delete(id)
+		return
+	}
 	select {
 	case d.queue <- id:
 	default:
-		// Full queue: the record stays "pending" and is picked up at next start.
+		// Full queue: the record stays "pending" and the next sweep picks it up.
+		d.queued.Delete(id)
 	}
 }
 
@@ -264,7 +285,9 @@ func (d *Docs) stop() {
 	close(d.done)
 	d.scan.Wait()
 	d.once.Do(func() {})
+	d.sendMu.Lock()
 	close(d.queue)
+	d.sendMu.Unlock()
 	// Under the jobs lock: a request queuing a searchable PDF never sends on a closed channel.
 	d.jobs.mu.Lock()
 	close(d.jobs.queue)
@@ -275,7 +298,11 @@ func (d *Docs) stop() {
 func (d *Docs) loop() {
 	defer d.wg.Done()
 	for id := range d.queue {
+		// Active first: a sweep in between must never see the id as neither queued nor active.
+		d.active.Store(id, struct{}{})
+		d.queued.Delete(id)
 		_ = d.process(id) // errors are logged and kept on the record
+		d.active.Delete(id)
 	}
 }
 
@@ -306,6 +333,9 @@ func (d *Docs) requeue(status string) {
 	for _, r := range recs {
 		if d.stopping() {
 			return
+		}
+		if _, busy := d.active.Load(r.Id); busy {
+			continue
 		}
 		d.enqueue(r.Id)
 	}

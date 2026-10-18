@@ -145,7 +145,7 @@ class UploadQueue extends ChangeNotifier {
     http.Client Function()? httpClient,
     Future<Directory> Function()? storage,
     DateTime Function()? now,
-  }) : _httpClient = httpClient ?? http.Client.new,
+  }) : _httpClient = httpClient ?? Session.uploadClient,
        _storage = storage ?? _defaultStorage,
        _now = now ?? DateTime.now;
 

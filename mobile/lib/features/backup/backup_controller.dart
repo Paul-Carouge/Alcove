@@ -23,7 +23,7 @@ class BackupController extends ChangeNotifier {
     http.Client Function()? httpClient,
   }) : library = library ?? DevicePhotoLibrary(),
        wifiCheck = wifiCheck ?? isOnWifi,
-       httpClient = httpClient ?? http.Client.new;
+       httpClient = httpClient ?? Session.uploadClient;
 
   final Session session;
   final BackupStore store;

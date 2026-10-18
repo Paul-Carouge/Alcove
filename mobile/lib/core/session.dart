@@ -89,6 +89,10 @@ class Session extends ChangeNotifier {
   static http.Client _defaultClient() =>
       IOClient(HttpClient()..connectionTimeout = const Duration(seconds: 15));
 
+  /// For tus uploads: a chunk whose connection died (Wi-Fi changed) fails after a while, and is
+  /// resumed, instead of freezing the queue for hours. Long enough for 8 MB on a slow uplink.
+  static http.Client uploadClient() => TimeoutClient(_defaultClient(), const Duration(minutes: 5));
+
   DateTime? _refreshedAt;
 
   /// Renews the token when the app comes back after a while (tokens expire after some days), so a

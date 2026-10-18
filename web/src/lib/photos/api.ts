@@ -65,10 +65,12 @@ export function timelineFilter(filter: PhotoFilter, refine: Refine = {}) {
 	return parts.join(' && ');
 }
 
-/** One page of the timeline (newest first), trashed files excluded. */
+/** One page of the timeline (newest first), trashed files excluded. Only the first page counts
+ * the total (`totalItems` is -1 after it): counting walks the whole library each time. */
 export function listMedia(page: number, filter: PhotoFilter, refine: Refine = {}) {
 	return pb.collection<Media>('media').getList(page, PAGE_SIZE, {
 		filter: timelineFilter(filter, refine),
+		skipTotal: page > 1,
 		sort: '-taken_at,-id',
 		expand: 'node'
 	});

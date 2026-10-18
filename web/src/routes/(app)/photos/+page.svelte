@@ -29,6 +29,7 @@
 		thumbUrl,
 		isRefined,
 		listMedia,
+		PAGE_SIZE,
 		setFavorite,
 		type Facets,
 		type Media,
@@ -117,7 +118,9 @@
 			const res = await listMedia(page + 1, filter, refine);
 			if (gen !== generation) return;
 			items = page === 0 ? res.items : [...items, ...res.items];
-			total = res.totalItems;
+			if (res.totalItems >= 0) total = res.totalItems;
+			// A short page is the end, whatever the first page counted.
+			if (res.items.length < PAGE_SIZE) total = items.length;
 			page = res.page;
 			failed = false;
 		} catch {

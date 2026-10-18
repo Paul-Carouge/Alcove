@@ -108,3 +108,32 @@ func TestImportsMigration(t *testing.T) {
 	}
 	check(true)
 }
+
+func TestMediaTimelineIndexMigration(t *testing.T) {
+	app, err := tests.NewTestApp()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Cleanup()
+	check := func(up bool) {
+		t.Helper()
+		media, err := app.FindCollectionByNameOrId("media")
+		if err != nil {
+			t.Fatal(err)
+		}
+		has := func(name string) bool { return media.GetIndex(name) != "" }
+		if has("idx_media_timeline_id") != up || has("idx_media_timeline") == up || !has("idx_media_status") {
+			t.Errorf("up=%v: indexes %v", up, media.Indexes)
+		}
+	}
+	check(true)
+	mig := find(t, "1791748800_media_timeline_index.go")
+	if err := mig.Down(app); err != nil {
+		t.Fatal(err)
+	}
+	check(false)
+	if err := mig.Up(app); err != nil {
+		t.Fatal(err)
+	}
+	check(true)
+}

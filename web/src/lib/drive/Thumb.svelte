@@ -1,6 +1,14 @@
 <script lang="ts">
 	import FileIcon from './FileIcon.svelte';
-	import { fileToken, hasThumbnail, thumbUrl, type ThumbSize } from './files.js';
+	import {
+		fileToken,
+		hasThumbnail,
+		mediaOf,
+		mediaUrl,
+		prefersMedia,
+		thumbUrl,
+		type ThumbSize
+	} from './files.js';
 	import type { DriveNode } from './types.js';
 
 	let {
@@ -15,10 +23,14 @@
 	$effect(() => {
 		src = null;
 		failed = false;
-		if (!hasThumbnail(node)) return;
 		const current = node;
-		fileToken().then((token) => {
-			if (current === node) src = thumbUrl(current, size, token);
+		const useMedia = prefersMedia(current);
+		if (!useMedia && !hasThumbnail(current)) return;
+		// The media worker's JPEGs first: they cover HEIC and videos and are upright.
+		Promise.all([fileToken(), useMedia ? mediaOf(current) : null]).then(([token, media]) => {
+			if (current !== node) return;
+			if (media) src = mediaUrl(media, size === '1600x0' ? 'preview' : 'thumb', token);
+			else if (hasThumbnail(current)) src = thumbUrl(current, size, token);
 		});
 	});
 </script>

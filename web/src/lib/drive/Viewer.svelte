@@ -3,7 +3,17 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import FileIcon from './FileIcon.svelte';
-	import { contentUrl, fileToken, hasThumbnail, previewKind, thumbUrl } from './files.js';
+	import {
+		contentUrl,
+		fileToken,
+		hasThumbnail,
+		mediaOf,
+		mediaUrl,
+		previewKind,
+		prefersMedia,
+		thumbUrl,
+		type MediaFiles
+	} from './files.js';
 	import { formatSize } from './format.js';
 	import type { DriveNode } from './types.js';
 
@@ -18,9 +28,24 @@
 	let dialog: HTMLDialogElement;
 	let token = $state('');
 	let text = $state<string | null>(null);
+	let media = $state<MediaFiles | null>(null);
+	// The node token and media were fetched for: until then the viewer shows "loading".
+	let loadedFor = $state('');
 
 	const node = $derived(index >= 0 ? items[index] : undefined);
-	const kind = $derived(node ? previewKind(node) : null);
+	// HEIC and other photo formats browsers cannot show open as the server-generated preview.
+	const kind = $derived(
+		node ? (previewKind(node) ?? (media && node.mime.startsWith('image/') ? 'image' : null)) : null
+	);
+	const imageSrc = $derived(
+		!node || !token
+			? ''
+			: media
+				? mediaUrl(media, 'preview', token)
+				: hasThumbnail(node)
+					? thumbUrl(node, '1600x0', token)
+					: contentUrl(node, token)
+	);
 
 	$effect(() => {
 		if (node && !dialog.open) dialog.showModal();
@@ -30,18 +55,23 @@
 	$effect(() => {
 		const current = node;
 		text = null;
+		media = null;
 		if (!current) return;
-		fileToken().then(async (t) => {
-			if (current !== node) return;
-			token = t;
-			if (previewKind(current) === 'text') {
-				// The download route honors Range: fetch only the beginning.
-				const res = await fetch(contentUrl(current, t), {
-					headers: { Range: `bytes=0-${TEXT_LIMIT - 1}` }
-				});
-				if (current === node) text = res.ok ? await res.text() : '';
+		Promise.all([fileToken(), prefersMedia(current) ? mediaOf(current) : null]).then(
+			async ([t, found]) => {
+				if (current !== node) return;
+				token = t;
+				media = found;
+				loadedFor = current.id;
+				if (previewKind(current) === 'text') {
+					// The download route honors Range: fetch only the beginning.
+					const res = await fetch(contentUrl(current, t), {
+						headers: { Range: `bytes=0-${TEXT_LIMIT - 1}` }
+					});
+					if (current === node) text = res.ok ? await res.text() : '';
+				}
 			}
-		});
+		);
 	});
 
 	function go(step: number) {
@@ -116,14 +146,11 @@
 				</button>
 			{/if}
 
-			{#if !token}
+			{#if loadedFor !== node.id}
 				<span class="muted">{m.loading()}</span>
 			{:else if kind === 'image'}
 				{#key node.id}
-					<img
-						src={hasThumbnail(node) ? thumbUrl(node, '1600x0', token) : contentUrl(node, token)}
-						alt={node.name}
-					/>
+					<img src={imageSrc} alt={node.name} />
 				{/key}
 			{:else if kind === 'video'}
 				<!-- svelte-ignore a11y_media_has_caption -->

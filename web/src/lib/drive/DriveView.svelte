@@ -24,7 +24,7 @@
 	import { downloadNode, forEachNode, listChildren, moveNode, pathTo, trashNode } from './api.js';
 	import MoveDialog from './MoveDialog.svelte';
 	import { Selection } from './selection.svelte.js';
-	import { previewKind } from './files.js';
+	import { isMedia, previewKind } from './files.js';
 	import Thumb from './Thumb.svelte';
 	import Viewer from './Viewer.svelte';
 	import TagChip from '#lib/tags/TagChip.svelte';
@@ -89,7 +89,9 @@
 
 	/** Opens the viewer for previewable files, downloads the others. */
 	function open(node: DriveNode) {
-		if (previewKind(node)) viewerIndex = files.indexOf(node);
+		// Photos the browser cannot show (HEIC) open as their generated preview.
+		if (previewKind(node) || (isMedia(node) && node.mime.startsWith('image/')))
+			viewerIndex = files.indexOf(node);
 		else download(node);
 	}
 

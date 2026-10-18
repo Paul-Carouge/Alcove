@@ -269,5 +269,10 @@
   "shareFiles": "{count, plural, =1{1 fichier} other{{count} fichiers}}",
   "shareMore": "{count, plural, =1{et 1 autre} other{et {count} autres}}",
   "shareDestination": "Destination",
-  "shareSendTo": "Envoyer dans {folder}"
+  "shareSendTo": "Envoyer dans {folder}",
+  "photosSelected": "{count, plural, =1{1 sélectionné} other{{count} sélectionnés}}",
+  "selectionCancel": "Annuler la sélection",
+  "photosTrashBody": "{count, plural, =1{1 élément part} other{{count} éléments partent}} à la corbeille ; vous pouvez les restaurer depuis l’application web pendant 30 jours.",
+  "photosTrashed": "{count, plural, =1{1 élément mis à la corbeille} other{{count} éléments mis à la corbeille}}",
+  "photosNotAllDone": "Certains éléments n’ont pas pu être modifiés"
 }

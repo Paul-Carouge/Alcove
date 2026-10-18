@@ -583,5 +583,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "photosSelected": "{count, plural, =1{1 selected} other{{count} selected}}",
+  "@photosSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectionCancel": "Cancel selection",
+  "photosTrashBody": "{count, plural, =1{1 item goes} other{{count} items go}} to the trash; you can restore them from the web app for 30 days.",
+  "@photosTrashBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosTrashed": "{count, plural, =1{1 item moved to the trash} other{{count} items moved to the trash}}",
+  "@photosTrashed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosNotAllDone": "Some items could not be changed"
 }

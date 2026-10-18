@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/native_files.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
@@ -40,11 +43,17 @@ class _PhotosScreenState extends State<PhotosScreen> {
   static const _pageSize = 120;
   final _scroll = ScrollController();
   final List<MediaItem> _items = [];
-  int _page = 0;
-  int _total = -1;
+  bool _done = false;
   bool _loading = false;
   bool _failed = false;
   String _token = '';
+
+  /// Bumped by every reload: a page that arrives afterwards belongs to the old list.
+  int _generation = 0;
+
+  /// Ids picked after a long press; null when not selecting.
+  Set<String>? _selected;
+  bool _busy = false;
 
   /// [_items] by month, recomputed only when the list changes (not on every pinch or spinner).
   List<(String, List<MediaItem>)>? _groups;
@@ -132,6 +141,127 @@ class _PhotosScreenState extends State<PhotosScreen> {
     );
   }
 
+  bool _mine(MediaItem item) => item.record.getStringValue('owner') == widget.session.user?.id;
+
+  List<MediaItem> get _picked => [
+    for (final it in _items)
+      if (_selected?.contains(it.id) ?? false) it,
+  ];
+
+  void _toggle(MediaItem item) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      final s = _selected ??= {};
+      if (!s.remove(item.id)) s.add(item.id);
+      if (s.isEmpty) _selected = null;
+    });
+  }
+
+  /// Runs [action] on [items] a few at a time (a whole selection at once would queue on a slow
+  /// disk) and returns how many failed.
+  Future<int> _each(List<MediaItem> items, Future<void> Function(MediaItem) action) async {
+    setState(() => _busy = true);
+    var failed = 0;
+    final queue = items.toList();
+    Future<void> worker() async {
+      while (queue.isNotEmpty) {
+        final it = queue.removeLast();
+        try {
+          await action(it);
+        } catch (_) {
+          failed++;
+        }
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < 4; i++) worker()]);
+    if (mounted) setState(() => _busy = false);
+    return failed;
+  }
+
+  /// Favorites every picked photo of the user, or removes them all when they already are.
+  Future<void> _favoriteSelection() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final mine = _picked.where(_mine).toList();
+    final next = !mine.every((it) => it.favorite);
+    final failed = await _each([...mine.where((it) => it.favorite != next)], (it) async {
+      await widget.session.pb.send<dynamic>(
+        '/api/v1/media/${Uri.encodeComponent(it.id)}/favorite',
+        method: 'PUT',
+        body: {'favorite': next},
+      );
+      it.favorite = next;
+    });
+    if (!mounted) return;
+    setState(() {
+      _selected = null;
+      _groups = null;
+    });
+    if (failed > 0) messenger.showSnackBar(SnackBar(content: Text(l.photosNotAllDone)));
+  }
+
+  Future<void> _trashSelection() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final mine = _picked.where(_mine).toList();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.trashTitle),
+        content: Text(l.photosTrashBody(mine.length)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l.trashConfirm)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final now = DateTime.now().toUtc().toIso8601String();
+    final gone = <MediaItem>{};
+    final failed = await _each(mine, (it) async {
+      await widget.session.pb
+          .collection('nodes')
+          .update(it.record.getStringValue('node'), body: {'trashed_at': now});
+      gone.add(it);
+    });
+    if (!mounted) return;
+    unawaited(HapticFeedback.mediumImpact());
+    setState(() {
+      final ids = {for (final it in gone) it.id};
+      _items.removeWhere((it) => ids.contains(it.id));
+      _groups = null;
+      _selected = null;
+    });
+    messenger.showSnackBar(
+      SnackBar(content: Text(failed > 0 ? l.photosNotAllDone : l.photosTrashed(gone.length))),
+    );
+  }
+
+  /// Downloads the originals into the viewer cache and hands them to the share sheet.
+  Future<void> _shareSelection() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final items = _picked;
+    final paths = <String>[];
+    final failed = await _each(
+      items,
+      (it) async => paths.add((await fetchOriginal(widget.session, it)).path),
+    );
+    if (!mounted) return;
+    if (paths.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(l.loadFailed)));
+      return;
+    }
+    if (failed > 0) messenger.showSnackBar(SnackBar(content: Text(l.photosNotAllDone)));
+    final mime = items.every((it) => it.isVideo)
+        ? 'video/*'
+        : (items.any((it) => it.isVideo) ? '*/*' : 'image/*');
+    if (!await NativeFiles.instance.share(paths, mime, l.tabPhotos)) {
+      messenger.showSnackBar(SnackBar(content: Text(l.viewerNoApp)));
+    }
+  }
+
   @override
   void dispose() {
     _scroll.dispose();
@@ -139,36 +269,49 @@ class _PhotosScreenState extends State<PhotosScreen> {
   }
 
   Future<void> _reload() async {
+    _generation++;
     _items.clear();
     _groups = null;
-    _page = 0;
-    _total = -1;
+    _selected = null;
+    _done = false;
+    _loading = false;
     await _loadMore();
   }
 
   Future<void> _loadMore() async {
-    if (_loading || (_total >= 0 && _items.length >= _total)) return;
+    if (_loading || _done) return;
+    final generation = _generation;
     setState(() => _loading = true);
     try {
-      _token = await widget.session.fileToken();
+      final token = await widget.session.fileToken();
+      // Keyset paging: continue after the last item instead of skipping N rows, so trashed items do
+      // not shift the next page and the database does not walk the whole timeline again.
+      final last = _items.isEmpty ? null : _items.last;
+      final after = last == null
+          ? ''
+          : widget.session.pb.filter(
+              ' && (taken_at < {:t} || (taken_at = {:t} && id < {:id}))',
+              {'t': last.record.getStringValue('taken_at'), 'id': last.id},
+            );
       final res = await widget.session.pb
           .collection('media')
           .getList(
-            page: _page + 1,
             perPage: _pageSize,
-            filter: 'node.trashed_at = ""',
+            skipTotal: true,
+            filter: 'node.trashed_at = ""$after',
             sort: '-taken_at,-id',
             expand: 'node',
           );
+      if (generation != _generation) return;
+      _token = token;
       _items.addAll(res.items.map(MediaItem.new));
       _groups = null;
-      _page = res.page;
-      _total = res.totalItems;
+      _done = res.items.length < _pageSize;
       _failed = false;
     } catch (_) {
-      _failed = true;
+      if (generation == _generation) _failed = true;
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && generation == _generation) setState(() => _loading = false);
     }
   }
 
@@ -183,7 +326,6 @@ class _PhotosScreenState extends State<PhotosScreen> {
           onTrashed: (item) => setState(() {
             _items.remove(item);
             _groups = null;
-            _total -= 1;
           }),
         ),
       ),
@@ -199,18 +341,54 @@ class _PhotosScreenState extends State<PhotosScreen> {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final columns = _columns(MediaQuery.sizeOf(context).width);
 
+    final selected = _selected;
+    final mine = selected == null ? const <MediaItem>[] : _picked.where(_mine).toList();
+    final allFavorite = mine.isNotEmpty && mine.every((it) => it.favorite);
     final slivers = <Widget>[
-      LargeTitleAppBar(
-        title: l.tabPhotos,
-        actions: [
-          if (widget.backup case final c?)
-            ListenableBuilder(
-              listenable: c,
-              builder: (context, _) => _BackupChip(controller: c, onTap: widget.onOpenBackup),
+      if (selected != null)
+        LargeTitleAppBar(
+          title: l.photosSelected(selected.length),
+          leading: IconButton(
+            tooltip: l.selectionCancel,
+            onPressed: () => setState(() => _selected = null),
+            icon: const Icon(Icons.close),
+          ),
+          actions: [
+            if (_busy)
+              const Padding(
+                padding: EdgeInsets.all(AlcoveSpace.s3),
+                child: LoadingIndicator(size: 24),
+              ),
+            IconButton(
+              tooltip: allFavorite ? l.favoriteRemove : l.favoriteAdd,
+              onPressed: _busy || mine.isEmpty ? null : _favoriteSelection,
+              icon: Icon(allFavorite ? Icons.favorite : Icons.favorite_border),
             ),
-          ...shellActions(context),
-        ],
-      ),
+            if (NativeFiles.instance.available)
+              IconButton(
+                tooltip: l.viewerShare,
+                onPressed: _busy ? null : _shareSelection,
+                icon: const Icon(Icons.share_outlined),
+              ),
+            IconButton(
+              tooltip: l.trashConfirm,
+              onPressed: _busy || mine.isEmpty ? null : _trashSelection,
+              icon: const Icon(Icons.delete_outline),
+            ),
+          ],
+        )
+      else
+        LargeTitleAppBar(
+          title: l.tabPhotos,
+          actions: [
+            if (widget.backup case final c?)
+              ListenableBuilder(
+                listenable: c,
+                builder: (context, _) => _BackupChip(controller: c, onTap: widget.onOpenBackup),
+              ),
+            ...shellActions(context),
+          ],
+        ),
       if (widget.header case final h?) SliverToBoxAdapter(child: h),
     ];
 
@@ -237,7 +415,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
           ),
         ),
       );
-    } else if (_items.isEmpty && _total == 0) {
+    } else if (_items.isEmpty && _done) {
       slivers.add(
         SliverFillRemaining(
           hasScrollBody: false,
@@ -288,7 +466,9 @@ class _PhotosScreenState extends State<PhotosScreen> {
                 itemBuilder: (_, i) => MediaTile(
                   item: items[i],
                   url: items[i].thumbUrl(widget.session.pb, _token),
-                  onTap: () => _open(items[i]),
+                  selected: selected?.contains(items[i].id),
+                  onTap: () => selected == null ? _open(items[i]) : _toggle(items[i]),
+                  onLongPress: () => _toggle(items[i]),
                 ),
               ),
             ),
@@ -329,17 +509,25 @@ class _PhotosScreenState extends State<PhotosScreen> {
       ),
     );
 
-    return Listener(
-      onPointerDown: (e) => _pointers[e.pointer] = e.position,
-      onPointerMove: _pointerMove,
-      onPointerUp: _pointerUp,
-      onPointerCancel: _pointerUp,
-      child: RefreshIndicator(
-        onRefresh: () async {
-          await Future.wait([_reload(), _loadMemories()]);
-        },
-        edgeOffset: LargeTitleAppBar.edgeOffset(context),
-        child: CustomScrollView(controller: _scroll, slivers: slivers),
+    return PopScope(
+      // Back leaves the selection first.
+      // Hidden behind another tab or the Albums view, a selection must not swallow back.
+      canPop: selected == null || !TickerMode.valuesOf(context).enabled,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _selected = null);
+      },
+      child: Listener(
+        onPointerDown: (e) => _pointers[e.pointer] = e.position,
+        onPointerMove: _pointerMove,
+        onPointerUp: _pointerUp,
+        onPointerCancel: _pointerUp,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([_reload(), _loadMemories()]);
+          },
+          edgeOffset: LargeTitleAppBar.edgeOffset(context),
+          child: CustomScrollView(controller: _scroll, slivers: slivers),
+        ),
       ),
     );
   }
@@ -488,25 +676,39 @@ class _BackupChip extends StatelessWidget {
 }
 
 class MediaTile extends StatelessWidget {
-  const MediaTile({super.key, required this.item, required this.url, required this.onTap});
+  const MediaTile({
+    super.key,
+    required this.item,
+    required this.url,
+    required this.onTap,
+    this.onLongPress,
+    this.selected,
+  });
 
   final MediaItem item;
   final Uri? url;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  /// Whether the tile is picked, or null outside selection mode.
+  final bool? selected;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.colors;
+    final picked = selected ?? false;
     return Semantics(
       button: true,
-      label: l.openPhoto(item.name),
+      selected: selected,
+      label: selected == null ? l.openPhoto(item.name) : item.name,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AlcoveRadius.sm - 2),
         child: Material(
           color: c.surfaceSunken,
           child: InkWell(
             onTap: onTap,
+            onLongPress: onLongPress,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -551,6 +753,33 @@ class MediaTile extends StatelessWidget {
                       shadows: [Shadow(blurRadius: 4, color: c.stageScrim)],
                     ),
                   ),
+                if (selected != null) ...[
+                  if (picked)
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: c.accent.withValues(alpha: 0.25),
+                        border: Border.all(color: c.accent, width: 3),
+                        borderRadius: BorderRadius.circular(AlcoveRadius.sm - 2),
+                      ),
+                    ),
+                  Positioned(
+                    top: AlcoveSpace.s1 + 2,
+                    left: AlcoveSpace.s1 + 2,
+                    // The check mark is a cut-out: a light disc keeps it readable on any photo.
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: picked ? c.onStage : null,
+                      ),
+                      child: Icon(
+                        picked ? Icons.check_circle : Icons.radio_button_unchecked,
+                        size: 22,
+                        color: picked ? c.accent : c.onStage,
+                        shadows: [Shadow(blurRadius: 4, color: c.stageScrim)],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

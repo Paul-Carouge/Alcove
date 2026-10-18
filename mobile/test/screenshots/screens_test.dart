@@ -18,6 +18,7 @@ import 'package:alcove/features/login/login_screen.dart';
 import 'package:alcove/features/photos/albums_screen.dart';
 import 'package:alcove/features/photos/media.dart';
 import 'package:alcove/features/photos/photo_viewer.dart';
+import 'package:alcove/features/photos/photos_screen.dart';
 import 'package:alcove/features/search/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -167,6 +168,19 @@ void main() {
       await tester.pump();
       await tester.drag(find.byType(CustomScrollView).first, const Offset(0, -500));
       await shoot(tester, 'photos-scrolled-$suffix');
+    }, skip: skipShots != false);
+
+    testWidgets('photos-selection $suffix', (tester) async {
+      await pump(tester, home);
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 80)));
+      await tester.pump();
+      final tiles = find.byType(MediaTile);
+      await tester.longPress(tiles.at(0));
+      await tester.pump();
+      await tester.tap(tiles.at(2));
+      await tester.tap(tiles.at(4));
+      await shoot(tester, 'photos-selection-$suffix');
     }, skip: skipShots != false);
 
     testWidgets('update $suffix', (tester) async {

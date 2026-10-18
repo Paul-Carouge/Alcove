@@ -49,6 +49,7 @@ class FakeServer {
   final Set<String> hashes = {};
   final List<String> uploadedNames = [];
   final List<String> folders = [];
+  final List<String> folderFilters = [];
   int quotaLeft = 1 << 30;
   final Map<String, (int, BytesBuilder, String)> uploads = {};
   final List<String> hosts = [];
@@ -60,11 +61,12 @@ class FakeServer {
     hosts.add(req.url.host);
     final path = req.url.path;
     if (path == '/api/collections/nodes/records' && req.method == 'GET') {
+      folderFilters.add(req.url.queryParameters['filter'] ?? '');
       return _json(200, {'page': 1, 'perPage': 1, 'totalItems': 0, 'totalPages': 0, 'items': []});
     }
     if (path == '/api/collections/nodes/records' && req.method == 'POST') {
       final body = jsonDecode(req.body) as Map<String, dynamic>;
-      folders.add(body['name'] as String);
+      folders.add('${body['parent']}/${body['name']}');
       return _json(200, {
         'id': 'folder1',
         'collectionId': 'nodes',
@@ -166,7 +168,9 @@ void main() {
     ]);
     final r = await service(library).run(defaultFolderName: 'Phone backup');
     expect(r.stop, BackupStop.finished);
-    expect(server.folders, ['Phone backup']);
+    // The backup folder lives in the photo library root folder.
+    expect(server.folders, ['/Photos', 'folder1/Phone backup']);
+    expect(server.folderFilters.first, contains('name:lower = "photos"'));
     expect(server.uploadedNames, ['IMG_1.HEIC', 'VID_1.mp4']);
     expect(r.progress.uploaded, 2);
     expect(r.progress.alreadyThere, 2);

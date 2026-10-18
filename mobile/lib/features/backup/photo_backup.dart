@@ -9,6 +9,10 @@ import 'backup_state.dart';
 import 'library.dart';
 import 'tus_client.dart';
 
+/// The server's root folder for the photo library (drive.PhotosFolder): the same word in English and
+/// French, not translated.
+const photosFolder = 'Photos';
+
 /// Why a backup run stopped.
 enum BackupStop {
   finished,
@@ -201,8 +205,8 @@ class PhotoBackup {
     return BackupReport(stop, progress, error);
   }
 
-  /// The destination folder: the saved one if it still exists, else a root folder with the same name,
-  /// else a new one.
+  /// The destination folder: the saved one if it still exists, else a folder with the same name in the
+  /// "Photos" root folder (the photo library, apart from the rest of the drive), else a new one.
   Future<void> _ensureFolder(PocketBase pb, BackupState state, String defaultName) async {
     final nodes = pb.collection('nodes');
     if (state.folderId.isNotEmpty) {
@@ -214,20 +218,32 @@ class PhotoBackup {
       }
     }
     final name = state.folderName.isEmpty ? defaultName : state.folderName;
-    final existing = await nodes.getList(
-      perPage: 1,
-      filter: pb.filter(
-        'parent = "" && kind = "folder" && trashed_at = "" && name = {:name}',
-        {'name': name},
-      ),
-    );
-    final folder = existing.items.isNotEmpty
-        ? existing.items.first
-        : await nodes.create(
-            body: {'owner': pb.authStore.record!.id, 'parent': '', 'name': name, 'kind': 'folder'},
-          );
+    final library = await _folderIn(pb, '', photosFolder);
+    final folder = await _folderIn(pb, library.id, name);
     state
       ..folderId = folder.id
       ..folderName = name;
+  }
+
+  Future<RecordModel> _folderIn(PocketBase pb, String parent, String name) async {
+    final nodes = pb.collection('nodes');
+    final existing = await nodes.getList(
+      perPage: 1,
+      filter: pb.filter(
+        // Drive names ignore case (unique index): "photos" is the same folder as "Photos".
+        'parent = {:parent} && kind = "folder" && trashed_at = "" && name:lower = {:name}',
+        {'parent': parent, 'name': name.toLowerCase()},
+      ),
+    );
+    return existing.items.isNotEmpty
+        ? existing.items.first
+        : await nodes.create(
+            body: {
+              'owner': pb.authStore.record!.id,
+              'parent': parent,
+              'name': name,
+              'kind': 'folder',
+            },
+          );
   }
 }

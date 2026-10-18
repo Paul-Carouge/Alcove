@@ -7,6 +7,20 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-10-18
+
+### Changed
+- Files: the photo library has its own root folder, "Photos". Google Photos imports now go to
+  "Photos/Google Photos/<year>" and the app's phone backup to "Photos/Phone backup", so the drive root
+  keeps your own files. On update, existing "Google Photos", "Phone backup" and "Sauvegarde du téléphone"
+  root folders move into "Photos" (an existing "Photos" folder is reused). Apps already backing up keep
+  using their folder. A backup folder renamed by hand is not moved.
+
+### Fixed
+- Files: HEIC photos and videos now have thumbnails, and HEIC photos open in the viewer. Files uses the
+  thumbnails and previews the server already makes for Photos, which are also upright for rotated JPEGs.
+  PNG, GIF and WebP keep their transparency and animation.
+
 ## [0.33.0] - 2026-10-18
 
 ### Added

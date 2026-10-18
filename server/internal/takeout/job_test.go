@@ -143,11 +143,13 @@ func TestImportFromServerFolder(t *testing.T) {
 	if !scan.GetBool("has_location") || scan.GetFloat("lat") != 43.29 || !scan.GetBool("favorite") || scan.GetString("description") != "Grandma" {
 		t.Errorf("metadata not restored: %v", scan.PublicExport())
 	}
-	// One file, in Google Photos/2013, also in the album.
+	// One file, in Photos/Google Photos/2013, also in the album.
 	node, _ := e.app.FindRecordById(drive.Collection, scan.GetString("node"))
 	parent, _ := e.app.FindRecordById(drive.Collection, node.GetString("parent"))
 	root, _ := e.app.FindRecordById(drive.Collection, parent.GetString("parent"))
-	if parent.GetString("name") != "2013" || root.GetString("name") != RootFolder || root.GetString("parent") != "" {
+	photos, _ := e.app.FindRecordById(drive.Collection, root.GetString("parent"))
+	if parent.GetString("name") != "2013" || root.GetString("name") != RootFolder ||
+		photos == nil || photos.GetString("name") != drive.PhotosFolder || photos.GetString("parent") != "" {
 		t.Errorf("folder = %s/%s", root.GetString("name"), parent.GetString("name"))
 	}
 	album, err := e.app.FindFirstRecordByData(albums.Collection, "name", "Summer trip")

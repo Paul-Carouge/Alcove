@@ -7,6 +7,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 
+	"github.com/Paul-Carouge/Alcove/server/internal/testutil"
 	_ "github.com/Paul-Carouge/Alcove/server/migrations"
 )
 
@@ -136,4 +137,44 @@ func TestMediaTimelineIndexMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	check(true)
+}
+
+func TestPhotoLibraryFolderMigration(t *testing.T) {
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+	u, _ := testutil.User(t, app, "photos@example.com")
+	other, _ := testutil.User(t, app, "other@example.com")
+	google := testutil.Node(t, app, u, "", "google photos", "folder") // names ignore case
+	backup := testutil.Node(t, app, u, "", "Sauvegarde du téléphone", "folder")
+	docs := testutil.Node(t, app, u, "", "Documents", "folder")
+	mine := testutil.Node(t, app, u, "", "Photos", "folder") // made by the user: reused
+	phone := testutil.Node(t, app, other, "", "Phone backup", "folder")
+
+	parentOf := func(n *core.Record) string {
+		t.Helper()
+		r, err := app.FindRecordById("nodes", n.Id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r.GetString("parent")
+	}
+	mig := find(t, "1791752400_photo_library_folder.go")
+	if err := mig.Up(app); err != nil {
+		t.Fatal(err)
+	}
+	if parentOf(google) != mine.Id || parentOf(backup) != mine.Id || parentOf(docs) != "" {
+		t.Errorf("up: google=%q backup=%q docs=%q", parentOf(google), parentOf(backup), parentOf(docs))
+	}
+	theirs, err := app.FindRecordById("nodes", parentOf(phone))
+	if err != nil || theirs.GetString("name") != "Photos" || theirs.GetString("owner") != other.Id ||
+		theirs.GetString("parent") != "" {
+		t.Errorf("up: other user's backup not in their own Photos folder: %v", err)
+	}
+
+	if err := mig.Down(app); err != nil {
+		t.Fatal(err)
+	}
+	if parentOf(google) != "" || parentOf(backup) != "" || parentOf(phone) != "" {
+		t.Error("down: folders not back at the root")
+	}
 }

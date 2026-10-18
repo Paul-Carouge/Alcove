@@ -35,7 +35,7 @@ import (
 
 const (
 	Collection = "imports"
-	// RootFolder receives the photos, by year ("Google Photos/2019"). Google's product name: not translated.
+	// RootFolder receives the photos, by year ("Photos/Google Photos/2019"). Google's product name: not translated.
 	RootFolder = "Google Photos"
 
 	ServerDir = "import"         // <data dir>/import: archives dropped by an administrator
@@ -775,7 +775,7 @@ func (imp *importer) lock(sum string) func() {
 	return l.Unlock
 }
 
-// folder returns "Google Photos" (year 0) or "Google Photos/<year>", reusing or creating them.
+// folder returns "Photos/Google Photos" (year 0) or "Photos/Google Photos/<year>", reusing or creating them.
 func (imp *importer) folder(year int) (string, error) {
 	imp.mu.Lock()
 	defer imp.mu.Unlock()
@@ -785,7 +785,13 @@ func (imp *importer) folder(year int) (string, error) {
 	root, ok := imp.folders[0]
 	if !ok {
 		var err error
-		if root, err = ensureFolder(imp.r.app, imp.owner, "", RootFolder); err != nil {
+		// shortcut: a root file named "Photos" makes each import create a new "Photos (N)" folder; store the
+		// library folder id per user if that ever matters.
+		photos, err := drive.EnsureFolder(imp.r.app, imp.owner, "", drive.PhotosFolder)
+		if err != nil {
+			return "", err
+		}
+		if root, err = drive.EnsureFolder(imp.r.app, imp.owner, photos, RootFolder); err != nil {
 			return "", err
 		}
 		imp.folders[0] = root
@@ -793,42 +799,12 @@ func (imp *importer) folder(year int) (string, error) {
 	if year == 0 {
 		return root, nil
 	}
-	id, err := ensureFolder(imp.r.app, imp.owner, root, strconv.Itoa(year))
+	id, err := drive.EnsureFolder(imp.r.app, imp.owner, root, strconv.Itoa(year))
 	if err != nil {
 		return "", err
 	}
 	imp.folders[year] = id
 	return id, nil
-}
-
-func ensureFolder(app core.App, owner, parent, name string) (string, error) {
-	var found []*core.Record
-	err := app.RecordQuery(drive.Collection).AndWhere(dbx.NewExp(
-		"owner = {:owner} AND parent = {:parent} AND kind = 'folder' AND trashed_at = '' AND name = {:name} COLLATE NOCASE",
-		dbx.Params{"owner": owner, "parent": parent, "name": name})).Limit(1).All(&found)
-	if err != nil {
-		return "", err
-	}
-	if len(found) > 0 {
-		return found[0].Id, nil
-	}
-	col, err := app.FindCollectionByNameOrId(drive.Collection)
-	if err != nil {
-		return "", err
-	}
-	free, err := drive.AvailableName(app, owner, parent, name) // a file may use the name
-	if err != nil {
-		return "", err
-	}
-	f := core.NewRecord(col)
-	f.Set("owner", owner)
-	f.Set("parent", parent)
-	f.Set("name", free)
-	f.Set("kind", drive.KindFolder)
-	if err := app.Save(f); err != nil {
-		return "", err
-	}
-	return f.Id, nil
 }
 
 // album returns the user's album with this title, creating it (re-running an import reuses it).

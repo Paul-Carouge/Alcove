@@ -32,6 +32,10 @@ const (
 	KindFile   = "file"
 	KindFolder = "folder"
 
+	// PhotosFolder is the root folder holding the photo library (phone backups, imports), apart
+	// from the rest of the drive. The same word in English and French: not translated.
+	PhotosFolder = "Photos"
+
 	// TrashRetention: trashed nodes older than this are deleted for good.
 	TrashRetention = 30 * 24 * time.Hour
 
@@ -76,6 +80,37 @@ func AvailableName(app core.App, owner, parent, name string) (string, error) {
 		candidate = fmt.Sprintf("%s (%d)%s", base, i, ext)
 	}
 	return "", errors.New("no available name")
+}
+
+// EnsureFolder returns the id of the owner's folder with this name in parent, creating it when missing.
+func EnsureFolder(app core.App, owner, parent, name string) (string, error) {
+	var found []*core.Record
+	err := app.RecordQuery(Collection).AndWhere(dbx.NewExp(
+		"owner = {:owner} AND parent = {:parent} AND kind = 'folder' AND trashed_at = '' AND name = {:name} COLLATE NOCASE",
+		dbx.Params{"owner": owner, "parent": parent, "name": name})).Limit(1).All(&found)
+	if err != nil {
+		return "", err
+	}
+	if len(found) > 0 {
+		return found[0].Id, nil
+	}
+	col, err := app.FindCollectionByNameOrId(Collection)
+	if err != nil {
+		return "", err
+	}
+	free, err := AvailableName(app, owner, parent, name) // a file may use the name
+	if err != nil {
+		return "", err
+	}
+	f := core.NewRecord(col)
+	f.Set("owner", owner)
+	f.Set("parent", parent)
+	f.Set("name", free)
+	f.Set("kind", KindFolder)
+	if err := app.Save(f); err != nil {
+		return "", err
+	}
+	return f.Id, nil
 }
 
 // Register binds the model hooks. They run for every write (API, admin UI,

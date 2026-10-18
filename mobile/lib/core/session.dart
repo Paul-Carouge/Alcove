@@ -219,17 +219,31 @@ class Session extends ChangeNotifier {
   };
 
   /// A short-lived token for file URLs (thumbnails, downloads), reused for a while.
+  /// Only valid for the account it was issued to; concurrent callers (a grid of thumbnails) share
+  /// one request.
   Future<String> fileToken() async {
+    final epoch = _epoch;
     final cached = _fileToken;
-    if (cached != null && DateTime.now().difference(cached.$2) < const Duration(seconds: 90)) {
+    if (cached != null &&
+        cached.$3 == epoch &&
+        DateTime.now().difference(cached.$2) < const Duration(seconds: 90)) {
       return cached.$1;
     }
-    final token = await pb.files.getToken();
-    _fileToken = (token, DateTime.now());
-    return token;
+    final pending = _pendingToken;
+    if (pending != null && pending.$2 == epoch) return pending.$1;
+    final request = pb.files.getToken().then((token) {
+      if (epoch == _epoch) _fileToken = (token, DateTime.now(), epoch);
+      return token;
+    });
+    _pendingToken = (request, epoch);
+    request.whenComplete(() {
+      if (identical(_pendingToken?.$1, request)) _pendingToken = null;
+    }).ignore();
+    return request;
   }
 
-  (String, DateTime)? _fileToken;
+  (String, DateTime, int)? _fileToken;
+  (Future<String>, int)? _pendingToken;
 
   @override
   void dispose() {

@@ -12,6 +12,7 @@ import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'theme/theme.dart';
+import 'ui/remote_image.dart';
 
 class AlcoveApp extends StatefulWidget {
   const AlcoveApp({
@@ -41,6 +42,7 @@ class _AlcoveAppState extends State<AlcoveApp> {
   @override
   void initState() {
     super.initState();
+    remoteImageToken = _session.fileToken;
     _session.addListener(_changed);
     _session.restore().whenComplete(() {
       _wasSignedIn = _session.isSignedIn;

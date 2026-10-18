@@ -21,6 +21,14 @@ import '../../ui/kit.dart';
 import '../../ui/remote_image.dart';
 import 'media.dart';
 
+/// The original, downloaded into the viewer cache (for Share and Open with).
+Future<File> fetchOriginal(Session session, MediaItem item) => FileCache.instance.fetch(
+  session,
+  key: cacheName('m${item.id}', '', item.name.isEmpty ? item.id : item.name),
+  url: () async => item.originalUrl(session.pb, await session.fileToken()),
+  expectedSize: item.size,
+);
+
 /// Full-screen photos and videos, swiped left and right, with details and favorites.
 class PhotoViewer extends StatefulWidget {
   const PhotoViewer({
@@ -247,14 +255,6 @@ class _PhotoViewerState extends State<PhotoViewer> {
     }
   }
 
-  /// The original, downloaded into the viewer cache (for Share and Open with).
-  Future<File> _original(MediaItem item) => FileCache.instance.fetch(
-    widget.session,
-    key: cacheName('m${item.id}', '', item.name.isEmpty ? item.id : item.name),
-    url: () async => item.originalUrl(widget.session.pb, await widget.session.fileToken()),
-    expectedSize: item.size,
-  );
-
   Future<void> _handOut({required bool share}) async {
     final l = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -272,7 +272,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
     }
     setState(() => _saving = true);
     try {
-      final f = await _original(item);
+      final f = await fetchOriginal(widget.session, item);
       final ok = share
           ? await NativeFiles.instance.share([f.path], mime, item.name)
           : await NativeFiles.instance.openWith(f.path, mime, l.viewerOpenWith);
@@ -606,34 +606,51 @@ class VideoPage extends StatefulWidget {
 }
 
 class VideoPageState extends State<VideoPage> {
-  late final VideoPlayerController _controller = VideoPlayerController.networkUrl(widget.url);
+  VideoPlayerController? _player;
   bool _ready = false;
+  bool _failed = false;
+
+  VideoPlayerController get _controller => _player!;
 
   @override
   void initState() {
     super.initState();
-    _controller.initialize().then((_) {
+    _open();
+  }
+
+  /// The URL was built when the viewer opened: its file token may have expired since.
+  Future<void> _open() async {
+    try {
+      final url = await withFreshToken(widget.url);
+      if (!mounted) return;
+      final player = _player = VideoPlayerController.networkUrl(url);
+      await player.initialize();
       if (!mounted) return;
       setState(() => _ready = true);
-      if (widget.active) _controller.play();
-    });
+      if (widget.active) await player.play();
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
   }
 
   @override
   void didUpdateWidget(VideoPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.active) _controller.pause();
+    if (!widget.active) _player?.pause();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _player?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    if (_failed) {
+      return Center(child: Icon(Icons.broken_image_outlined, color: colors.onStageMuted, size: 48));
+    }
     if (!_ready) return Center(child: LoadingIndicator(color: colors.onStage));
     return GestureDetector(
       onTap: () => setState(() {

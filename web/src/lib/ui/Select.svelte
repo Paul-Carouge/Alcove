@@ -8,11 +8,12 @@
 </script>
 
 <script lang="ts" generics="T extends string">
-	import { Check, ChevronDown } from '@lucide/svelte';
+	import { Check, ChevronDown, ChevronUp } from '@lucide/svelte';
+	import { Select } from 'bits-ui';
 	import { tick } from 'svelte';
 
-	// WAI-ARIA "select-only combobox": the list can be styled (a native <select> popup cannot,
-	// notably in Firefox) while keeping the keyboard and screen-reader behaviour of a select.
+	// bits-ui implements the WAI-ARIA select-only combobox (keyboard, typeahead, collision-aware
+	// placement): the list can be styled, which a native <select> popup cannot, notably in Firefox.
 	let {
 		value = $bindable(),
 		options,
@@ -32,214 +33,94 @@
 		onchange?: (value: T) => void;
 	} = $props();
 
-	const uid = $props.id();
-	let open = $state(false);
-	let active = $state(0);
-	let trigger: HTMLDivElement;
-	let list = $state<HTMLUListElement>();
-	let place = $state({ top: 0, left: 0, width: 0, up: false, max: 320 });
-	let typed = '';
-	let typedAt = 0;
-
 	const selected = $derived(options.find((o) => o.value === value));
 
-	function position() {
-		const r = trigger.getBoundingClientRect();
-		const below = window.innerHeight - r.bottom - 8;
-		const above = r.top - 8;
-		const up = below < 200 && above > below;
-		// Keep the list on screen when it is wider than the field near the right edge.
-		const w = list?.offsetWidth ?? r.width;
-		const left = r.left + w > window.innerWidth - 8 ? Math.max(8, r.right - w) : r.left;
-		place = {
-			top: up ? r.top - 4 : r.bottom + 4,
-			left,
-			width: r.width,
-			up,
-			max: Math.min(320, Math.max(120, up ? above : below))
-		};
+	let trigger = $state<HTMLElement | null>(null);
+	// A modal <dialog> sits in the top layer and makes <body> inert: render the list inside it.
+	const portalTarget = $derived(trigger?.closest('dialog') ?? 'body');
+	const uid = $props.id();
+	const listId = `${uid}-list`;
+	let open = $state(false);
+	let highlighted = $state<string>();
+
+	function choose(chosenValue: string) {
+		const option = options.find((o) => o.value === chosenValue);
+		if (!option || option.value === value) return;
+		value = option.value;
+		onchange?.(option.value);
 	}
 
-	async function show() {
-		if (open || !options.length) return;
-		active = Math.max(
-			0,
-			options.findIndex((o) => o.value === value)
-		);
-		position();
-		open = true;
-		await tick();
-		try {
-			list?.showPopover?.();
-		} catch {
-			// Popover API missing: the list is still positioned, just not in the top layer.
-		}
-		position(); // again, now that the list's width is known
-		scrollActive();
-	}
-
-	function hide() {
-		if (!open) return;
-		try {
-			list?.hidePopover?.();
-		} catch {
-			// Not shown as a popover.
-		}
-		open = false;
-	}
-
-	function choose(i: number) {
-		const o = options[i];
-		hide();
-		trigger.focus();
-		if (!o || o.value === value) return;
-		value = o.value;
-		onchange?.(o.value);
-	}
-
-	async function scrollActive() {
-		await tick();
-		list?.querySelector<HTMLElement>(`#${CSS.escape(`${uid}-o${active}`)}`)?.scrollIntoView({
-			block: 'nearest'
-		});
-	}
-
-	function move(to: number) {
-		active = Math.min(options.length - 1, Math.max(0, to));
-		scrollActive();
-	}
-
-	// Typing letters jumps to the next option starting with them, like a native select.
-	function typeahead(key: string) {
-		const now = Date.now();
-		typed = now - typedAt > 700 ? key : typed + key;
-		typedAt = now;
-		const q = typed.toLocaleLowerCase();
-		const start = typed.length === 1 ? active + 1 : active;
-		for (let k = 0; k < options.length; k++) {
-			const i = (start + k) % options.length;
-			if (options[i]!.label.toLocaleLowerCase().startsWith(q)) {
-				if (open) move(i);
-				else choose(i);
-				return;
-			}
-		}
-	}
-
-	function onKeydown(e: KeyboardEvent) {
-		if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-			typeahead(e.key);
+	// Two keys of the WAI-ARIA select-only combobox that bits-ui leaves out: Tab commits the
+	// highlighted option, Home/End open the closed list on the first/last option.
+	async function completeKeyboardPattern(e: KeyboardEvent) {
+		if (e.key === 'Tab' && open && highlighted !== undefined) choose(highlighted);
+		if ((e.key === 'Home' || e.key === 'End') && !open && options.length) {
 			e.preventDefault();
-			return;
+			open = true;
+			await tick();
+			// Replayed once the options exist, bits-ui moves the highlight itself.
+			trigger?.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true }));
 		}
-		if (!open) {
-			if (['ArrowDown', 'ArrowUp', 'Enter', ' ', 'Home', 'End'].includes(e.key)) {
-				e.preventDefault();
-				show().then(() => {
-					if (e.key === 'Home') move(0);
-					else if (e.key === 'End') move(options.length - 1);
-				});
-			}
-			return;
-		}
-		switch (e.key) {
-			case 'ArrowDown':
-				move(active + 1);
-				break;
-			case 'ArrowUp':
-				move(active - 1);
-				break;
-			case 'Home':
-				move(0);
-				break;
-			case 'End':
-				move(options.length - 1);
-				break;
-			case 'PageDown':
-				move(active + 8);
-				break;
-			case 'PageUp':
-				move(active - 8);
-				break;
-			case 'Enter':
-			case ' ':
-				choose(active);
-				break;
-			case 'Escape':
-				hide();
-				break;
-			case 'Tab':
-				choose(active);
-				return; // let focus move on
-			default:
-				return;
-		}
-		e.preventDefault();
 	}
 </script>
 
-<svelte:window
-	onpointerdown={(e) =>
-		open && !trigger.contains(e.target as Node) && !list?.contains(e.target as Node) && hide()}
-	onresize={() => open && position()}
-	onscrollcapture={(e) => open && e.target !== list && position()}
-/>
-
-<div
-	bind:this={trigger}
-	{id}
-	class="select {size}"
-	role="combobox"
-	tabindex="0"
-	aria-label={labelledby ? undefined : label}
-	aria-labelledby={labelledby}
-	aria-haspopup="listbox"
-	aria-expanded={open}
-	aria-controls="{uid}-list"
-	aria-activedescendant={open ? `${uid}-o${active}` : undefined}
-	onclick={() => (open ? hide() : show())}
-	onkeydown={onKeydown}
-	onblur={(e) => !list?.contains(e.relatedTarget as Node) && hide()}
->
-	<span class="value" lang={selected?.lang}>{selected?.label ?? ''}</span>
-	<ChevronDown size={16} aria-hidden="true" class="chevron" />
-</div>
-
-{#if open}
-	<ul
-		bind:this={list}
-		id="{uid}-list"
-		class="list"
-		class:up={place.up}
-		role="listbox"
-		popover="manual"
-		aria-label={label}
+<Select.Root type="single" {value} onValueChange={choose} items={options} bind:open>
+	<Select.Trigger
+		bind:ref={trigger}
+		{id}
+		role="combobox"
+		aria-controls={listId}
+		aria-label={labelledby ? undefined : label}
 		aria-labelledby={labelledby}
-		tabindex="-1"
-		style:top="{place.top}px"
-		style:left="{place.left}px"
-		style:min-width="{place.width}px"
-		style:max-height="{place.max}px"
+		onkeydown={completeKeyboardPattern}
 	>
-		{#each options as o, i (o.value)}
-			<!-- Keys are handled by the combobox, which keeps focus (aria-activedescendant). -->
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<li
-				id="{uid}-o{i}"
-				role="option"
-				aria-selected={o.value === value}
-				class:active={i === active}
-				lang={o.lang}
-				onpointermove={() => (active = i)}
-				onpointerdown={(e) => e.preventDefault()}
-				onclick={() => choose(i)}
-			>
-				<span>{o.label}</span>
-				{#if o.value === value}<Check size={16} aria-hidden="true" />{/if}
-			</li>
-		{/each}
-	</ul>
-{/if}
+		{#snippet child({ props })}
+			<button {...props} class="select {size}">
+				<span class="value" lang={selected?.lang}>{selected?.label ?? ''}</span>
+				<ChevronDown size={16} aria-hidden="true" class="chevron" />
+			</button>
+		{/snippet}
+	</Select.Trigger>
+	<Select.Portal to={portalTarget}>
+		<Select.Content
+			id={listId}
+			strategy="fixed"
+			sideOffset={4}
+			collisionPadding={8}
+			aria-label={label}
+			aria-labelledby={labelledby}
+		>
+			{#snippet child({ wrapperProps, props })}
+				<div {...wrapperProps}>
+					<div {...props} class="list">
+						<Select.ScrollUpButton class="scroll" aria-hidden="true">
+							<ChevronUp size={16} />
+						</Select.ScrollUpButton>
+						<Select.Viewport>
+							{#each options as o (o.value)}
+								<Select.Item
+									value={o.value}
+									label={o.label}
+									onHighlight={() => (highlighted = o.value)}
+								>
+									{#snippet child({ props: itemProps, selected: isSelected })}
+										<div {...itemProps} class="option" lang={o.lang}>
+											<span>{o.label}</span>
+											{#if isSelected}<Check size={16} aria-hidden="true" />{/if}
+										</div>
+									{/snippet}
+								</Select.Item>
+							{/each}
+						</Select.Viewport>
+						<Select.ScrollDownButton class="scroll" aria-hidden="true">
+							<ChevronDown size={16} />
+						</Select.ScrollDownButton>
+					</div>
+				</div>
+			{/snippet}
+		</Select.Content>
+	</Select.Portal>
+</Select.Root>
 
 <style>
 	.select {
@@ -254,8 +135,10 @@
 		border-radius: var(--radius-md);
 		background: var(--color-surface);
 		color: var(--color-text);
+		font: inherit;
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
+		text-align: start;
 		cursor: pointer;
 		user-select: none;
 		transition:
@@ -277,7 +160,7 @@
 			0 0 0 1px var(--color-focus),
 			0 0 0 4px var(--color-accent-subtle);
 	}
-	.select[aria-expanded='true'] {
+	.select[data-state='open'] {
 		border-color: var(--color-accent);
 		box-shadow: 0 0 0 4px var(--color-accent-subtle);
 	}
@@ -291,30 +174,22 @@
 		color: var(--color-text-muted);
 		transition: transform var(--duration-fast) var(--ease-standard);
 	}
-	.select[aria-expanded='true'] :global(.chevron) {
+	.select[data-state='open'] :global(.chevron) {
 		transform: rotate(180deg);
 	}
 	.list {
-		position: fixed;
-		inset: auto;
 		z-index: 50;
-		margin: 0;
-		padding: var(--space-1);
+		min-width: var(--bits-floating-anchor-width);
 		max-width: calc(100vw - 2 * var(--space-4));
-		overflow-y: auto;
-		list-style: none;
+		max-height: min(20rem, var(--bits-floating-available-height));
+		padding: var(--space-1);
 		background: var(--color-surface-raised);
 		color: var(--color-text);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
 		animation: pop var(--duration-base) var(--ease-emphasized);
-		transform-origin: top left;
-	}
-	.list.up {
-		transform: translateY(-100%);
-		animation-name: pop-up;
-		transform-origin: bottom left;
+		transform-origin: var(--bits-floating-transform-origin);
 	}
 	@keyframes pop {
 		from {
@@ -322,13 +197,7 @@
 			transform: scale(0.97);
 		}
 	}
-	@keyframes pop-up {
-		from {
-			opacity: 0;
-			transform: translateY(-100%) scale(0.97);
-		}
-	}
-	[role='option'] {
+	.option {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -339,11 +208,19 @@
 		font-size: var(--text-sm);
 		white-space: nowrap;
 		cursor: pointer;
+		outline: none;
 	}
-	[role='option'].active {
+	.list :global(.scroll) {
+		display: grid;
+		place-items: center;
+		min-height: var(--space-6);
+		color: var(--color-text-muted);
+		cursor: default;
+	}
+	.option[data-highlighted] {
 		background: var(--color-surface-sunken);
 	}
-	[role='option'][aria-selected='true'] {
+	.option[data-selected] {
 		color: var(--color-accent);
 		font-weight: var(--weight-medium);
 	}

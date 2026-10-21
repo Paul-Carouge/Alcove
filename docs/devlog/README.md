@@ -7,6 +7,7 @@ One file per release: `YYYY-MM-DD-vX.Y.Z.md`.
 
 | Version | Date | Title |
 |---|---|---|
+| [0.35.0](2026-10-21-v0.35.0.md) | 2026-10-21 | Borrowed accessibility |
 | [0.34.0](2026-10-18-v0.34.0.md) | 2026-10-18 | One folder for the photos |
 | [0.33.0](2026-10-18-v0.33.0.md) | 2026-10-18 | Tokens that expire, queues that overflow |
 | [0.32.3](2026-10-17-v0.32.3.md) | 2026-10-17 | Saves in order |

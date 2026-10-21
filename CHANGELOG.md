@@ -7,6 +7,15 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-10-21
+
+### Changed
+- Web: drop-down lists, action menus and the account menu are built on bits-ui, a headless component
+  library, styled with Alcove's own design. They keep their look, and gain a placement that avoids the
+  screen edges and arrows to scroll long lists. In a drop-down list, Tab now keeps the highlighted
+  choice, and Home or End opens the list on its first or last choice. The account panel is announced
+  to screen readers by name.
+
 ## [0.34.0] - 2026-10-18
 
 ### Changed

@@ -7,6 +7,14 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-10-21
+
+### Added
+- App: a Trash page, opened from the account menu (profile icon). It lists deleted files, folders,
+  photos and notes; each can be restored or deleted for good, and the whole trash can be emptied. A
+  file whose folder is gone or in the trash is restored to the root. Before, the trash could only be
+  reached from the web app.
+
 ## [0.35.1] - 2026-10-21
 
 ### Fixed

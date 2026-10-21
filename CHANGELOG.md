@@ -7,6 +7,12 @@ The story behind each release is in the [devlog](docs/devlog/).
 
 ## [Unreleased]
 
+## [0.35.1] - 2026-10-21
+
+### Fixed
+- App: a photo whose file was damaged stayed broken in the timeline even after the file was fixed or
+  the network came back; it is now fetched again the next time it shows.
+
 ## [0.35.0] - 2026-10-21
 
 ### Changed

@@ -35,5 +35,6 @@ accepted. To change a decision, add a new ADR that supersedes the old one.
 | [0028](0028-calendar-model.md) | Calendar: events in the database, shaped like iCalendar; CalDAV later | Accepted |
 | [0029](0029-per-abi-android-apks.md) | Android: one APK per ABI, the universal APK kept | Accepted |
 | [0030](0030-google-photos-import-from-takeout.md) | Google Photos import from Google Takeout archives | Accepted |
+| [0031](0031-web-headless-primitives-bits-ui.md) | Web: bits-ui for interactive primitives, styled with our tokens | Accepted |
 
 Template: copy an existing ADR. Sections: Status, Context, Decision, Consequences.

@@ -35,7 +35,8 @@ class FreshTokenImage extends ImageProvider<FreshTokenImage> {
   final Uri url;
   final String _key;
 
-  static final http.Client _client = IOClient(
+  @visibleForTesting
+  static http.Client client = IOClient(
     HttpClient()..connectionTimeout = const Duration(seconds: 15),
   );
 
@@ -55,11 +56,11 @@ class FreshTokenImage extends ImageProvider<FreshTokenImage> {
     try {
       final u = await freshUrl();
       // A server that accepts the connection but never answers would leave a spinner forever.
-      final res = await _client.get(u).timeout(const Duration(seconds: 60));
+      final res = await client.get(u).timeout(const Duration(seconds: 60));
       if (res.statusCode != 200 || res.bodyBytes.isEmpty) {
         throw NetworkImageLoadException(statusCode: res.statusCode, uri: u);
       }
-      return decode(await ui.ImmutableBuffer.fromUint8List(res.bodyBytes));
+      return await decode(await ui.ImmutableBuffer.fromUint8List(res.bodyBytes));
     } catch (_) {
       // The cache keeps failures: without this, the image stays broken even once back online.
       scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(this));

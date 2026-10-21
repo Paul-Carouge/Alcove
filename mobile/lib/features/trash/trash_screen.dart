@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../core/drive.dart';
+import '../../core/notes.dart';
 import '../../core/session.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../theme/theme.dart';
@@ -13,13 +14,19 @@ import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../files/file_actions.dart';
 import '../files/files_screen.dart';
+import '../notes/notes_screen.dart';
 
-/// Files and photos in the trash (photos are drive files): restore them or delete them for good.
-/// Notes keep their own trash in the Notes tab.
+enum _TrashAction { restore, deleteForever }
+
+/// Everything in the trash: files and photos (photos are drive files), then notes. Each item can be
+/// restored or deleted for good, or the whole trash emptied.
 class TrashScreen extends StatefulWidget {
-  const TrashScreen({super.key, required this.session});
+  const TrashScreen({super.key, required this.session, this.notes});
 
   final Session session;
+
+  /// Replaced in tests.
+  final NotesApi? notes;
 
   @override
   State<TrashScreen> createState() => _TrashScreenState();
@@ -27,10 +34,14 @@ class TrashScreen extends StatefulWidget {
 
 class _TrashScreenState extends State<TrashScreen> {
   late final Drive _drive = Drive(widget.session);
-  List<RecordModel>? _items;
+  late final NotesApi _notesApi = widget.notes ?? NotesApi(widget.session);
+  List<RecordModel>? _files;
+  List<RecordModel>? _notes;
   bool _failed = false;
   bool _emptying = false;
   String _token = '';
+
+  bool get _isEmpty => (_files?.isEmpty ?? true) && (_notes?.isEmpty ?? true);
 
   @override
   void initState() {
@@ -41,10 +52,11 @@ class _TrashScreenState extends State<TrashScreen> {
   Future<void> _load() async {
     try {
       _token = await widget.session.fileToken().catchError((Object _) => '');
-      final list = await _drive.trashed();
+      final (files, notes) = await (_drive.trashed(), _notesApi.list()).wait;
       if (mounted) {
         setState(() {
-          _items = list;
+          _files = files;
+          _notes = sortNotes(notes, trash: true);
           _failed = false;
         });
       }
@@ -53,7 +65,9 @@ class _TrashScreenState extends State<TrashScreen> {
     }
   }
 
-  void _drop(String id) => setState(() => _items = _items?.where((n) => n.id != id).toList());
+  void _dropFile(String id) => setState(() => _files = _files?.where((n) => n.id != id).toList());
+
+  void _dropNote(String id) => setState(() => _notes = _notes?.where((n) => n.id != id).toList());
 
   void _snack(String text) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -83,10 +97,10 @@ class _TrashScreenState extends State<TrashScreen> {
       ) ??
       false;
 
-  Future<void> _actions(RecordModel node) async {
+  /// Asks what to do with one item; null when dismissed.
+  Future<_TrashAction?> _ask(String name) {
     final l = AppLocalizations.of(context);
-    final name = node.getStringValue('name');
-    final action = await showModalBottomSheet<String>(
+    return showModalBottomSheet<_TrashAction>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
@@ -103,14 +117,14 @@ class _TrashScreenState extends State<TrashScreen> {
                     icon: Icons.restore_from_trash_outlined,
                     title: l.notesRestore,
                     chevron: false,
-                    onTap: () => Navigator.pop(context, 'restore'),
+                    onTap: () => Navigator.pop(context, _TrashAction.restore),
                   ),
                   GroupTile(
                     icon: Icons.delete_forever_outlined,
                     title: l.notesDeleteForever,
                     danger: true,
                     chevron: false,
-                    onTap: () => Navigator.pop(context, 'delete'),
+                    onTap: () => Navigator.pop(context, _TrashAction.deleteForever),
                   ),
                 ],
               ),
@@ -119,29 +133,41 @@ class _TrashScreenState extends State<TrashScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _confirmDeleteForever(String name) {
+    final l = AppLocalizations.of(context);
+    return _confirm(
+      l.notesDeleteForeverTitle,
+      l.trashDeleteForeverBody(name),
+      l.notesDeleteForever,
+    );
+  }
+
+  Future<void> _fileActions(RecordModel node) async {
+    final l = AppLocalizations.of(context);
+    final name = node.getStringValue('name');
+    final action = await _ask(name);
     if (!mounted || action == null) return;
     try {
-      if (action == 'restore') {
-        await _drive.restoreFromTrash(node);
-        if (!mounted) return;
-        _drop(node.id);
-        _snack(l.trashRestored(name));
-        return;
+      switch (action) {
+        case _TrashAction.restore:
+          await _drive.restoreFromTrash(node);
+          if (!mounted) return;
+          _dropFile(node.id);
+          _snack(l.trashRestored(name));
+        case _TrashAction.deleteForever:
+          if (!await _confirmDeleteForever(name)) return;
+          await _drive.deleteForever(node.id);
+          if (!mounted) return;
+          // A folder takes its content with it, and trashed children are listed on their own.
+          node.getStringValue('kind') == 'folder' ? await _load() : _dropFile(node.id);
       }
-      if (!await _confirm(
-        l.notesDeleteForeverTitle,
-        l.trashDeleteForeverBody(name),
-        l.notesDeleteForever,
-      )) {
-        return;
-      }
-      await _drive.deleteForever(node.id);
-      if (mounted) _drop(node.id);
     } on ClientException catch (e) {
       // The unique-name index refuses a restore next to an item of the same name.
       if (mounted) {
         _snack(
-          action == 'restore' && e.statusCode == 400
+          action == _TrashAction.restore && e.statusCode == 400
               ? l.trashRestoreConflict(name)
               : errorMessage(context, e),
         );
@@ -151,23 +177,58 @@ class _TrashScreenState extends State<TrashScreen> {
     }
   }
 
+  Future<void> _noteActions(RecordModel note) async {
+    final l = AppLocalizations.of(context);
+    final title = noteTitle(note).isEmpty ? l.notesUntitled : noteTitle(note);
+    final action = await _ask(title);
+    if (!mounted || action == null) return;
+    try {
+      switch (action) {
+        case _TrashAction.restore:
+          await _notesApi.restore(note.id);
+          if (!mounted) return;
+          _dropNote(note.id);
+          _snack(l.trashRestored(title));
+        case _TrashAction.deleteForever:
+          if (!await _confirmDeleteForever(title)) return;
+          await _notesApi.delete(note.id);
+          if (mounted) _dropNote(note.id);
+      }
+    } catch (e) {
+      if (mounted) _snack(errorMessage(context, e));
+    }
+  }
+
   Future<void> _emptyTrash() async {
     final l = AppLocalizations.of(context);
-    final items = _items ?? const <RecordModel>[];
-    if (!await _confirm(l.trashEmptyTitle, l.trashEmptyBody(items.length), l.trashEmptyAction)) {
+    final files = _files ?? const <RecordModel>[];
+    final notes = _notes ?? const <RecordModel>[];
+    if (!await _confirm(
+      l.trashEmptyTitle,
+      l.trashEmptyBody(files.length + notes.length),
+      l.trashEmptyAction,
+    )) {
       return;
     }
+    // Rows stay untouchable until the end: nothing restored meanwhile gets deleted by the loop.
     setState(() => _emptying = true);
     var failed = 0;
-    // Deleting a folder takes its content with it: only top-level items are listed.
-    for (final n in items) {
+    for (final n in files) {
       try {
         await _drive.deleteForever(n.id);
-        if (mounted) _drop(n.id);
       } catch (_) {
         failed++;
       }
     }
+    for (final n in notes) {
+      try {
+        await _notesApi.delete(n.id);
+      } catch (_) {
+        failed++;
+      }
+    }
+    if (!mounted) return;
+    await _load();
     if (!mounted) return;
     setState(() => _emptying = false);
     if (failed > 0) _snack(l.trashEmptyFailed(failed));
@@ -178,10 +239,11 @@ class _TrashScreenState extends State<TrashScreen> {
     final l = AppLocalizations.of(context);
     final c = context.colors;
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final items = _items;
+    final files = _files;
+    final notes = _notes;
 
     final List<Widget> content;
-    if (_failed && items == null) {
+    if (_failed && (files == null || notes == null)) {
       content = [
         SliverFillRemaining(
           hasScrollBody: false,
@@ -192,7 +254,7 @@ class _TrashScreenState extends State<TrashScreen> {
           ),
         ),
       ];
-    } else if (items == null) {
+    } else if (files == null || notes == null) {
       content = [
         SliverList.builder(
           itemCount: 5,
@@ -202,7 +264,7 @@ class _TrashScreenState extends State<TrashScreen> {
           ),
         ),
       ];
-    } else if (items.isEmpty) {
+    } else if (_isEmpty) {
       content = [
         SliverFillRemaining(
           hasScrollBody: false,
@@ -215,21 +277,50 @@ class _TrashScreenState extends State<TrashScreen> {
       ];
     } else {
       content = [
+        if (files.isNotEmpty)
+          SliverToBoxAdapter(
+            child: InsetGroup(
+              title: l.trashFilesSection,
+              children: [
+                for (final n in files)
+                  NodeRow(
+                    key: ValueKey(n.id),
+                    node: n,
+                    locale: locale,
+                    thumb: nodeThumb(widget.session, n, _token),
+                    onTap: () => _fileActions(n),
+                    onMore: () => _fileActions(n),
+                    below: _trashedOn(n, locale, c),
+                  ),
+              ],
+            ),
+          ),
+        if (notes.isNotEmpty)
+          SliverToBoxAdapter(
+            child: InsetGroup(
+              title: l.notesTrashSection,
+              children: [
+                for (final n in notes)
+                  NoteRow(
+                    key: ValueKey(n.id),
+                    note: n,
+                    locale: locale,
+                    onTap: () => _noteActions(n),
+                  ),
+              ],
+            ),
+          ),
         SliverToBoxAdapter(
-          child: InsetGroup(
-            footer: l.trashHint,
-            children: [
-              for (final n in items)
-                NodeRow(
-                  key: ValueKey(n.id),
-                  node: n,
-                  locale: locale,
-                  thumb: nodeThumb(widget.session, n, _token),
-                  onTap: () => _actions(n),
-                  onMore: () => _actions(n),
-                  below: _trashedOn(n, locale, c),
-                ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AlcoveSpace.s6),
+            child: Text(
+              l.trashHint,
+              style: TextStyle(
+                color: c.textMuted,
+                fontSize: AlcoveFont.sizeXs + 1,
+                height: AlcoveFont.leadingNormal,
+              ),
+            ),
           ),
         ),
       ];
@@ -245,20 +336,20 @@ class _TrashScreenState extends State<TrashScreen> {
             LargeTitleAppBar(
               title: l.trashScreenTitle,
               actions: [
-                if (items != null && items.isNotEmpty)
-                  _emptying
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: AlcoveSpace.s4),
-                          child: LoadingIndicator(size: 28),
-                        )
-                      : TextButton(
-                          onPressed: _emptyTrash,
-                          style: TextButton.styleFrom(foregroundColor: c.danger),
-                          child: Text(l.trashEmptyAction),
-                        ),
+                if (_emptying)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AlcoveSpace.s4),
+                    child: LoadingIndicator(size: 28),
+                  )
+                else if (!_isEmpty)
+                  TextButton(
+                    onPressed: _emptyTrash,
+                    style: TextButton.styleFrom(foregroundColor: c.danger),
+                    child: Text(l.trashEmptyAction),
+                  ),
               ],
             ),
-            ...content,
+            for (final sliver in content) SliverIgnorePointer(ignoring: _emptying, sliver: sliver),
             SliverToBoxAdapter(
               child: SizedBox(height: AlcoveSpace.s8 + MediaQuery.paddingOf(context).bottom),
             ),

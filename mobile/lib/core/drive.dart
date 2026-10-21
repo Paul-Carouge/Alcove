@@ -68,8 +68,14 @@ class Drive {
     return _nodes.update(node.id, body: {'trashed_at': '', 'parent': parent});
   }
 
-  /// Deletes a file, or a folder with its content, for good.
-  Future<void> deleteForever(String id) => _nodes.delete(id);
+  /// Deletes a file, or a folder with its content, for good. An item already gone (taken with a
+  /// trashed folder deleted just before) counts as deleted.
+  Future<void> deleteForever(String id) => _nodes
+      .delete(id)
+      .catchError(
+        (Object _) {},
+        test: (e) => e is ClientException && e.statusCode == 404,
+      );
 
   /// Makes a searchable copy of a scan (`<name> (OCR).pdf`) and waits for it; returns the new file id.
   /// Throws on refusal or failure.

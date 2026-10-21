@@ -266,9 +266,11 @@
   },
   "trashConfirm": "Move to trash",
   "trashScreenTitle": "Trash",
-  "trashAccountSubtitle": "Deleted files and photos",
-  "trashHint": "Files and photos in the trash are deleted permanently after 30 days. Notes have their own trash in Notes.",
+  "trashAccountSubtitle": "Deleted files, photos and notes",
+  "trashHint": "Items in the trash are deleted permanently after 30 days.",
   "trashEmptyState": "The trash is empty",
+  "trashFilesSection": "Files and photos",
+  "notesTrashSection": "Notes",
   "kindFolder": "Folder",
   "trashRestored": "“{name}” restored",
   "@trashRestored": {

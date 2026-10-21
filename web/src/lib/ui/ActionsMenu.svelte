@@ -11,95 +11,47 @@
 
 <script lang="ts">
 	import { EllipsisVertical } from '@lucide/svelte';
-	import { tick } from 'svelte';
+	import { DropdownMenu } from 'bits-ui';
 
+	// bits-ui implements the WAI-ARIA menu button: arrows, Home/End, typeahead, Esc and focus return.
 	let { label, actions }: { label: string; actions: MenuAction[] } = $props();
 
-	let open = $state(false);
-	let root: HTMLDivElement;
-	let trigger: HTMLButtonElement;
-	let menu = $state<HTMLDivElement>();
-	const uid = $props.id();
-
-	const items = () => [...(menu?.querySelectorAll<HTMLElement>('[role=menuitem]') ?? [])];
-
-	async function show() {
-		open = true;
-		await tick();
-		items()[0]?.focus();
-	}
-
-	function hide(focusTrigger = true) {
-		open = false;
-		if (focusTrigger) trigger.focus();
-	}
-
-	// WAI-ARIA menu button pattern: arrows move, Home/End jump, Esc/Tab close.
-	function onKeydown(e: KeyboardEvent) {
-		const list = items();
-		const i = list.indexOf(document.activeElement as HTMLElement);
-		const move = (to: number) => list[(to + list.length) % list.length]?.focus();
-		if (e.key === 'ArrowDown') move(i + 1);
-		else if (e.key === 'ArrowUp') move(i - 1);
-		else if (e.key === 'Home') move(0);
-		else if (e.key === 'End') move(list.length - 1);
-		else if (e.key === 'Escape') hide();
-		else if (e.key === 'Tab') hide(false);
-		else return;
-		e.preventDefault();
-	}
-
-	function select(action: MenuAction) {
-		hide();
-		action.onselect();
-	}
+	let trigger = $state<HTMLElement | null>(null);
+	// A modal <dialog> sits in the top layer and makes <body> inert: render the menu inside it.
+	const portalTarget = $derived(trigger?.closest('dialog') ?? 'body');
 </script>
 
-<svelte:window onpointerdown={(e) => open && !root.contains(e.target as Node) && hide(false)} />
-
-<div class="wrap" bind:this={root}>
-	<button
-		bind:this={trigger}
-		class="trigger"
-		aria-label={label}
-		aria-haspopup="menu"
-		aria-expanded={open}
-		aria-controls="menu-{uid}"
-		onclick={() => (open ? hide() : show())}
-		onkeydown={(e) => e.key === 'ArrowDown' && (e.preventDefault(), show())}
-	>
-		<EllipsisVertical size={18} aria-hidden="true" />
-	</button>
-	{#if open}
-		<!-- svelte-ignore a11y_interactive_supports_focus -->
-		<div
-			class="menu"
-			id="menu-{uid}"
-			role="menu"
-			aria-label={label}
-			bind:this={menu}
-			onkeydown={onKeydown}
-		>
-			{#each actions as action (action.label)}
-				<button
-					role="menuitem"
-					tabindex="-1"
-					class:danger={action.danger}
-					onclick={() => select(action)}
-				>
-					{#if action.icon}<action.icon size={16} />{/if}
-					{action.label}
-				</button>
-			{/each}
-		</div>
-	{/if}
-</div>
+<DropdownMenu.Root>
+	<DropdownMenu.Trigger bind:ref={trigger} aria-label={label}>
+		{#snippet child({ props })}
+			<button {...props} class="trigger">
+				<EllipsisVertical size={18} aria-hidden="true" />
+			</button>
+		{/snippet}
+	</DropdownMenu.Trigger>
+	<DropdownMenu.Portal to={portalTarget}>
+		<DropdownMenu.Content align="end" sideOffset={4} collisionPadding={8} aria-label={label}>
+			{#snippet child({ wrapperProps, props })}
+				<div {...wrapperProps}>
+					<div {...props} class="menu">
+						{#each actions as action (action.label)}
+							<DropdownMenu.Item onSelect={action.onselect}>
+								{#snippet child({ props: itemProps })}
+									<div {...itemProps} class="item" class:danger={action.danger}>
+										{#if action.icon}<action.icon size={16} />{/if}
+										{action.label}
+									</div>
+								{/snippet}
+							</DropdownMenu.Item>
+						{/each}
+					</div>
+				</div>
+			{/snippet}
+		</DropdownMenu.Content>
+	</DropdownMenu.Portal>
+</DropdownMenu.Root>
 
 <style>
-	.wrap {
-		position: relative;
-		display: inline-block;
-	}
 	.trigger {
 		display: grid;
 		place-items: center;
@@ -112,52 +64,47 @@
 		cursor: pointer;
 	}
 	.trigger:hover,
-	.trigger[aria-expanded='true'] {
+	.trigger[data-state='open'] {
 		background: color-mix(in srgb, var(--color-text) 6%, transparent);
 		color: var(--color-text);
 	}
 	.menu {
-		position: absolute;
-		right: 0;
-		top: calc(100% + var(--space-1));
-		z-index: 10;
+		z-index: 50;
+		display: grid;
 		min-width: 14rem;
+		max-height: var(--bits-floating-available-height);
+		overflow-y: auto;
 		padding: var(--space-1);
 		background: var(--color-surface-raised);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
-		display: grid;
+		outline: none;
 		animation: pop var(--duration-base) var(--ease-emphasized);
-		transform-origin: top right;
+		transform-origin: var(--bits-floating-transform-origin);
 	}
 	@keyframes pop {
 		from {
 			opacity: 0;
-			transform: scale(0.96) translateY(calc(-1 * var(--space-1)));
+			transform: scale(0.96);
 		}
 	}
-	[role='menuitem'] {
+	.item {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
 		min-height: 2.75rem;
 		padding: 0 var(--space-3);
-		border: 0;
 		border-radius: var(--radius-md);
-		background: transparent;
-		font: inherit;
 		font-size: var(--text-sm);
 		color: var(--color-text);
-		text-align: left;
 		cursor: pointer;
-	}
-	[role='menuitem']:hover,
-	[role='menuitem']:focus-visible {
-		background: var(--color-surface-sunken);
 		outline: none;
 	}
-	[role='menuitem'] :global(svg) {
+	.item[data-highlighted] {
+		background: var(--color-surface-sunken);
+	}
+	.item :global(svg) {
 		flex: none;
 		color: var(--color-text-muted);
 	}

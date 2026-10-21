@@ -10,6 +10,7 @@
 		User as UserIcon,
 		Users
 	} from '@lucide/svelte';
+	import { Popover } from 'bits-ui';
 	import { session } from '#lib/auth/session.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { theme, type ThemeMode } from '#lib/theme/theme.svelte.js';
@@ -23,108 +24,95 @@
 	}: { name?: string; email: string; onsignout: () => void } = $props();
 
 	let open = $state(false);
-	let root: HTMLDivElement;
-	let trigger: HTMLButtonElement;
 
 	const modes: { value: ThemeMode; label: () => string; icon: typeof Sun }[] = [
 		{ value: 'system', label: m.theme_system, icon: Monitor },
 		{ value: 'light', label: m.theme_light, icon: Sun },
 		{ value: 'dark', label: m.theme_dark, icon: Moon }
 	];
-
-	function close(focusTrigger = false) {
-		open = false;
-		if (focusTrigger) trigger.focus();
-	}
-
-	// pointerdown (not click): a click can re-render its own target, which is then
-	// detached from the DOM and would look like an outside click.
-	function onWindowPointerDown(e: PointerEvent) {
-		if (open && !root.contains(e.target as Node)) close();
-	}
 </script>
 
-<svelte:window
-	onpointerdown={onWindowPointerDown}
-	onkeydown={(e) => open && e.key === 'Escape' && close(true)}
-/>
-
-<div class="wrap" bind:this={root}>
-	<button
-		bind:this={trigger}
-		class="trigger"
-		aria-expanded={open}
-		aria-controls="user-menu"
-		aria-label={m.account_menu()}
-		onclick={() => (open = !open)}
-	>
-		<Avatar {name} {email} size={36} />
-	</button>
-
-	{#if open}
-		<div class="panel" id="user-menu">
-			<div class="who">
-				<Avatar {name} {email} size={44} />
-				<div class="ids">
-					{#if name}<strong>{name}</strong>{/if}
-					<span class="email">{email}</span>
-				</div>
-			</div>
-
-			<div class="row">
-				<span class="label" id="theme-label">{m.theme_label()}</span>
-				<div class="segmented" role="radiogroup" aria-labelledby="theme-label">
-					{#each modes as mode (mode.value)}
-						<button
-							role="radio"
-							aria-checked={theme.mode === mode.value}
-							aria-label={mode.label()}
-							title={mode.label()}
-							onclick={() => theme.set(mode.value)}
-						>
-							<mode.icon size={16} aria-hidden="true" />
-						</button>
-					{/each}
-				</div>
-			</div>
-
-			<div class="row">
-				<span class="label">{m.language()}</span>
-				<LanguageSelect />
-			</div>
-
-			<hr />
-			<a class="item" href={resolve('/(app)/account')} onclick={() => close()}>
-				<UserIcon size={18} aria-hidden="true" />
-				{m.account_title()}
-			</a>
-			<a class="item" href={resolve('/(app)/security')} onclick={() => close()}>
-				<Shield size={18} aria-hidden="true" />
-				{m.nav_security()}
-			</a>
-			{#if session.isAdmin}
-				<a class="item" href={resolve('/(app)/admin/users')} onclick={() => close()}>
-					<Users size={18} aria-hidden="true" />
-					{m.users_title()}
-				</a>
-				<a class="item" href={resolve('/(app)/admin/system')} onclick={() => close()}>
-					<Server size={18} aria-hidden="true" />
-					{m.nav_system()}
-				</a>
-			{/if}
-			<hr />
-			<button class="item danger" onclick={onsignout}>
-				<LogOut size={18} aria-hidden="true" />
-				{m.sign_out_button()}
+<Popover.Root bind:open>
+	<Popover.Trigger aria-label={m.account_menu()}>
+		{#snippet child({ props })}
+			<button {...props} class="trigger">
+				<Avatar {name} {email} size={36} />
 			</button>
-		</div>
-	{/if}
-</div>
+		{/snippet}
+	</Popover.Trigger>
+	<Popover.Portal>
+		<Popover.Content
+			align="end"
+			sideOffset={8}
+			collisionPadding={12}
+			role="dialog"
+			aria-label={m.account_menu()}
+		>
+			{#snippet child({ wrapperProps, props })}
+				<div {...wrapperProps}>
+					<div {...props} class="panel">
+						<div class="who">
+							<Avatar {name} {email} size={44} />
+							<div class="ids">
+								{#if name}<strong>{name}</strong>{/if}
+								<span class="email">{email}</span>
+							</div>
+						</div>
+
+						<div class="row">
+							<span class="label" id="theme-label">{m.theme_label()}</span>
+							<div class="segmented" role="radiogroup" aria-labelledby="theme-label">
+								{#each modes as mode (mode.value)}
+									<button
+										role="radio"
+										aria-checked={theme.mode === mode.value}
+										aria-label={mode.label()}
+										title={mode.label()}
+										onclick={() => theme.set(mode.value)}
+									>
+										<mode.icon size={16} aria-hidden="true" />
+									</button>
+								{/each}
+							</div>
+						</div>
+
+						<div class="row">
+							<span class="label">{m.language()}</span>
+							<LanguageSelect />
+						</div>
+
+						<hr />
+						<a class="item" href={resolve('/(app)/account')} onclick={() => (open = false)}>
+							<UserIcon size={18} aria-hidden="true" />
+							{m.account_title()}
+						</a>
+						<a class="item" href={resolve('/(app)/security')} onclick={() => (open = false)}>
+							<Shield size={18} aria-hidden="true" />
+							{m.nav_security()}
+						</a>
+						{#if session.isAdmin}
+							<a class="item" href={resolve('/(app)/admin/users')} onclick={() => (open = false)}>
+								<Users size={18} aria-hidden="true" />
+								{m.users_title()}
+							</a>
+							<a class="item" href={resolve('/(app)/admin/system')} onclick={() => (open = false)}>
+								<Server size={18} aria-hidden="true" />
+								{m.nav_system()}
+							</a>
+						{/if}
+						<hr />
+						<button class="item danger" onclick={onsignout}>
+							<LogOut size={18} aria-hidden="true" />
+							{m.sign_out_button()}
+						</button>
+					</div>
+				</div>
+			{/snippet}
+		</Popover.Content>
+	</Popover.Portal>
+</Popover.Root>
 
 <style>
-	.wrap {
-		position: relative;
-	}
 	.trigger {
 		display: grid;
 		place-items: center;
@@ -138,16 +126,15 @@
 		transition: box-shadow var(--duration-fast) var(--ease-standard);
 	}
 	.trigger:hover,
-	.trigger[aria-expanded='true'] {
+	.trigger[data-state='open'] {
 		box-shadow: 0 0 0 3px var(--color-accent-subtle);
 	}
 	.panel {
-		position: absolute;
-		right: 0;
-		top: calc(100% + var(--space-2));
-		z-index: 20;
+		z-index: 50;
 		width: 19rem;
 		max-width: calc(100vw - 2 * var(--space-3));
+		max-height: var(--bits-floating-available-height);
+		overflow-y: auto;
 		padding: var(--space-2);
 		background: var(--color-surface-raised);
 		border: 1px solid var(--color-border);
@@ -156,12 +143,13 @@
 		display: grid;
 		gap: 1px;
 		animation: pop var(--duration-base) var(--ease-emphasized);
-		transform-origin: top right;
+		transform-origin: var(--bits-floating-transform-origin);
+		outline: none;
 	}
 	@keyframes pop {
 		from {
 			opacity: 0;
-			transform: scale(0.96) translateY(calc(-1 * var(--space-1)));
+			transform: scale(0.96);
 		}
 	}
 	.who {

@@ -43,3 +43,13 @@ test('unknown routes are served by the SPA and show a translated 404', async ({ 
 	expect(response?.status()).toBe(200);
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page not found');
 });
+
+test('select commits the highlighted option on Tab, and Home/End open it', async ({ page }) => {
+	await page.goto('/login');
+	// WAI-ARIA select-only combobox: End on the closed field opens it on the last option.
+	await page.getByRole('combobox', { name: 'Language' }).focus();
+	await page.keyboard.press('End');
+	await expect(page.getByRole('option', { name: 'Français' })).toHaveAttribute('data-highlighted');
+	await page.keyboard.press('Tab');
+	await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+});

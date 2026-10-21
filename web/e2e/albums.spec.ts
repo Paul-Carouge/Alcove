@@ -58,6 +58,12 @@ test('create an album, share it with a contributor, revoke it', async ({ browser
 	await owner.getByRole('button', { name: 'Share', exact: true }).click();
 	const share = owner.getByRole('dialog', { name: 'Share album' });
 	await share.getByLabel('Email').fill('nobody@e2e.test');
+	// Esc closes the open list, not the dialog around it.
+	await share.getByRole('combobox', { name: 'Role' }).click();
+	await expect(owner.getByRole('listbox', { name: 'Role' })).toBeVisible();
+	await owner.keyboard.press('Escape');
+	await expect(owner.getByRole('listbox', { name: 'Role' })).toBeHidden();
+	await expect(share).toBeVisible();
 	await pick(share.getByRole('combobox', { name: 'Role' }), 'Can add photos');
 	await share.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(share.getByText('No account with this email on this server.')).toBeVisible();

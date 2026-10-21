@@ -68,4 +68,20 @@ void main() {
     await tester.pump();
     expect(PaintingBinding.instance.imageCache.containsKey(img), isFalse);
   });
+
+  testWidgets('an image that fails to decode leaves the cache too', (tester) async {
+    final realClient = FreshTokenImage.client;
+    addTearDown(() => FreshTokenImage.client = realClient);
+    FreshTokenImage.client = MockClient((_) async => http.Response.bytes([1, 2, 3], 200));
+    final img = FreshTokenImage(Uri.parse('https://c.example/corrupt.webp?token=t'));
+    final failed = Completer<void>();
+    img
+        .resolve(ImageConfiguration.empty)
+        .addListener(
+          ImageStreamListener((_, _) {}, onError: (_, _) => failed.complete()),
+        );
+    await tester.runAsync(() => failed.future.timeout(const Duration(seconds: 5)));
+    await tester.pump();
+    expect(PaintingBinding.instance.imageCache.containsKey(img), isFalse);
+  });
 }

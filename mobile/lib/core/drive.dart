@@ -48,6 +48,29 @@ class Drive {
 
   Future<RecordModel> restore(String id) => _nodes.update(id, body: {'trashed_at': ''});
 
+  /// Top-level trashed items, most recent first (children of a trashed folder stay with it).
+  Future<List<RecordModel>> trashed() =>
+      _nodes.getFullList(filter: 'trashed_at != ""', sort: '-trashed_at', batch: 500);
+
+  /// Restores into the original folder, or the root if that folder is gone or trashed (as the web).
+  Future<RecordModel> restoreFromTrash(RecordModel node) async {
+    var parent = node.getStringValue('parent');
+    if (parent.isNotEmpty) {
+      final original = await _nodes
+          .getOne(parent)
+          .then<RecordModel?>((r) => r)
+          .catchError(
+            (Object _) => null,
+            test: (e) => e is ClientException && e.statusCode == 404,
+          );
+      if (original == null || original.getStringValue('trashed_at').isNotEmpty) parent = '';
+    }
+    return _nodes.update(node.id, body: {'trashed_at': '', 'parent': parent});
+  }
+
+  /// Deletes a file, or a folder with its content, for good.
+  Future<void> deleteForever(String id) => _nodes.delete(id);
+
   /// Makes a searchable copy of a scan (`<name> (OCR).pdf`) and waits for it; returns the new file id.
   /// Throws on refusal or failure.
   Future<String> makeSearchable(String id, {Duration poll = const Duration(seconds: 2)}) async {

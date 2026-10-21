@@ -10,6 +10,7 @@ import '../../ui/expressive.dart';
 import '../../ui/kit.dart';
 import '../backup/backup_controller.dart';
 import '../backup/backup_screen.dart';
+import '../trash/trash_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({
@@ -98,6 +99,20 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
           ),
+        SliverToBoxAdapter(
+          child: InsetGroup(
+            children: [
+              GroupTile(
+                icon: Icons.delete_outline,
+                title: l.trashScreenTitle,
+                subtitle: l.trashAccountSubtitle,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => TrashScreen(session: session)),
+                ),
+              ),
+            ],
+          ),
+        ),
         SliverToBoxAdapter(
           child: InsetGroup(
             title: l.appSection,

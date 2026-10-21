@@ -256,7 +256,7 @@
     }
   },
   "trashTitle": "Move to trash?",
-  "trashBody": "“{name}” goes to the trash; you can restore it from the web app for 30 days.",
+  "trashBody": "“{name}” goes to the trash; you can restore it from the trash (Account menu) for 30 days.",
   "@trashBody": {
     "placeholders": {
       "name": {
@@ -265,6 +265,53 @@
     }
   },
   "trashConfirm": "Move to trash",
+  "trashScreenTitle": "Trash",
+  "trashAccountSubtitle": "Deleted files and photos",
+  "trashHint": "Files and photos in the trash are deleted permanently after 30 days. Notes have their own trash in Notes.",
+  "trashEmptyState": "The trash is empty",
+  "kindFolder": "Folder",
+  "trashRestored": "“{name}” restored",
+  "@trashRestored": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trashRestoreConflict": "An item named “{name}” already exists in its original folder. Rename one of them first.",
+  "@trashRestoreConflict": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trashDeleteForeverBody": "“{name}” will be permanently deleted. This cannot be undone.",
+  "@trashDeleteForeverBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trashEmptyAction": "Empty",
+  "trashEmptyTitle": "Empty the trash?",
+  "trashEmptyBody": "{count, plural, =1{1 item will be permanently deleted.} other{{count} items will be permanently deleted.}} This cannot be undone.",
+  "@trashEmptyBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trashEmptyFailed": "{count, plural, =1{1 item could not be deleted.} other{{count} items could not be deleted.}}",
+  "@trashEmptyFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cancel": "Cancel",
   "photosEmptyTitle": "No photos yet",
   "albumsEmptyTitle": "No albums yet",
@@ -593,7 +640,7 @@
     }
   },
   "selectionCancel": "Cancel selection",
-  "photosTrashBody": "{count, plural, =1{1 item goes} other{{count} items go}} to the trash; you can restore them from the web app for 30 days.",
+  "photosTrashBody": "{count, plural, =1{1 item goes} other{{count} items go}} to the trash; you can restore them from the trash (Account menu) for 30 days.",
   "@photosTrashBody": {
     "placeholders": {
       "count": {
